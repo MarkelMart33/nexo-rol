@@ -16,7 +16,7 @@ Al entrar aparece la N durante dos segundos con una barra de carga; después se 
 
 La aplicación de Mapa busca mundos y sistemas en Traveller Map, conserva el mundo elegido en cada partida y centra el mapa en su hexágono con un acercamiento local; muestra los datos de mundo disponibles y permite abrir el mapa incrustado o completo. El buscador y los datos requieren conexión a Internet; Traveller Map ofrece estos datos mediante su API pública.
 
-La aplicación Traveller conserva un índice temático conciso del manual con referencias de página. El usuario puede cargar su propia copia del PDF en cada navegador y abrir desde los resultados la página correspondiente. El archivo se guarda en IndexedDB local, no se envía al servidor ni se incluye en el sitio público; por tanto, hay que cargarlo una vez en cada dispositivo y navegador donde se quiera consultar. Borrar los datos del sitio o del navegador también puede borrar la copia local.
+La aplicación Traveller conserva un índice temático conciso del manual con referencias de página. Incluye un enlace al PDF compartido en Google Drive y cada resultado abre ese visor en la página correspondiente. El archivo permanece alojado en Drive; quienes lo consulten necesitarán permisos sobre el enlace compartido.
 
 ## Cuentas personales y sincronización
 
