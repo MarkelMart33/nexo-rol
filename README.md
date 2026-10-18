@@ -5,7 +5,7 @@ MVP estático para llevar partidas comerciales de Traveller.
 ## Abrir y publicar
 
 - Para consultar el proyecto en tu ordenador, abre `index.html`; el guardado local funciona en ese modo. Este modo no permite instalar NEXO ni habilita el servicio offline.
-- NEXO ya incluye manifiesto de instalación, iconos de 192 y 512 px y caché de recursos. Las cuentas personales usan Supabase para autenticación y sincronización privada. Para instalarlo en móvil/ordenador y usar la interfaz sin conexión, publica el contenido de `outputs` en un alojamiento web con HTTPS.
+- NEXO ya incluye manifiesto de instalación, iconos de 192 y 512 px y caché de recursos. En esta beta, las partidas se guardan localmente por navegador y no requieren correo. El código de autenticación y sincronización se conserva para una futura activación. Para instalarlo en móvil/ordenador y usar la interfaz sin conexión, publica el contenido de `outputs` en un alojamiento web con HTTPS.
 - En desarrollo, sirve la carpeta `outputs` con cualquier servidor HTTP estático. La app de Mapa necesita conexión incluso cuando la interfaz está instalada.
 - La versión pública necesitará un dominio o una dirección web del alojamiento. Después se podrá verificar el sitio en Google Search Console y enviar el sitemap; Google decide cuándo indexarlo y en qué posición mostrarlo.
 - Al pasar del archivo local al dominio, el navegador lo considera otra instalación. En el primer acceso a una cuenta vacía, NEXO copia las partidas locales encontradas en ese navegador a la cuenta. Conserva una copia JSON como respaldo.
@@ -18,7 +18,7 @@ La aplicación de Mapa busca sistemas en Traveller Map, conserva el sistema actu
 
 ## Cuentas personales y sincronización
 
-Cada jugador puede crear una cuenta con correo y contraseña. Si la confirmación de email está activada, se verifica una vez al registrarse; los siguientes inicios usan la contraseña y no envían un correo cada vez. La pantalla incluye recuperación de contraseña. Las partidas pertenecen a una sola cuenta y están protegidas por políticas de acceso de Supabase. Al iniciar sesión, NEXO carga las partidas de esa cuenta; los cambios se guardan en el servicio y el navegador mantiene una copia local. Cuando la app vuelve a primer plano, consulta los cambios recientes de otros dispositivos. La sincronización requiere conexión y puede tardar unos instantes; no es una edición colaborativa en directo. Compartir partidas entre cuentas no está incluido.
+La autenticación y la sincronización con Supabase están desactivadas durante la beta. Cada navegador mantiene sus propias partidas locales; abrir NEXO desde otro teléfono u ordenador muestra un espacio independiente. Para mover una partida entre dispositivos, usa exportar/importar JSON. El código de cuentas personales se conserva para poder reactivar esta función más adelante. Compartir partidas entre cuentas no está incluido.
 
 El proyecto Supabase debe tener la tabla `public.campaigns` y las políticas del archivo `supabase/schema.sql`. `cloud-config.js` contiene la URL del proyecto y una clave pública diseñada para usarse en el navegador; la protección depende de las políticas RLS. Nunca pongas una contraseña de base de datos ni una clave secreta en archivos web. El SMTP predeterminado de Supabase es limitado; para permitir registros por parte de otros jugadores habrá que configurar un proveedor SMTP propio.
 
@@ -37,4 +37,4 @@ El resultado introducido se interpreta como tirada total final y se trunca a ent
 
 ## Alcance
 
-Incluye selector y creación de partidas, calculadora, inventario, artículos personalizados, historial, deshacer la última operación, edición manual de cartera e inventario, importación/exportación JSON, visor y buscador de sistemas de Traveller Map, soporte PWA, cuentas personales y sincronización de partidas privadas.
+Incluye selector y creación de partidas locales, calculadora, inventario, artículos personalizados, historial, deshacer la última operación, edición manual de cartera e inventario, importación/exportación JSON, visor y buscador de sistemas de Traveller Map y soporte PWA. La autenticación y sincronización están desactivadas en la beta.
