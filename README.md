@@ -1,6 +1,6 @@
 # NEXO · Traveller Trade Terminal
 
-MVP estático para llevar partidas comerciales de Traveller.
+Terminal multiverso para NEXO, con el módulo Traveller como sistema disponible.
 
 ## Abrir y publicar
 
@@ -12,7 +12,7 @@ MVP estático para llevar partidas comerciales de Traveller.
 
 ## Partidas y datos
 
-Al entrar aparece la N durante dos segundos con una barra de carga; después se muestra directamente el selector de partidas. Elige una campaña para abrirla, renombrarla o crear una partida vacía. Al entrar en una partida aparece un lanzador estilo PDA con aplicaciones separadas para comercio, inventario, cartera, notas, mapa estelar, historial y un acceso externo al asistente de ChatGPT. Dentro de cada módulo, el logo NEXO de la esquina superior izquierda vuelve al inicio de la partida y el botón de cuadrícula abre un menú para cambiar de aplicación sin volver al inicio. En la app móvil de ChatGPT se puede activar «Iniciar con voz» en Ajustes → Voz; el arranque automático depende de que ChatGPT abra un chat nuevo o vacío. NEXO no controla ese ajuste ni puede iniciar el micrófono desde su enlace. Las transiciones de entrada a partidas y aplicaciones muestran una conexión de terminal de alrededor de un segundo; las operaciones confirmadas producen un pulso verde en cartera, inventario e historial. En Notas puedes crear varias notas con título y contenido, guardarlas, cerrarlas, reabrirlas para editarlas y eliminarlas con confirmación; se conservan por partida. Los textos antiguos del bloc se migran a una nota titulada «Nota de la partida». La partida inicial conserva la cartera sembrada de 4.060.000 Cr.; las partidas nuevas empiezan con 0 Cr. y categorías vacías.
+Al abrir NEXO aparece el selector de sistemas de rol. Traveller abre el selector de partidas; D&D y Vampiro aparecen como módulos en preparación. Dentro de una partida hay aplicaciones separadas para comercio, inventario, cartera, notas, mapa estelar, historial, hangar, personajes y un acceso al asistente de ChatGPT. En PERSONAJES puedes crear fichas editables ilimitadas para la partida, con datos personales, biométricos, vitales, habilidades y semanas; los campos son opcionales y las fichas se guardan automáticamente. Desde el logo NEXO se vuelve al selector de sistemas y el botón de cuadrícula permite cambiar de aplicación. Las operaciones confirmadas producen un pulso verde en cartera, inventario e historial. En Notas puedes crear, editar y eliminar apuntes con confirmación; se conservan por partida. La partida inicial conserva la cartera sembrada de 4.060.000 Cr.; las partidas nuevas empiezan con 0 Cr. y categorías vacías.
 
 La aplicación de Mapa busca mundos y sistemas en Traveller Map, conserva el mundo elegido en cada partida y centra el mapa en su hexágono con un acercamiento local; muestra los datos de mundo disponibles y permite abrir el mapa incrustado o completo. El buscador y los datos requieren conexión a Internet; Traveller Map ofrece estos datos mediante su API pública.
 
@@ -39,5 +39,5 @@ El resultado introducido se interpreta como tirada total final y se trunca a ent
 
 ## Alcance
 
-Incluye selector y creación de partidas locales, calculadora, inventario, artículos personalizados, historial, deshacer la última operación, edición manual de cartera e inventario, importación/exportación JSON, visor y buscador de sistemas de Traveller Map y soporte PWA. La autenticación y sincronización están desactivadas en la beta.
+Incluye selector de sistemas y partidas locales, calculadora, inventario, hangar, fichas de personajes, notas, historial, deshacer la última operación, edición manual de cartera e inventario, importación/exportación JSON, visor y buscador de Traveller Map y soporte PWA. La autenticación y sincronización están desactivadas en la beta.
 
