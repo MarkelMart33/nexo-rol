@@ -1,1 +1,72 @@
-(() => { const start=()=>{if(document.getElementById('nexoSystems'))return; const css=document.createElement('link');css.rel='stylesheet';css.href='./terminal-shell.css?v=1';document.head.append(css);const hub=document.createElement('section');hub.id='nexoSystems';hub.className='nexo-systems';hub.hidden=true;document.body.append(hub);const names={dnd:'NEXO D&D',vampire:'NEXO VAMPIRO'};function render(view='home'){if(view==='home'){hub.innerHTML='<header class="sys-top"><a class="sys-brand" href="#"><span class="sys-orbit">N</span><span><b>NEXO</b><small>TERMINAL DE SISTEMAS DE ROL</small></span></a><span class="sys-status"><i></i> TERMINAL LOCAL</span></header><main class="sys-main"><p class="sys-kicker">PLATAFORMA DE CAMPAÑA · MULTISISTEMA</p><h1>Un terminal.<br><em>Todos tus universos.</em></h1><p class="sys-intro">Elige el sistema de juego para abrir las herramientas de tu campaña.</p><div class="sys-grid"><button class="sys-card sys-traveller" data-system="traveller"><span class="sys-icon">⌖</span><span class="sys-tag">SISTEMA DISPONIBLE</span><b>NEXO TRAVELLER</b><small>Comercio, partidas, inventario, mapa y reglas.</small><span class="sys-open">ABRIR SISTEMA →</span></button><button class="sys-card sys-dnd" data-system="dnd"><span class="sys-icon">✧</span><span class="sys-tag">MÓDULO EN PREPARACIÓN</span><b>NEXO D&amp;D</b><small>Un espacio para tus aventuras de fantasía.</small><span class="sys-open">VER MÓDULO →</span></button><button class="sys-card sys-vampire" data-system="vampire"><span class="sys-icon">◈</span><span class="sys-tag">MÓDULO EN PREPARACIÓN</span><b>NEXO VAMPIRO</b><small>Herramientas para Mundo de Tinieblas.</small><span class="sys-open">VER MÓDULO →</span></button></div><footer class="sys-footer"><span>NEXO · SISTEMAS DE ROL</span><span>SELECCIONA UN MÓDULO</span></footer></main>';hub.querySelector('[data-system="traveller"]').onclick=()=>{hub.hidden=true;document.documentElement.classList.add('nexo-system-selected')};hub.querySelectorAll('[data-system="dnd"],[data-system="vampire"]').forEach(b=>b.onclick=()=>render(b.dataset.system));}else{hub.innerHTML='<header class="sys-top"><button class="sys-brand" data-home><span class="sys-orbit">N</span><span><b>NEXO</b><small>TERMINAL DE SISTEMAS DE ROL</small></span></button><span class="sys-status"><i></i> EN PREPARACIÓN</span></header><main class="sys-main sys-coming"><p class="sys-kicker">NEXO / '+names[view]+'</p><span class="sys-icon">⌑</span><h1>'+names[view]+'</h1><p class="sys-intro">Este módulo aún no está instalado. Aquí añadiremos sus herramientas cuando empecemos ese reglamento.</p><button class="sys-back" data-home>← VOLVER A SISTEMAS</button></main>';hub.querySelector('[data-home]').onclick=()=>render('home')} }render();const show=()=>{if(!document.getElementById('introScreen'))hub.hidden=false};new MutationObserver(show).observe(document.body,{childList:true,subtree:true});setTimeout(show,2400);const sw=document.createElement('button');sw.type='button';sw.className='small-action';sw.id='systemHubButton';sw.textContent='SISTEMAS';sw.hidden=true;const games=document.getElementById('gamesBtn');if(games)games.before(sw);sw.onclick=()=>{render('home');hub.hidden=false;document.documentElement.classList.remove('nexo-system-selected')};const traveller=hub.querySelector('[data-system="traveller"]');traveller.addEventListener('click',()=>{sw.hidden=false});hub.addEventListener('click',e=>{if(e.target.closest('a.sys-brand'))e.preventDefault()})};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start()})();
+(() => {
+  const start = () => {
+    if (document.getElementById('nexoSystems')) return;
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = './terminal-shell.css?v=1';
+    document.head.append(css);
+
+    const hub = document.createElement('section');
+    hub.id = 'nexoSystems';
+    hub.className = 'nexo-systems';
+    hub.hidden = true;
+    document.body.append(hub);
+    const names = { dnd: 'NEXO D&D', vampire: 'NEXO VAMPIRO' };
+
+    function render(view = 'home') {
+      if (view === 'home') {
+        hub.innerHTML = '<header class="sys-top"><a class="sys-brand" href="#"><span class="sys-orbit">N</span><span><b>NEXO</b><small>TERMINAL DE SISTEMAS DE ROL</small></span></a><span class="sys-status"><i></i> TERMINAL LOCAL</span></header><main class="sys-main"><p class="sys-kicker">PLATAFORMA DE CAMPAÑA · MULTISISTEMA</p><h1>Un terminal.<br><em>Todos tus universos.</em></h1><p class="sys-intro">Elige el sistema de juego para abrir las herramientas de tu campaña.</p><div class="sys-grid"><button class="sys-card sys-traveller" data-system="traveller"><span class="sys-icon">⌖</span><span class="sys-tag">SISTEMA DISPONIBLE</span><b>NEXO TRAVELLER</b><small>Comercio, partidas, inventario, mapa y reglas.</small><span class="sys-open">ABRIR SISTEMA →</span></button><button class="sys-card sys-dnd" data-system="dnd"><span class="sys-icon">✧</span><span class="sys-tag">MÓDULO EN PREPARACIÓN</span><b>NEXO D&amp;D</b><small>Un espacio para tus aventuras de fantasía.</small><span class="sys-open">VER MÓDULO →</span></button><button class="sys-card sys-vampire" data-system="vampire"><span class="sys-icon">◈</span><span class="sys-tag">MÓDULO EN PREPARACIÓN</span><b>NEXO VAMPIRO</b><small>Herramientas para Mundo de Tinieblas.</small><span class="sys-open">VER MÓDULO →</span></button></div><footer class="sys-footer"><span>NEXO · SISTEMAS DE ROL</span><span>SELECCIONA UN MÓDULO</span></footer></main>';
+        hub.querySelector('[data-system="traveller"]').onclick = () => {
+          hub.hidden = true;
+          document.documentElement.classList.add('nexo-system-selected');
+        };
+        hub.querySelectorAll('[data-system="dnd"],[data-system="vampire"]').forEach(button => {
+          button.onclick = () => render(button.dataset.system);
+        });
+      } else {
+        hub.innerHTML = '<header class="sys-top"><button class="sys-brand" data-home><span class="sys-orbit">N</span><span><b>NEXO</b><small>TERMINAL DE SISTEMAS DE ROL</small></span></button><span class="sys-status"><i></i> EN PREPARACIÓN</span></header><main class="sys-main sys-coming"><p class="sys-kicker">NEXO / ' + names[view] + '</p><span class="sys-icon">⌑</span><h1>' + names[view] + '</h1><p class="sys-intro">Este módulo aún no está instalado. Aquí añadiremos sus herramientas cuando empecemos ese reglamento.</p><button class="sys-back" data-home>← VOLVER A SISTEMAS</button></main>';
+        hub.querySelectorAll('[data-home]').forEach(button => button.onclick = openHub);
+      }
+    }
+
+    function openHub() {
+      render('home');
+      hub.hidden = false;
+      document.documentElement.classList.remove('nexo-system-selected');
+    }
+
+    render();
+    const show = () => {
+      if (!document.getElementById('introScreen')) hub.hidden = false;
+    };
+    new MutationObserver(show).observe(document.body, { childList: true, subtree: true });
+    setTimeout(show, 2400);
+
+    const systemButton = document.createElement('button');
+    systemButton.type = 'button';
+    systemButton.className = 'small-action';
+    systemButton.id = 'systemHubButton';
+    systemButton.textContent = 'SISTEMAS';
+    systemButton.hidden = true;
+    const games = document.getElementById('gamesBtn');
+    if (games) games.before(systemButton);
+    systemButton.onclick = openHub;
+
+    const homeBrand = document.getElementById('nexoHome');
+    if (homeBrand) {
+      homeBrand.addEventListener('click', event => {
+        if (!document.documentElement.classList.contains('nexo-system-selected')) return;
+        event.preventDefault();
+        openHub();
+      });
+    }
+
+    const traveller = hub.querySelector('[data-system="traveller"]');
+    traveller.addEventListener('click', () => { systemButton.hidden = false; });
+    hub.addEventListener('click', event => {
+      if (event.target.closest('a.sys-brand')) event.preventDefault();
+    });
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
+  else start();
+})();
