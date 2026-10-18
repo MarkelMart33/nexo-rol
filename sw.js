@@ -1,6 +1,6 @@
-const CACHE = 'nexo-static-v30';
+const CACHE = 'nexo-static-v31';
 const FILES = [
-  './', './index.html', './styles.css?v=30', './app.js?v=30', './traveller-index.js?v=30', './manifest.webmanifest',
+  './', './index.html', './styles.css?v=31', './app.js?v=31', './traveller-index.js?v=31', './manifest.webmanifest',
   './icon.svg', './icon-192.png', './icon-512.png'
 ];
 self.addEventListener('install', event => {
