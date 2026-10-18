@@ -16,6 +16,8 @@ Al entrar aparece la N durante dos segundos con una barra de carga; después se 
 
 La aplicación de Mapa busca mundos y sistemas en Traveller Map, conserva el mundo elegido en cada partida y centra el mapa en su hexágono con un acercamiento local; muestra los datos de mundo disponibles y permite abrir el mapa incrustado o completo. El buscador y los datos requieren conexión a Internet; Traveller Map ofrece estos datos mediante su API pública.
 
+La aplicación Traveller conserva un índice temático conciso del manual con referencias de página. El usuario puede cargar su propia copia del PDF en cada navegador y abrir desde los resultados la página correspondiente. El archivo se guarda en IndexedDB local, no se envía al servidor ni se incluye en el sitio público; por tanto, hay que cargarlo una vez en cada dispositivo y navegador donde se quiera consultar. Borrar los datos del sitio o del navegador también puede borrar la copia local.
+
 ## Cuentas personales y sincronización
 
 La autenticación y la sincronización con Supabase están desactivadas durante la beta. Cada navegador mantiene sus propias partidas locales; abrir NEXO desde otro teléfono u ordenador muestra un espacio independiente. Para mover una partida entre dispositivos, usa exportar/importar JSON. El código de cuentas personales se conserva para poder reactivar esta función más adelante. Compartir partidas entre cuentas no está incluido.
@@ -38,3 +40,4 @@ El resultado introducido se interpreta como tirada total final y se trunca a ent
 ## Alcance
 
 Incluye selector y creación de partidas locales, calculadora, inventario, artículos personalizados, historial, deshacer la última operación, edición manual de cartera e inventario, importación/exportación JSON, visor y buscador de sistemas de Traveller Map y soporte PWA. La autenticación y sincronización están desactivadas en la beta.
+
