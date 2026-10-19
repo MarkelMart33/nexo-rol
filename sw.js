@@ -1,6 +1,6 @@
-const CACHE = 'nexo-static-v47';
+const CACHE = 'nexo-static-v48';
 const FILES = [
-  './', './index.html', './styles.css?v=41', './app.js?v=40', './traveller-index.js?v=38', './traveller-pdf.js?v=38', './hangar.js?v=38', './characters.js?v=2', './terminal-shell.js?v=41', './terminal-shell.css?v=1', './vampire.js?v=3', './vampire.css?v=3', './dnd.js?v=2', './dnd.css?v=2', './manifest.webmanifest',
+  './', './index.html', './styles.css?v=41', './app.js?v=40', './traveller-index.js?v=38', './traveller-pdf.js?v=38', './hangar.js?v=38', './characters.js?v=2', './terminal-shell.js?v=41', './terminal-shell.css?v=1', './vampire.js?v=3', './vampire.css?v=3', './dnd-progresion.js?v=1', './dnd.js?v=3', './dnd.css?v=3', './manifest.webmanifest',
   './icon.svg', './icon-192.png', './icon-512.png'
 ];
 self.addEventListener('install', event => {

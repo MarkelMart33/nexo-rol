@@ -82,6 +82,16 @@
   };
   const LANGUAGES = ['Común de signos', 'Dracónico', 'Élfico', 'Enano', 'Gigante', 'Gnomo', 'Goblin', 'Mediano', 'Orco'];
   const LANG_PICKS = 2;
+  // Progresión por niveles (datos en dnd-progresion.js)
+  const P = window.NEXO_DND_PROGRESSION || { features: {}, subclasses: {}, story: {} };
+  const MAX_LEVEL = 20;
+  const SUBCLASS_LEVEL = 3;
+  const BOON_LEVEL = 19;
+  const EXTRA_ASI = { guerrero: [6, 14], picaro: [10] };
+  const CAPSTONES = { barbaro: ['fue', 'con'], monje: ['des', 'sab'] };
+  const FULL_CASTERS = ['bardo', 'clerigo', 'druida', 'hechicero', 'mago'];
+  const HALF_CASTERS = ['paladin', 'explorador'];
+  const FULL_SLOTS = [[2], [3], [4, 2], [4, 3], [4, 3, 2], [4, 3, 3], [4, 3, 3, 1], [4, 3, 3, 2], [4, 3, 3, 3, 1], [4, 3, 3, 3, 2], [4, 3, 3, 3, 2, 1], [4, 3, 3, 3, 2, 1], [4, 3, 3, 3, 2, 1, 1], [4, 3, 3, 3, 2, 1, 1], [4, 3, 3, 3, 2, 1, 1, 1], [4, 3, 3, 3, 2, 1, 1, 1], [4, 3, 3, 3, 2, 1, 1, 1, 1], [4, 3, 3, 3, 3, 1, 1, 1, 1], [4, 3, 3, 3, 3, 2, 1, 1, 1], [4, 3, 3, 3, 3, 2, 2, 1, 1]];
   const ALIGNMENTS = ['Legal bueno', 'Neutral bueno', 'Caótico bueno', 'Legal neutral', 'Neutral', 'Caótico neutral', 'Legal malvado', 'Neutral malvado', 'Caótico malvado'];
 
   let host = null;
@@ -93,7 +103,9 @@
   function load() {
     try {
       const parsed = JSON.parse(localStorage.getItem(KEY) || '{}');
-      return { characters: Array.isArray(parsed.characters) ? parsed.characters : [] };
+      const characters = Array.isArray(parsed.characters) ? parsed.characters : [];
+      characters.forEach(ch => { ch.levels ||= {}; ch.subclass ||= ''; });
+      return { characters };
     } catch { return { characters: [] }; }
   }
   function persist() {
@@ -109,7 +121,7 @@
       id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
       name: '', player: '', campaign: '', alignment: '', level: 1, cls: '', species: '', variant: '', size: '', bg: '',
       method: 'array', base: emptyBase('array'), bonusMode: '21', bonus2: '', bonus1: '',
-      picks: { class: [], species: [], feat: [], featH: [] }, humanFeat: '', langs: [], notes: ''
+      picks: { class: [], species: [], feat: [], featH: [] }, humanFeat: '', langs: [], notes: '', subclass: '', levels: {}
     };
   }
   function emptyBase(method) {
@@ -123,9 +135,31 @@
     if (ch.bonusMode === '111') return 1;
     return key === ch.bonus2 ? 2 : key === ch.bonus1 ? 1 : 0;
   }
+  // Niveles que dan Mejora de característica (y el Don épico a nivel 19) ya alcanzados.
+  function asiLevels(cls) { return [4, 8, 12, 16, ...(EXTRA_ASI[cls] || [])].sort((a, b) => a - b); }
+  function improvementLevels(ch) {
+    if (!CLASSES[ch.cls]) return [];
+    return [...asiLevels(ch.cls), BOON_LEVEL].filter(l => l <= ch.level);
+  }
+  function levelBonus(ch, key, boon) {
+    let total = 0;
+    improvementLevels(ch).forEach(l => {
+      const e = ch.levels[l] || {};
+      if ((l === BOON_LEVEL) !== boon) return;
+      if (boon) { if (e.a === key) total += 1; return; }
+      if (e.mode === 'asi2' && e.a === key) total += 2;
+      if ((e.mode === 'asi11' || e.mode === 'feat') && e.a === key) total += 1;
+      if (e.mode === 'asi11' && e.b === key && e.b !== e.a) total += 1;
+    });
+    return total;
+  }
   function score(ch, key) {
     const base = ch.base[key];
-    return base == null ? null : Math.min(SCORE_CAP, base + bonus(ch, key));
+    if (base == null) return null;
+    let s = Math.min(SCORE_CAP, base + bonus(ch, key) + levelBonus(ch, key, false));
+    s = Math.min(30, s + levelBonus(ch, key, true));
+    if (ch.level >= MAX_LEVEL && CAPSTONES[ch.cls]?.includes(key)) s = Math.min(Math.max(25, s), s + 4);
+    return s;
   }
   function mod(ch, key) {
     const s = score(ch, key);
@@ -145,19 +179,105 @@
     const variant = sp.variants?.find(([k]) => k === ch.variant);
     return { ...sp, ...(variant?.[2] || {}), variantName: variant?.[1] || '' };
   }
+  function levelHp(ch, l) {
+    const die = CLASSES[ch.cls].die;
+    const e = ch.levels[l];
+    return e?.hp === 'roll' && Number.isInteger(e.roll) ? e.roll : die / 2 + 1;
+  }
   function hitPoints(ch) {
     const cls = CLASSES[ch.cls];
     if (!cls) return null;
     const con = mod(ch, 'con');
     let hp = Math.max(1, cls.die + con);
-    for (let l = 2; l <= ch.level; l += 1) hp += Math.max(1, cls.die / 2 + 1 + con);
+    for (let l = 2; l <= ch.level; l += 1) hp += Math.max(1, levelHp(ch, l) + con);
+    if (hasSub(ch, 'hechicero', 'draconica')) hp += ch.level;
     hp += (SPECIES[ch.species]?.hpPerLevel || 0) * ch.level;
     if (hasFeat(ch, 'duro')) hp += 2 * ch.level;
     return hp;
   }
+  const hasSub = (ch, cls, sub) => ch.cls === cls && ch.subclass === sub && ch.level >= SUBCLASS_LEVEL;
+  function unarmoredExtra(ch) {
+    if (CLASSES[ch.cls]?.unarmored) return CLASSES[ch.cls].unarmored;
+    if (hasSub(ch, 'hechicero', 'draconica') || hasSub(ch, 'bardo', 'danza')) return 'car';
+    return null;
+  }
   function armorClass(ch) {
-    const extra = CLASSES[ch.cls]?.unarmored;
+    const extra = unarmoredExtra(ch);
     return 10 + mod(ch, 'des') + (extra ? mod(ch, extra) : 0);
+  }
+  const step = (level, pairs) => pairs.reduce((v, [l, val]) => (level >= l ? val : v), null);
+  function speed(ch, sp) {
+    let total = sp.speed;
+    if (ch.cls === 'barbaro' && ch.level >= 5) total += 10;
+    if (ch.cls === 'explorador' && ch.level >= 6) total += 10;
+    if (ch.cls === 'monje' && ch.level >= 2) total += step(ch.level, [[2, 10], [6, 15], [10, 20], [14, 25], [18, 30]]);
+    return total;
+  }
+  function saveProficiencies(ch) {
+    const cls = CLASSES[ch.cls];
+    if (!cls) return [];
+    if (ch.cls === 'monje' && ch.level >= 14) return ABILITIES.map(([k]) => k);
+    if (ch.cls === 'picaro' && ch.level >= 15) return [...cls.saves, 'sab', 'car'];
+    return cls.saves;
+  }
+  function spellSlots(ch) {
+    if (FULL_CASTERS.includes(ch.cls)) return FULL_SLOTS[ch.level - 1];
+    if (HALF_CASTERS.includes(ch.cls)) return FULL_SLOTS[Math.ceil(ch.level / 2) - 1];
+    return null;
+  }
+  function resources(ch) {
+    const L = ch.level;
+    const out = [];
+    switch (ch.cls) {
+      case 'barbaro': out.push(['Usos de furia', step(L, [[1, 2], [3, 3], [6, 4], [12, 5], [17, 6]])], ['Daño de furia', '+' + step(L, [[1, 2], [9, 3], [16, 4]])]); break;
+      case 'bardo': out.push(['Inspiración bárdica', `${Math.max(1, mod(ch, 'car'))} × d${step(L, [[1, 6], [5, 8], [10, 10], [15, 12]])}`]); break;
+      case 'brujo': out.push(['Invocaciones', step(L, [[1, 1], [2, 3], [5, 5], [7, 6], [9, 7], [12, 8], [15, 9], [18, 10]])], ['Espacios de pacto', `${step(L, [[1, 1], [2, 2], [11, 3], [17, 4]])} de nivel ${step(L, [[1, 1], [3, 2], [5, 3], [7, 4], [9, 5]])}`]); break;
+      case 'clerigo': if (L >= 2) out.push(['Canalizar divinidad', step(L, [[2, 2], [6, 3], [18, 4]])]); break;
+      case 'druida': if (L >= 2) out.push(['Forma salvaje', step(L, [[2, 2], [6, 3], [17, 4]])]); break;
+      case 'explorador': out.push(['Marca del cazador gratis', step(L, [[1, 2], [5, 3], [9, 4], [13, 5], [17, 6]])]); break;
+      case 'guerrero':
+        out.push(['Tomar aliento', step(L, [[1, 2], [4, 3], [10, 4]])]);
+        if (L >= 2) out.push(['Oleada de acción', L >= 17 ? 2 : 1]);
+        if (L >= 9) out.push(['Indomable', step(L, [[9, 1], [13, 2], [17, 3]])]);
+        break;
+      case 'hechicero': out.push(['Hechicería innata', 2]); if (L >= 2) out.push(['Puntos de hechicería', L]); break;
+      case 'monje': out.push(['Dado de artes marciales', 'd' + step(L, [[1, 6], [5, 8], [11, 10], [17, 12]])]); if (L >= 2) out.push(['Puntos de concentración', L]); break;
+      case 'paladin': out.push(['Imposición de manos', 5 * L + ' PG']); if (L >= 3) out.push(['Canalizar divinidad', L >= 11 ? 3 : 2]); break;
+      case 'picaro': out.push(['Ataque furtivo', Math.ceil(L / 2) + 'd6']); break;
+      default: break;
+    }
+    let attacks = 1;
+    if (ch.cls === 'guerrero') attacks = step(L, [[1, 1], [5, 2], [11, 3], [20, 4]]);
+    else if (['barbaro', 'monje', 'paladin', 'explorador'].includes(ch.cls) && L >= 5) attacks = 2;
+    else if (hasSub(ch, 'bardo', 'valor') && L >= 6) attacks = 2;
+    if (attacks > 1) out.push(['Ataques por acción', attacks]);
+    return out;
+  }
+
+  // Rasgos de clase y subclase con su nivel, más los hitos de elección.
+  const subclassOf = ch => (P.subclasses[ch.cls] || []).find(s => s.key === ch.subclass) || null;
+  function classFeatures(ch) {
+    if (!CLASSES[ch.cls]) return [];
+    const list = (P.features[ch.cls] || []).map(([level, name, narr, mech]) => ({ level, name, narr, mech, kind: 'clase' }));
+    list.push({ level: SUBCLASS_LEVEL, name: 'Subclase', narr: 'Eliges el camino que define tu clase.', mech: 'Eliges una subclase y ganas sus rasgos a nivel 3 y en niveles posteriores.', kind: 'hito' });
+    asiLevels(ch.cls).forEach(level => list.push({ level, name: 'Mejora de característica', narr: 'Tu entrenamiento da sus frutos.', mech: 'Ganas la dote Mejora de característica (+2 a una o +1 a dos, máximo 20) u otra dote general cuyos requisitos cumplas.', kind: 'hito' }));
+    list.push({ level: BOON_LEVEL, name: 'Don épico', narr: 'Alcanzas un poder legendario.', mech: 'Ganas una dote de Don épico, que además suma +1 a una característica (máximo 30).', kind: 'hito' });
+    const sub = subclassOf(ch);
+    if (sub) sub.features.forEach(([level, name, narr, mech]) => list.push({ level, name, narr, mech, kind: 'subclase', sub: sub.name }));
+    return list.sort((a, b) => a.level - b.level);
+  }
+  function levelPending(ch) {
+    let n = 0;
+    improvementLevels(ch).forEach(l => {
+      const e = ch.levels[l] || {};
+      if (l === BOON_LEVEL) { if (!e.feat?.trim() || !e.a) n += 1; return; }
+      if (e.mode === 'asi2' && e.a) return;
+      if (e.mode === 'asi11' && e.a && e.b && e.a !== e.b) return;
+      if (e.mode === 'feat' && e.feat?.trim()) return;
+      n += 1;
+    });
+    for (let l = 2; l <= ch.level; l += 1) if (ch.levels[l]?.hp === 'roll' && !Number.isInteger(ch.levels[l].roll)) n += 1;
+    return n;
   }
   function proficientSkills(ch) {
     const set = new Set(BACKGROUNDS[ch.bg]?.skills || []);
@@ -184,6 +304,8 @@
     else if (sp.sizes.length === 1) ch.size = sp.sizes[0];
     else if (!sp.sizes.includes(ch.size)) ch.size = '';
     if (ch.species !== 'humano') ch.humanFeat = '';
+    ch.levels ||= {};
+    if (!(P.subclasses[ch.cls] || []).some(sub => sub.key === ch.subclass)) ch.subclass = '';
     const abil = BACKGROUNDS[ch.bg]?.abil || [];
     if (!abil.includes(ch.bonus2)) ch.bonus2 = '';
     if (!abil.includes(ch.bonus1) || ch.bonus1 === ch.bonus2) ch.bonus1 = '';
@@ -223,6 +345,10 @@
     }
     if (ch.species === 'humano') rows.push({ label: 'Dote de origen', left: ch.humanFeat ? 0 : 1, budget: 1 });
     rows.push({ label: 'Idiomas', left: LANG_PICKS - ch.langs.length, budget: LANG_PICKS });
+    if (CLASSES[ch.cls] && ch.level >= SUBCLASS_LEVEL) rows.push({ label: 'Subclase', left: ch.subclass ? 0 : 1, budget: 1 });
+    const rolls = Object.entries(ch.levels).filter(([l, e]) => Number(l) <= ch.level && e?.hp === 'roll').length;
+    const levelBudget = improvementLevels(ch).length + rolls;
+    if (levelBudget) rows.push({ label: 'Subida de nivel', left: levelPending(ch), budget: levelBudget });
     return rows;
   }
   function isComplete(ch) { return summary(ch).every(row => row.left === 0); }
@@ -357,7 +483,8 @@
         ${field('Nombre', 'name', { placeholder: 'Nombre del personaje' })}${field('Jugador', 'player')}${field('Campaña', 'campaign')}${field('Alineamiento', 'alignment', { list: 'dndAlignments' })}
       </div><datalist id="dndAlignments">${ALIGNMENTS.map(a => `<option value="${esc(a)}">`).join('')}</datalist></section>
       <div data-sheet></div>
-      <section class="dnd-panel"><h2><span>VII</span> Equipo y notas</h2><p class="dnd-note">El equipo inicial depende de la clase y el trasfondo (o 50 po del trasfondo en su lugar). Anota aquí lo que elijas, conjuros, rasgos de personalidad e historia.</p><textarea class="dnd-notes" data-prop="notes" rows="6" placeholder="Equipo, conjuros, historia…">${esc(ch.notes)}</textarea></section>
+      <section class="dnd-panel"><h2><span>VIII</span> Equipo y notas</h2><p class="dnd-note">El equipo inicial depende de la clase y el trasfondo (o 50 po del trasfondo en su lugar). Anota aquí lo que elijas, conjuros, rasgos de personalidad e historia.</p><textarea class="dnd-notes" data-prop="notes" rows="6" placeholder="Equipo, conjuros, historia…">${esc(ch.notes)}</textarea></section>
+      <div class="dnd-modal" data-lvmodal hidden><div class="dnd-modal-card dnd-levelup-card" role="dialog" aria-modal="true" aria-labelledby="dndLvTitle"><div data-lvbody></div><div class="dnd-actions"><button class="dnd-button ghost" data-lvclose>CERRAR</button><button class="dnd-button" data-lvgo>IR A LAS ELECCIONES</button></div></div></div>
       <div class="dnd-modal" data-modal hidden><div class="dnd-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="dndDelTitle"><h3 id="dndDelTitle">¿Retirar a este aventurero?</h3><p>La ficha se borrará de este dispositivo y no se podrá recuperar.</p><div class="dnd-actions"><button class="dnd-button ghost" data-cancel>CANCELAR</button><button class="dnd-button danger" data-confirm>ELIMINAR FICHA</button></div></div></div>`, saved ? 'GUARDADO EN ESTE DISPOSITIVO' : 'FICHA NUEVA · SIN GUARDAR');
 
     host.querySelector('[data-back]').addEventListener('click', renderList);
@@ -366,6 +493,12 @@
       scheduleSave();
       host.querySelector('[data-delete]').hidden = false;
     }));
+    const lvModal = host.querySelector('[data-lvmodal]');
+    host.querySelector('[data-lvclose]').addEventListener('click', () => { lvModal.hidden = true; });
+    host.querySelector('[data-lvgo]').addEventListener('click', () => {
+      lvModal.hidden = true;
+      host.querySelector('#dndLvl' + current.level)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
     const modal = host.querySelector('[data-modal]');
     host.querySelector('[data-delete]').addEventListener('click', () => { modal.hidden = false; host.querySelector('[data-cancel]').focus(); });
     host.querySelector('[data-cancel]').addEventListener('click', () => { modal.hidden = true; });
@@ -388,13 +521,13 @@
     const cls = CLASSES[ch.cls];
     const sp = speciesInfo(ch);
     const bg = BACKGROUNDS[ch.bg];
-    const levels = Array.from({ length: 20 }, (_, i) => [i + 1, 'Nivel ' + (i + 1)]);
     const featChoices = Object.entries(FEATS).map(([k, [name]]) => [k, name]);
     return `<section class="dnd-panel"><h2><span>II</span> Origen <small>Clase · Especie · Trasfondo</small></h2><div class="dnd-cols">
       <div class="dnd-col"><div class="dnd-col-head"><h3>Clase</h3></div>
         <label class="dnd-field"><span>Clase</span><select data-choice="cls">${options(sorted(CLASSES), ch.cls, 'Elige una clase…')}</select></label>
-        <label class="dnd-field"><span>Nivel</span><select data-choice="level">${options(levels, ch.level)}</select></label>
-        ${cls ? info([['Dado de golpe', 'd' + cls.die], ['Característica principal', cls.primary], ['Salvaciones', cls.saves.map(k => AB[k].name).join(' y ')], ['Armadura', cls.armor], ['Armas', cls.weapons], ['Rasgos de nivel 1', cls.features]]) : '<p class="dnd-note">La clase fija tu dado de golpe, tus tiradas de salvación y las habilidades entre las que eliges.</p>'}
+        <div class="dnd-level"><span class="dnd-level-num"><small>Nivel</small><b>${ch.level}</b></span><button class="dnd-button" data-levelup ${ch.level >= MAX_LEVEL ? 'disabled' : ''}>▲ SUBIR DE NIVEL</button><button class="dnd-button ghost" data-leveldown ${ch.level <= 1 ? 'disabled' : ''} aria-label="Bajar un nivel">▼</button></div>
+        ${cls ? `<p class="dnd-narr">${esc(P.story[ch.cls] || '')}</p>` : ''}
+        ${cls ? info([['Subclase', subclassOf(ch)?.name || (ch.level >= SUBCLASS_LEVEL ? 'Por elegir' : 'A nivel 3')], ['Dado de golpe', 'd' + cls.die], ['Característica principal', cls.primary], ['Salvaciones', cls.saves.map(k => AB[k].name).join(' y ')], ['Armadura', cls.armor], ['Armas', cls.weapons], ['Rasgos de nivel 1', cls.features]]) : '<p class="dnd-note">La clase fija tu dado de golpe, tus tiradas de salvación y las habilidades entre las que eliges.</p>'}
       </div>
       <div class="dnd-col"><div class="dnd-col-head"><h3>Especie</h3></div>
         <label class="dnd-field"><span>Especie</span><select data-choice="species">${options(sorted(SPECIES), ch.species, 'Elige una especie…')}</select></label>
@@ -467,21 +600,117 @@
     const init = mod(ch, 'des') + (hasFeat(ch, 'alerta') ? pb : 0);
     const stats = [
       ['Bonif. competencia', signed(pb)], ['Puntos de golpe', hp ?? '—'], ['Dados de golpe', cls ? `${ch.level}d${cls.die}` : '—'],
-      ['CA sin armadura', armorClass(ch)], ['Iniciativa', signed(init)], ['Velocidad', sp ? sp.speed + ' pies' : '—'],
+      ['CA sin armadura', armorClass(ch)], ['Iniciativa', signed(init)], ['Velocidad', sp ? speed(ch, sp) + ' pies' : '—'],
       ['Percepción pasiva', perception], ['Visión oscuridad', sp ? (sp.dv ? sp.dv + ' pies' : 'No') : '—']
     ];
     if (cls?.cast) stats.push(['CD de conjuros', 8 + pb + mod(ch, cls.cast)], ['Ataque de conjuro', signed(pb + mod(ch, cls.cast))]);
     if (hasFeat(ch, 'afortunado')) stats.push(['Puntos de suerte', pb]);
+    stats.push(...resources(ch));
+    const slots = spellSlots(ch);
+    const saveProf = saveProficiencies(ch);
     const saves = ABILITIES.map(([k, name]) => {
-      const p = !!cls?.saves.includes(k);
+      const p = saveProf.includes(k);
       return `<li class="${p ? 'is-prof' : ''}"><i></i><span>${name}</span><b>${signed(mod(ch, k) + (p ? pb : 0))}</b></li>`;
     }).join('');
     const skills = ALL_SKILLS.map(k => `<li class="${prof.has(k) ? 'is-prof' : ''}"><i></i><span>${esc(SKILLS[k][0])} <small>${AB[SKILLS[k][1]].short}</small></span><b>${signed(skillTotal(ch, k, prof))}</b></li>`).join('');
-    const unarmored = cls?.unarmored ? `Defensa sin armadura: 10 + DES + ${AB[cls.unarmored].short}.` : 'Sin armadura: 10 + DES.';
+    const extra = unarmoredExtra(ch);
+    const unarmored = extra ? `Defensa sin armadura: 10 + DES + ${AB[extra].short}.` : 'Sin armadura: 10 + DES.';
     return `<section class="dnd-panel"><h2><span>V</span> Hoja calculada <small>${esc(describe(ch))}</small></h2>
       <div class="dnd-stats">${stats.map(([k, v]) => `<div><small>${k}</small><b>${esc(v)}</b></div>`).join('')}</div>
-      <p class="dnd-note dnd-stats-note">${unarmored} Puntos de golpe: máximo del dado + CON a nivel 1 y la media (${cls ? cls.die / 2 + 1 : '—'}) + CON por nivel${SPECIES[ch.species]?.hpPerLevel ? ', +1 por nivel (enano)' : ''}${hasFeat(ch, 'duro') ? ', +2 por nivel (Duro)' : ''}.</p>
+      ${slots ? `<p class="dnd-slots"><b>Espacios de conjuro</b>${slots.map((n, i) => `<span>${i + 1}º <b>${n}</b></span>`).join('')}</p>` : ''}
+      <p class="dnd-note dnd-stats-note">${unarmored} Puntos de golpe: máximo del dado + CON a nivel 1 y, en cada nivel siguiente, la media (${cls ? cls.die / 2 + 1 : '—'}) o tu tirada + CON${SPECIES[ch.species]?.hpPerLevel ? ', +1 por nivel (enano)' : ''}${hasFeat(ch, 'duro') ? ', +2 por nivel (Duro)' : ''}.</p>
       <div class="dnd-cols dnd-cols-2"><div class="dnd-col"><div class="dnd-col-head"><h3>Tiradas de salvación</h3></div><ul class="dnd-rolls">${saves}</ul></div><div class="dnd-col"><div class="dnd-col-head"><h3>Habilidades</h3></div><ul class="dnd-rolls dnd-rolls-2">${skills}</ul></div></div></section>`;
+  }
+
+  const openFeats = new Set();
+  function featuresPanel(ch) {
+    const cls = CLASSES[ch.cls];
+    if (!cls) return '<section class="dnd-panel"><h2><span>VI</span> Rasgos de clase</h2><p class="dnd-note">Elige una clase para ver sus rasgos del nivel 1 al 20 y sus subclases.</p></section>';
+    const subs = P.subclasses[ch.cls] || [];
+    const cards = subs.map(sub => `<button class="dnd-sub ${sub.key === ch.subclass ? 'is-on' : ''}" data-subclass="${sub.key}" aria-pressed="${sub.key === ch.subclass}"><b>${esc(sub.name)}</b><small>${esc(sub.story)}</small></button>`).join('');
+    const items = classFeatures(ch).map(f => {
+      const key = `${f.level}|${f.kind}|${f.name}`;
+      const locked = f.level > ch.level;
+      return `<details class="dnd-feat ${locked ? 'is-locked' : ''} is-${f.kind}" data-feat="${esc(key)}" ${openFeats.has(key) ? 'open' : ''}><summary><span class="dnd-feat-lvl">Nv ${f.level}</span><b>${esc(f.name)}</b>${f.kind === 'subclase' ? `<small>${esc(f.sub)}</small>` : ''}${locked ? '<small class="dnd-feat-lock">próximo</small>' : ''}</summary><p class="dnd-narr">${esc(f.narr)}</p><p>${esc(f.mech)}</p></details>`;
+    }).join('');
+    const subNote = ch.level >= SUBCLASS_LEVEL ? (ch.subclass ? 'Puedes cambiarla si tu mesa lo permite.' : 'Ya puedes elegir tu subclase.') : 'Se elige a nivel 3; puedes echar un vistazo ya.';
+    return `<section class="dnd-panel"><h2><span>VI</span> Rasgos de clase <small>${esc(cls.name)} · niveles 1 a 20</small></h2>
+      <div class="dnd-col-head"><h3>Subclase</h3></div><p class="dnd-note">${subNote}</p><div class="dnd-subs">${cards}</div>
+      <div class="dnd-col-head dnd-feats-head"><h3>Rasgos</h3><span class="dnd-note">Pulsa un rasgo para leer su explicación narrativa y mecánica.</span></div><div class="dnd-feats">${items}</div></section>`;
+  }
+  function improvementCtl(ch, l) {
+    const e = ch.levels[l] || {};
+    const abil = ABILITIES.map(([k, n]) => [k, n]);
+    if (l === BOON_LEVEL) {
+      return `<div class="dnd-impr"><span>Don épico</span><input data-lvl-feat="${l}" value="${esc(e.feat || '')}" placeholder="Nombre del don" maxlength="60" aria-label="Nombre del don épico"><select data-lvl-a="${l}" aria-label="Característica del don">${options(abil, e.a, '+1 a…')}</select></div>`;
+    }
+    let extra = '';
+    if (e.mode === 'asi2') extra = `<select data-lvl-a="${l}" aria-label="Característica con +2">${options(abil, e.a, '+2 a…')}</select>`;
+    if (e.mode === 'asi11') extra = `<select data-lvl-a="${l}" aria-label="Primera característica con +1">${options(abil, e.a, '+1 a…')}</select><select data-lvl-b="${l}" aria-label="Segunda característica con +1">${options(abil.filter(([k]) => k !== e.a), e.b, '+1 a…')}</select>`;
+    if (e.mode === 'feat') extra = `<input data-lvl-feat="${l}" value="${esc(e.feat || '')}" placeholder="Nombre de la dote" maxlength="60" aria-label="Nombre de la dote"><select data-lvl-a="${l}" aria-label="Característica que mejora la dote">${options(abil.map(([k, n]) => [k, '+1 a ' + n]), e.a, 'Sin +1')}</select>`;
+    return `<div class="dnd-impr"><span>Mejora</span><select data-lvl-mode="${l}" aria-label="Tipo de mejora">${options([['asi2', '+2 a una característica'], ['asi11', '+1 a dos características'], ['feat', 'Otra dote']], e.mode, 'Elige mejora…')}</select>${extra}</div>`;
+  }
+  function progressionPanel(ch) {
+    const cls = CLASSES[ch.cls];
+    if (!cls) return '<section class="dnd-panel"><h2><span>VII</span> Subida de nivel</h2><p class="dnd-note">Elige una clase para poder subir de nivel.</p></section>';
+    const feats = classFeatures(ch);
+    const con = mod(ch, 'con');
+    const improvements = improvementLevels(ch);
+    const rows = [];
+    for (let l = ch.level; l >= 1; l -= 1) {
+      const e = ch.levels[l] || {};
+      const chips = feats.filter(f => f.level === l && f.kind !== 'hito').map(f => `<span class="dnd-chip is-fixed ${f.kind === 'subclase' ? 'is-sub' : ''}">${esc(f.name)}</span>`).join('');
+      let hpCtl;
+      let gain;
+      if (l === 1) {
+        hpCtl = `<span class="dnd-note">Máximo del dado (${cls.die}) + CON</span>`;
+        gain = Math.max(1, cls.die + con);
+      } else {
+        const rolling = e.hp === 'roll';
+        hpCtl = `<select data-lvl-hp="${l}" aria-label="Puntos de golpe del nivel ${l}">${options([['avg', `Media (${cls.die / 2 + 1})`], ['roll', `Tirar d${cls.die}`]], rolling ? 'roll' : 'avg')}</select>${rolling ? `<input type="number" min="1" max="${cls.die}" data-lvl-roll="${l}" value="${e.roll ?? ''}" aria-label="Resultado del d${cls.die}"><button class="dnd-dice" data-lvl-dice="${l}" aria-label="Tirar d${cls.die}">🎲</button>` : ''}`;
+        gain = rolling && !Number.isInteger(e.roll) ? '?' : Math.max(1, levelHp(ch, l) + con);
+      }
+      const subCtl = l === SUBCLASS_LEVEL ? `<div class="dnd-impr"><span>Subclase</span><select data-sub-select aria-label="Subclase">${options((P.subclasses[ch.cls] || []).map(sub => [sub.key, sub.name]), ch.subclass, 'Elige subclase…')}</select></div>` : '';
+      rows.push(`<li class="dnd-lvl ${l === ch.level ? 'is-current' : ''}" id="dndLvl${l}"><div class="dnd-lvl-head"><b>Nivel ${l}</b><small>Competencia +${Math.ceil(l / 4) + 1}</small><span class="dnd-lvl-hp">+${gain} PG</span></div>${chips ? `<div class="dnd-chips">${chips}</div>` : ''}<div class="dnd-lvl-ctl"><div class="dnd-impr"><span>PG</span>${hpCtl}</div>${subCtl}${improvements.includes(l) ? improvementCtl(ch, l) : ''}</div></li>`);
+    }
+    const next = ch.level < MAX_LEVEL ? feats.filter(f => f.level === ch.level + 1).map(f => f.name) : [];
+    const nextNote = ch.level < MAX_LEVEL ? `<p class="dnd-note"><b>En el nivel ${ch.level + 1}:</b> ${next.length ? esc(next.join(', ')) : 'mejoran tus recursos y conjuros'}.</p>` : '<p class="dnd-note">Has alcanzado el nivel máximo.</p>';
+    return `<section class="dnd-panel"><h2><span>VII</span> Subida de nivel <small>${esc(cls.name)} ${ch.level}</small></h2>
+      <div class="dnd-level dnd-level-inline"><button class="dnd-button" data-levelup ${ch.level >= MAX_LEVEL ? 'disabled' : ''}>▲ SUBIR AL NIVEL ${Math.min(MAX_LEVEL, ch.level + 1)}</button><button class="dnd-button ghost" data-leveldown ${ch.level <= 1 ? 'disabled' : ''}>▼ BAJAR UN NIVEL</button></div>
+      ${nextNote}<p class="dnd-note">En cada nivel ganas la media del dado de golpe o lo que saques en la tirada, más tu CON. Las mejoras de característica se suman a tus puntuaciones (máximo 20).</p><ol class="dnd-timeline">${rows.join('')}</ol></section>`;
+  }
+
+  function levelEntry(l) {
+    current.levels[l] ||= { hp: 'avg' };
+    return current.levels[l];
+  }
+  function levelUp() {
+    const ch = current;
+    if (!CLASSES[ch.cls]) return flash('Elige primero una clase para poder subir de nivel.');
+    if (ch.level >= MAX_LEVEL) return flash('Ya estás en el nivel 20, el máximo.');
+    ch.level += 1;
+    levelEntry(ch.level);
+    changed();
+    showLevelUp(ch.level);
+  }
+  function levelDown() {
+    if (current.level <= 1) return;
+    current.level -= 1;
+    changed();
+  }
+  function showLevelUp(l) {
+    const ch = current;
+    const cls = CLASSES[ch.cls];
+    const modal = host.querySelector('[data-lvmodal]');
+    const gained = classFeatures(ch).filter(f => f.level === l);
+    const todo = [];
+    if (l === SUBCLASS_LEVEL && !ch.subclass) todo.push('elige tu subclase');
+    if (asiLevels(ch.cls).includes(l)) todo.push('elige tu mejora de característica o una dote');
+    if (l === BOON_LEVEL) todo.push('elige tu don épico');
+    const list = gained.length ? `<ul class="dnd-lv-list">${gained.map(f => `<li><b>${esc(f.name)}</b>${f.kind === 'subclase' ? ` <small>${esc(f.sub)}</small>` : ''}<p class="dnd-narr">${esc(f.narr)}</p><p>${esc(f.mech)}</p></li>`).join('')}</ul>` : '<p class="dnd-note">En este nivel no ganas rasgos nuevos, pero mejoran tus recursos y tus conjuros.</p>';
+    modal.querySelector('[data-lvbody]').innerHTML = `<p class="dnd-kicker">¡SUBIDA DE NIVEL!</p><h3 id="dndLvTitle">${esc(cls.name)} · nivel ${l}</h3><p class="dnd-note">Competencia +${profBonus(ch)} · ${hitPoints(ch)} puntos de golpe (se aplica la media del d${cls.die}; puedes cambiarla por una tirada).</p>${list}${todo.length ? `<p class="dnd-lv-todo"><b>Pendiente:</b> ${todo.join(', ')}.</p>` : ''}`;
+    modal.hidden = false;
+    modal.querySelector('[data-lvgo]').focus();
   }
 
   function renderSheet() {
@@ -494,7 +723,7 @@
     sheet.innerHTML = `
       <section class="dnd-tracker"><div class="dnd-tracker-head"><b>${pending ? `Te quedan ${pending} elecciones` : 'Personaje completo'}</b><span>Manual del Jugador 2024</span></div>
         <ul class="dnd-pools">${rows.map(r => `<li class="${r.left === 0 ? 'is-done' : r.left < 0 ? 'is-over' : ''}"><span>${r.label}</span><b>${r.left === 0 ? '✓' : r.left}</b><small>/ ${r.budget}</small></li>`).join('')}</ul></section>
-      ${originPanel(ch)}${abilitiesPanel(ch)}${proficiencyPanel(ch)}${sheetPanel(ch)}`;
+      ${originPanel(ch)}${abilitiesPanel(ch)}${proficiencyPanel(ch)}${sheetPanel(ch)}${featuresPanel(ch)}${progressionPanel(ch)}`;
 
     sheet.querySelectorAll('[data-choice]').forEach(select => select.addEventListener('change', () => update(c => {
       const prop = select.dataset.choice;
@@ -508,6 +737,35 @@
     sheet.querySelector('[data-roll-all]')?.addEventListener('click', () => { ABILITIES.forEach(([k]) => { current.base[k] = roll4d6(); }); changed(); });
     sheet.querySelectorAll('[data-pick]').forEach(button => button.addEventListener('click', () => togglePick(button.dataset.pick, button.dataset.skill)));
     sheet.querySelectorAll('[data-lang]').forEach(button => button.addEventListener('click', () => toggleLang(button.dataset.lang)));
+    sheet.querySelectorAll('[data-levelup]').forEach(button => button.addEventListener('click', levelUp));
+    sheet.querySelectorAll('[data-leveldown]').forEach(button => button.addEventListener('click', levelDown));
+    sheet.querySelectorAll('[data-subclass]').forEach(button => button.addEventListener('click', () => { current.subclass = button.dataset.subclass; changed(); }));
+    sheet.querySelector('[data-sub-select]')?.addEventListener('change', event => { current.subclass = event.target.value; changed(); });
+    sheet.querySelectorAll('[data-feat]').forEach(node => node.addEventListener('toggle', () => { if (node.open) openFeats.add(node.dataset.feat); else openFeats.delete(node.dataset.feat); }));
+    sheet.querySelectorAll('[data-lvl-hp]').forEach(select => select.addEventListener('change', () => { levelEntry(select.dataset.lvlHp).hp = select.value; changed(); }));
+    sheet.querySelectorAll('[data-lvl-roll]').forEach(input => input.addEventListener('change', () => {
+      const n = Math.trunc(Number(input.value));
+      levelEntry(input.dataset.lvlRoll).roll = input.value === '' || !Number.isFinite(n) ? null : Math.max(1, Math.min(CLASSES[current.cls].die, n));
+      changed();
+    }));
+    sheet.querySelectorAll('[data-lvl-dice]').forEach(button => button.addEventListener('click', () => {
+      const die = CLASSES[current.cls].die;
+      levelEntry(button.dataset.lvlDice).roll = (crypto.getRandomValues(new Uint32Array(1))[0] % die) + 1;
+      changed();
+    }));
+    sheet.querySelectorAll('[data-lvl-mode]').forEach(select => select.addEventListener('change', () => {
+      const e = levelEntry(select.dataset.lvlMode);
+      e.mode = select.value;
+      e.a = '';
+      e.b = '';
+      changed();
+    }));
+    sheet.querySelectorAll('[data-lvl-a]').forEach(select => select.addEventListener('change', () => { const e = levelEntry(select.dataset.lvlA); e.a = select.value; if (e.b === e.a) e.b = ''; changed(); }));
+    sheet.querySelectorAll('[data-lvl-b]').forEach(select => select.addEventListener('change', () => { levelEntry(select.dataset.lvlB).b = select.value; changed(); }));
+    sheet.querySelectorAll('[data-lvl-feat]').forEach(input => {
+      input.addEventListener('input', () => { levelEntry(input.dataset.lvlFeat).feat = input.value; scheduleSave(); });
+      input.addEventListener('change', () => changed());
+    });
     if (store.characters.some(item => item.id === ch.id)) host.querySelector('[data-delete]').hidden = false;
   }
 
@@ -519,7 +777,7 @@
     document.head.append(fonts);
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './dnd.css?v=2';
+    stylesheet.href = './dnd.css?v=3';
     document.head.append(stylesheet);
     host = document.createElement('section');
     host.id = 'nexoDnd';
@@ -528,8 +786,7 @@
     host.setAttribute('aria-label', 'NEXO Dungeons & Dragons');
     document.body.append(host);
     host.addEventListener('keydown', event => {
-      const modal = host.querySelector('[data-modal]');
-      if (event.key === 'Escape' && modal && !modal.hidden) modal.hidden = true;
+      if (event.key === 'Escape') host.querySelectorAll('.dnd-modal').forEach(modal => { modal.hidden = true; });
     });
   }
   function open(options = {}) {
