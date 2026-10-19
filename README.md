@@ -53,3 +53,5 @@ El resultado introducido se interpreta como tirada total final y se trunca a ent
 
 Incluye selector de sistemas y partidas locales, calculadora, inventario, hangar, fichas de personajes, notas, historial, deshacer la última operación, edición manual de cartera e inventario, importación/exportación JSON, visor y buscador de Traveller Map y soporte PWA. La autenticación y sincronización están desactivadas en la beta.
 
+
+La portada de Traveller usa ahora la identidad visual orbital NEXO (NEXO Traveller RPG, Bienvenido, explorador y accesos con iconos ilustrados). El resto del terminal multisistema mantiene sus apartados D&D y Vampiro.
