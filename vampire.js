@@ -76,13 +76,15 @@
       roads: ['humanidad', 'reyes', 'bestia', 'cielo', 'pecado'], sects: ['Alto Clan', 'Bajo Clan', 'Concilio de Sombras', 'Independiente'], defaultGen: 12
     }
   };
-  const GENERATIONS = { 13: [10, 1], 12: [11, 1], 11: [12, 1], 10: [13, 1], 9: [14, 2], 8: [15, 3], 7: [20, 4] };
+  const GENERATIONS = { 13: [10, 1], 12: [11, 1], 11: [12, 1], 10: [13, 1], 9: [14, 2], 8: [15, 3], 7: [20, 4], 6: [30, 6], 5: [40, 8], 4: [50, 10] };
+  const TRAIT_MAX = { 7: 6, 6: 7, 5: 8, 4: 9 };
   const ARCHETYPES = ['Arquitecto', 'Autócrata', 'Bon vivant', 'Bravucón', 'Cuidador', 'Celebrante', 'Conformista', 'Competidor', 'Desviado', 'Director', 'Fanático', 'Galante', 'Gruñón', 'Juez', 'Mártir', 'Masoquista', 'Monstruo', 'Pedagogo', 'Penitente', 'Perfeccionista', 'Rebelde', 'Pícaro', 'Solitario', 'Superviviente', 'Tradicionalista', 'Visionario'];
   const PHASES = { base: 'b', freebie: 'f', xp: 'x' };
 
   let host = null;
   let store = load();
   let current = null;
+  let dia = null;
   let exitHandler = null;
   let saveTimer = 0;
 
@@ -102,6 +104,7 @@
     ch.road = ROADS[ch.road] ? ch.road : 'humanidad';
     ch.attrs ||= {}; ch.abil ||= {}; ch.disc ||= {}; ch.bg ||= {}; ch.virt ||= {};
     ch.merits ||= [];
+    ch.diablerie = Array.isArray(ch.diablerie) ? ch.diablerie : [];
     ch.humF ||= 0; ch.wpF ||= 0; ch.humX ||= 0; ch.wpX ||= 0;
     if (!Array.isArray(ch.extraDisc)) ch.extraDisc = ch.clan === 'caitiff' ? Object.keys(ch.disc) : [];
     if (!PHASES[ch.phase]) ch.phase = 'base';
@@ -141,9 +144,12 @@
   }
   function maxOf(ch, kind, key) {
     if (isNosAppearance(ch, kind, key)) return 0;
-    return ['attrs', 'abil', 'disc'].includes(kind) && generation(ch) <= 7 ? 6 : 5;
+    return ['attrs', 'abil', 'disc'].includes(kind) ? TRAIT_MAX[generation(ch)] || 5 : 5;
   }
-  function value(ch, kind, key) { const t = trait(ch, kind, key); return minOf(ch, kind, key) + t.b + t.f + t.x; }
+  // Puntos de disciplina obtenidos con la diablerie: no cuestan nada y cuentan como suelo del rasgo.
+  function gift(ch, kind, key) { return kind === 'disc' ? ch.diablerie.filter(entry => entry.discGift === key).length : 0; }
+  function floorOf(ch, kind, key) { return minOf(ch, kind, key) + gift(ch, kind, key); }
+  function value(ch, kind, key) { const t = trait(ch, kind, key); return floorOf(ch, kind, key) + t.b + t.f + t.x; }
   function sum(ch, kind, keys, field) { return keys.reduce((total, key) => total + trait(ch, kind, key)[field], 0); }
 
   function clanDiscKeys(ch) { return clanOf(ch).disc.map(slug); }
@@ -152,12 +158,14 @@
     const keys = [...clanDiscKeys(ch), ...ch.extraDisc.filter(key => !clanDiscKeys(ch).includes(key))];
     return keys.map(key => [key, DISC_NAMES[key] || key]);
   }
-  function generation(ch) { return ch.baseGen - Math.min(5, value(ch, 'bg', 'generacion')); }
+  function genDrop(ch) { return ch.diablerie.reduce((t, entry) => t + (Number(entry.genSteps) || 0), 0); }
+  function humLoss(ch) { return ch.diablerie.reduce((t, entry) => t + (entry.humLoss ? 1 : 0), 0); }
+  function generation(ch) { return Math.max(4, ch.baseGen - Math.min(5, value(ch, 'bg', 'generacion')) - genDrop(ch)); }
   // La Humanidad/Senda y la Voluntad salen de las virtudes de creación; la experiencia en virtudes no las sube.
   function virtueAtCreation(ch, key) { const t = trait(ch, 'virt', key); return 1 + t.b + t.f; }
   function humanityBase(ch) { return virtueAtCreation(ch, 'conciencia') + virtueAtCreation(ch, 'autocontrol'); }
   function willpowerBase(ch) { return virtueAtCreation(ch, 'coraje'); }
-  function humanity(ch) { return Math.min(10, humanityBase(ch) + ch.humF + ch.humX); }
+  function humanity(ch) { return Math.max(0, Math.min(10, humanityBase(ch) + ch.humF + ch.humX) - humLoss(ch)); }
   function willpower(ch) { return Math.min(10, willpowerBase(ch) + ch.wpF + ch.wpX); }
 
   function abilityGroups(ch) { return era(ch).abilities; }
@@ -207,7 +215,7 @@
     ['attrs', 'abil', 'disc', 'bg', 'virt'].forEach(kind => {
       Object.entries(ch[kind]).forEach(([key, t]) => {
         if (!t.x) return;
-        const start = minOf(ch, kind, key) + t.b + t.f;
+        const start = floorOf(ch, kind, key) + t.b + t.f;
         total += rangeCost(ch, kind, key, start, start + t.x);
       });
     });
@@ -243,7 +251,7 @@
   function setDot(kind, key, n) {
     const ch = current;
     const t = trait(ch, kind, key);
-    const min = minOf(ch, kind, key);
+    const min = floorOf(ch, kind, key);
     const max = maxOf(ch, kind, key);
     const cur = value(ch, kind, key);
     const target = Math.max(min, Math.min(max, n === cur ? n - 1 : n));
@@ -256,7 +264,7 @@
         if (kind === 'disc' && !inClan(ch, key)) return flash(phaseMessage.outOfClan);
         const p = pool(ch, kind, key);
         if (p.spent + delta > p.budget) return flash(phaseMessage.poolEmpty);
-        if (kind === 'abil' && min + next > ABIL_BASE_MAX) return flash(phaseMessage.abilCap);
+        if (kind === 'abil' && minOf(ch, kind, key) + next > ABIL_BASE_MAX) return flash(phaseMessage.abilCap);
       } else if (field === 'f') {
         const cost = delta * COST[kind];
         if (freebieSpent(ch) + cost > freebieBudget(ch)) return flash(`Necesitas ${cost} puntos gratuitos y no te quedan suficientes.`);
@@ -400,6 +408,7 @@
 
   function openEditor(ch) {
     current = ch;
+    dia = null;
     renderEditor();
     host.scrollTop = 0;
   }
@@ -423,7 +432,7 @@
         ${numberField('Puntos gratuitos', 'freebies', 99)}${numberField('PX iniciales', 'xpStart', 9999)}
       </div><p class="vtm-note">V20 parte de la 13ª generación y Edad Oscura de la 12ª; el trasfondo Generación baja desde ahí. Por defecto hay ${DEFAULT_FREEBIES} puntos gratuitos y 0 PX, pero tu Narrador puede dar otros valores.</p></section>
       <div data-sheet></div>
-      <section class="vtm-panel"><h2><span>IX</span> Notas</h2><textarea class="vtm-notes" data-prop="notes" rows="5" placeholder="Historia, aspecto, refugio…">${esc(ch.notes)}</textarea></section>
+      <section class="vtm-panel"><h2><span>X</span> Notas</h2><textarea class="vtm-notes" data-prop="notes" rows="5" placeholder="Historia, aspecto, refugio…">${esc(ch.notes)}</textarea></section>
       <div class="vtm-modal" data-modal hidden><div class="vtm-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="vtmDelTitle"><h3 id="vtmDelTitle">¿Destruir a este vástago?</h3><p>La ficha se borrará de este dispositivo y no se podrá recuperar.</p><div class="vtm-actions"><button class="vtm-button ghost" data-cancel>CANCELAR</button><button class="vtm-button danger" data-confirm>ELIMINAR FICHA</button></div></div></div>`, saved ? 'GUARDADO EN ESTE DISPOSITIVO' : 'FICHA NUEVA · SIN GUARDAR');
 
     host.querySelector('[data-back]').addEventListener('click', renderList);
@@ -458,21 +467,23 @@
     const ch = current;
     const t = trait(ch, kind, key);
     const min = minOf(ch, kind, key);
+    const g = gift(ch, kind, key);
     const max = maxOf(ch, kind, key);
     let html = '';
     for (let i = 1; i <= Math.max(5, max); i += 1) {
-      const cls = i <= min ? 'inn' : i <= min + t.b ? 'base' : i <= min + t.b + t.f ? 'free' : i <= min + t.b + t.f + t.x ? 'xp' : '';
+      const cls = i <= min ? 'inn' : i <= min + g ? 'dia' : i <= min + g + t.b ? 'base' : i <= min + g + t.b + t.f ? 'free' : i <= min + g + t.b + t.f + t.x ? 'xp' : '';
       html += `<button class="vtm-dot ${cls}" data-dot="${kind}" data-key="${key}" data-n="${i}" ${i > max ? 'disabled' : ''} aria-label="${esc(label)} ${i}"></button>`;
     }
     return `<div class="vtm-trait"><span>${esc(label)}${extra}</span><span class="vtm-dots">${html}</span></div>`;
   }
-  function track(kind, label, base, free, xp) {
+  function track(kind, label, base, free, xp, lost = 0) {
+    const total = Math.min(10, base + free + xp);
     let html = '';
     for (let i = 1; i <= 10; i += 1) {
-      const cls = i <= base ? 'base' : i <= base + free ? 'free' : i <= base + free + xp ? 'xp' : '';
+      const cls = i > total - lost && i <= total ? 'lost' : i <= base ? 'base' : i <= base + free ? 'free' : i <= base + free + xp ? 'xp' : '';
       html += `<button class="vtm-dot ${cls}" data-track="${kind}" data-n="${i}" aria-label="${esc(label)} ${i}"></button>`;
     }
-    return `<div class="vtm-track"><span>${esc(label)} <b>${Math.min(10, base + free + xp)}</b></span><span class="vtm-dots">${html}</span></div>`;
+    return `<div class="vtm-track"><span>${esc(label)} <b>${Math.max(0, total - lost)}</b>${lost ? ` <small class="vtm-out">−${lost} por ${current?.era === 'da' ? 'Amaranto' : 'diablerie'}</small>` : ''}</span><span class="vtm-dots">${html}</span></div>`;
   }
   function left(kind, key) {
     const p = pool(current, kind, key);
@@ -527,7 +538,7 @@
           <div class="vtm-add"><select data-disc-add aria-label="Disciplina para añadir"><option value="">${ch.clan === 'caitiff' ? 'Añadir disciplina…' : 'Añadir de otro clan…'}</option>${addable.map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('')}</select></div></div>
         <div class="vtm-col"><div class="vtm-col-head"><h3>Trasfondos</h3><span class="vtm-note">5 puntos</span>${left('bg')}</div>${era(ch).backgrounds.map(([k, l]) => dots('bg', k, l)).join('')}</div>
         <div class="vtm-col"><div class="vtm-col-head"><h3>Virtudes</h3><span class="vtm-note">7 puntos</span>${left('virt')}</div>${virt.map(([k, l]) => dots('virt', k, l)).join('')}
-          <div class="vtm-derived">${track('hum', road(ch).name, humanityBase(ch), ch.humF, ch.humX)}${track('wp', 'Fuerza de Voluntad', willpowerBase(ch), ch.wpF, ch.wpX)}</div></div>
+          <div class="vtm-derived">${track('hum', road(ch).name, humanityBase(ch), ch.humF, ch.humX, humLoss(ch))}${track('wp', 'Fuerza de Voluntad', willpowerBase(ch), ch.wpF, ch.wpX)}</div></div>
       </div></section>
       <section class="vtm-panel"><h2><span>VI</span> Méritos y defectos</h2><p class="vtm-note">Los méritos se pagan con puntos gratuitos. Los defectos dan puntos extra, hasta un máximo de ${FLAW_CAP} (llevas ${Math.min(flaws, FLAW_CAP)}${flaws > FLAW_CAP ? ', el resto no cuenta' : ''}).</p><div class="vtm-merits">${meritRows}</div><button class="vtm-button ghost" data-merit-add>✚ AÑADIR MÉRITO O DEFECTO</button></section>
       <section class="vtm-panel"><h2><span>VII</span> Experiencia</h2><div class="vtm-stats vtm-stats-xp">
@@ -536,7 +547,8 @@
       ${logRows ? `<ul class="vtm-xp-log">${logRows}</ul>` : '<p class="vtm-note">Aún no has añadido experiencia después de la creación. Gasta los PX en la pestaña «3 · Experiencia».</p>'}</section>
       <section class="vtm-panel"><h2><span>VIII</span> La sangre</h2><div class="vtm-stats">
         <div><small>Generación</small><b>${gen}ª</b></div><div><small>Reserva de sangre máx.</small><b>${blood}</b></div><div><small>Sangre por turno</small><b>${perTurn}</b></div><div><small>${esc(road(ch).name)}</small><b>${humanity(ch)}</b></div><div><small>Fuerza de Voluntad</small><b>${willpower(ch)}</b></div>
-      </div><div class="vtm-blood" aria-label="Reserva de sangre máxima: ${blood}">${'<i></i>'.repeat(blood)}</div><p class="vtm-note">La reserva inicial se determina tirando un dado de diez caras. Sube el trasfondo Generación para bajar de la ${ch.baseGen}ª${gen <= 7 ? '; en la 7ª generación los rasgos pueden llegar a 6' : ''}.</p></section>`;
+      </div><div class="vtm-blood" aria-label="Reserva de sangre máxima: ${blood}">${'<i></i>'.repeat(blood)}</div><p class="vtm-note">La reserva inicial se determina tirando un dado de diez caras. Sube el trasfondo Generación para bajar de la ${ch.baseGen}ª${TRAIT_MAX[gen] ? `; en la ${gen}ª generación los rasgos pueden llegar a ${TRAIT_MAX[gen]}` : ''}.</p></section>
+      ${diablerieSection(ch)}`;
 
     sheet.querySelectorAll('[data-dot]').forEach(button => button.addEventListener('click', () => setDot(button.dataset.dot, button.dataset.key, Number(button.dataset.n))));
     sheet.querySelectorAll('[data-track]').forEach(button => button.addEventListener('click', () => setDerived(button.dataset.track, Number(button.dataset.n))));
@@ -575,6 +587,133 @@
       if (xpSpent(ch) > xpBudget(ch)) { ch.xpLog.splice(Number(button.dataset.xpDel), 0, entry); return flash('No puedes quitar esos PX porque ya están gastados. Reduce antes algún rasgo comprado con experiencia.'); }
       changed();
     }));
+    bindDiablerie(sheet, ch);
+  }
+
+  // Diablerie (Amaranto en Edad Oscura)
+  function crimeName(ch) { return ch.era === 'da' ? 'Amaranto' : 'Diablerie'; }
+  function diaDraft(ch) {
+    if (!dia) {
+      dia = { victim: '', victimGen: Math.max(4, generation(ch) - 1), victimWP: 5, difficulty: 9, steps: 1, humLoss: false, discGift: '', notes: '', successes: 0, turns: 0, rolls: [], failed: false };
+    }
+    return dia;
+  }
+  function suggestedSteps(ch, d) { return d.victimGen < generation(ch) ? 1 : 0; }
+  function rollStrength(ch) {
+    const d = diaDraft(ch);
+    if (d.failed || d.successes >= d.victimWP) return;
+    const dicePool = Math.max(1, value(ch, 'attrs', 'fuerza'));
+    const dice = Array.from({ length: dicePool }, () => 1 + Math.floor(Math.random() * 10));
+    const hits = dice.filter(n => n >= d.difficulty).length;
+    const ones = dice.filter(n => n === 1).length;
+    d.turns += 1;
+    let text;
+    if (hits === 0 && ones > 0) {
+      d.failed = true;
+      d.successes = 0;
+      text = 'Pifia: el alma se resiste y se pierden los éxitos acumulados.';
+    } else {
+      const net = Math.max(0, hits - ones);
+      d.successes += net;
+      text = net ? `${net} éxito${net === 1 ? '' : 's'}` : 'Sin éxitos este turno';
+    }
+    d.rolls.unshift({ turn: d.turns, dice, text });
+    renderSheet();
+  }
+  function resetAttempt() {
+    Object.assign(diaDraft(current), { successes: 0, turns: 0, rolls: [], failed: false });
+    renderSheet();
+  }
+  function commitDiablerie(ch) {
+    const d = diaDraft(ch);
+    const gen = generation(ch);
+    const maxSteps = Math.max(0, gen - Math.max(4, d.victimGen));
+    const steps = Math.min(Math.max(0, Math.trunc(d.steps) || 0), maxSteps);
+    if (d.discGift && !shownDisciplines(ch).some(([k]) => k === d.discGift)) ch.extraDisc.push(d.discGift);
+    ch.diablerie.push({
+      id: crypto.randomUUID(), at: new Date().toISOString(), victim: d.victim.trim(), victimGen: d.victimGen, victimWP: d.victimWP,
+      genBefore: gen, genSteps: steps, humLoss: Boolean(d.humLoss), discGift: d.discGift, notes: d.notes.trim(),
+      rolled: d.turns ? { turns: d.turns, successes: d.successes } : null
+    });
+    dia = null;
+    changed();
+    const done = ch.era === 'da' ? 'Amaranto consumado' : 'Diablerie consumada';
+    flash(steps ? `${done}: ahora eres de ${generation(ch)}ª generación.` : `${done}. Tu generación no cambia porque la víctima no era más antigua.`);
+  }
+  const LORE = {
+    v20: 'La diablerie es el crimen supremo entre los Vástagos: beber a otro vampiro hasta devorar su alma. El diablerista roba la potencia de una sangre más cercana a Caín, pero su aura queda veteada de negro y la Camarilla lo castiga con la Muerte Definitiva. En el Sabbat es un rito aceptado.',
+    da: 'El Amaranto es el pecado que los Cainitas solo susurran: beber a otro vampiro hasta devorar su alma. El devorador roba la potencia de una sangre más cercana a Caín, pero su aura queda veteada de negro y casi todos los príncipes lo castigan con la Muerte Definitiva.'
+  };
+  function diablerieSection(ch) {
+    const d = diaDraft(ch);
+    const name = crimeName(ch);
+    const gen = generation(ch);
+    const strength = value(ch, 'attrs', 'fuerza');
+    const maxSteps = Math.max(0, gen - Math.max(4, d.victimGen));
+    const done = d.successes >= d.victimWP;
+    const discOptions = DISCIPLINES.map(n => [slug(n), n]).map(([k, l]) => `<option value="${k}" ${d.discGift === k ? 'selected' : ''}>${esc(l)} (+1)</option>`).join('');
+    const rolls = d.rolls.slice(0, 6).map(r => `<li><b>Turno ${r.turn}</b><span class="vtm-dice">${r.dice.map(n => `<i class="${n >= d.difficulty ? 'hit' : n === 1 ? 'one' : ''}">${n}</i>`).join('')}</span><small>${esc(r.text)}</small></li>`).join('');
+    const history = ch.diablerie.map((e, i) => {
+      const parts = [`${e.victimGen}ª generación`, e.genSteps ? `de ${e.genBefore}ª a ${e.genBefore - e.genSteps}ª` : 'sin cambio de generación'];
+      if (e.humLoss) parts.push(`−1 ${road(ch).name}`);
+      if (e.discGift) parts.push(`+1 ${DISC_NAMES[e.discGift] || e.discGift}`);
+      if (e.notes) parts.push(e.notes);
+      return `<li><b>${esc(e.victim || 'Víctima sin nombre')}</b><span>${esc(parts.join(' · '))}</span><small>${esc(new Date(e.at).toLocaleDateString('es-ES'))}</small><button class="vtm-x vtm-x-sm" data-dia-del="${i}" aria-label="Deshacer este registro">×</button></li>`;
+    }).join('');
+    return `<section class="vtm-panel vtm-diablerie"><h2><span>IX</span> ${name}</h2>
+      <p class="vtm-lore">${LORE[ch.era] || LORE.v20}</p>
+      <ol class="vtm-steps">
+        <li><b>Vaciar la sangre.</b> Primero bebes toda la reserva de sangre de la víctima.</li>
+        <li><b>Devorar el alma.</b> Sigues bebiendo y tiras Fuerza cada turno (dificultad 9). Necesitas tantos éxitos acumulados como la Fuerza de Voluntad permanente de la víctima. Una pifia hace que se pierdan los éxitos.</li>
+        <li><b>La recompensa.</b> Si la víctima era de generación más baja, la tuya baja un paso. Con víctimas mucho más antiguas el Narrador puede conceder más.</li>
+        <li><b>El precio.</b> Es un pecado gravísimo: haz una tirada de degeneración. Las vetas negras en el aura delatan el crimen durante años.</li>
+        <li><b>El regalo de la sangre.</b> El Narrador puede permitirte ganar un punto en una disciplina que la víctima dominara.</li>
+      </ol>
+      <div class="vtm-fields">
+        <label class="vtm-field"><span>Víctima</span><input data-dia="victim" value="${esc(d.victim)}" maxlength="60" placeholder="Nombre del vástago"></label>
+        <label class="vtm-field"><span>Generación de la víctima</span><input type="number" min="3" max="15" data-dia-num="victimGen" value="${d.victimGen}"></label>
+        <label class="vtm-field"><span>Voluntad permanente de la víctima</span><input type="number" min="1" max="10" data-dia-num="victimWP" value="${d.victimWP}"></label>
+      </div>
+      <div class="vtm-attempt">
+        <div class="vtm-attempt-head"><span>Fuerza: <b>${strength}</b> dados · dificultad <b>${d.difficulty}</b></span><span class="vtm-attempt-count ${done ? 'is-done' : d.failed ? 'is-over' : ''}">${d.failed ? 'El alma escapó' : `${d.successes} / ${d.victimWP} éxitos · ${d.turns} turno${d.turns === 1 ? '' : 's'}`}</span></div>
+        <div class="vtm-actions"><button class="vtm-button" data-dia-roll ${d.failed || done ? 'disabled' : ''}>⚄ TIRAR FUERZA</button><button class="vtm-button ghost" data-dia-reset ${d.turns ? '' : 'disabled'}>REINICIAR INTENTO</button></div>
+        ${rolls ? `<ul class="vtm-rolls">${rolls}</ul>` : '<p class="vtm-note">Puedes tirar aquí o con tus propios dados y registrar el resultado igualmente.</p>'}
+      </div>
+      <div class="vtm-fields">
+        <label class="vtm-field"><span>Pasos de generación ganados</span><input type="number" min="0" max="${maxSteps}" data-dia-num="steps" value="${Math.min(d.steps, maxSteps)}"></label>
+        <label class="vtm-field"><span>Disciplina aprendida de la víctima</span><select data-dia="discGift"><option value="">Ninguna</option>${discOptions}</select></label>
+        <label class="vtm-check"><input type="checkbox" data-dia-check="humLoss" ${d.humLoss ? 'checked' : ''}><span>Falló la degeneración (−1 ${esc(road(ch).name)})</span></label>
+        <label class="vtm-field vtm-wide"><span>Notas</span><input data-dia="notes" value="${esc(d.notes)}" maxlength="120" placeholder="Dónde, cómo, quién lo sabe…"></label>
+      </div>
+      <p class="vtm-note">Ahora eres de ${gen}ª generación. ${maxSteps ? `Con esta víctima puedes bajar hasta ${maxSteps} paso${maxSteps === 1 ? '' : 's'}; lo habitual es 1.` : 'Esta víctima no es más antigua que tú, así que tu generación no cambiaría.'}</p>
+      <button class="vtm-button danger" data-dia-commit>☠ CONSUMAR ${name.toUpperCase()}</button>
+      ${history ? `<h3 class="vtm-sub">Almas devoradas</h3><ul class="vtm-xp-log vtm-dia-log">${history}</ul>` : ''}
+    </section>`;
+  }
+  function bindDiablerie(sheet, ch) {
+    const d = diaDraft(ch);
+    sheet.querySelectorAll('[data-dia]').forEach(input => input.addEventListener(input.tagName === 'SELECT' ? 'change' : 'input', () => { d[input.dataset.dia] = input.value; }));
+    sheet.querySelectorAll('[data-dia-num]').forEach(input => input.addEventListener('change', () => {
+      const n = Math.max(Number(input.min), Math.min(Number(input.max), Math.trunc(Number(input.value)) || Number(input.min)));
+      d[input.dataset.diaNum] = n;
+      if (input.dataset.diaNum === 'victimGen') d.steps = suggestedSteps(ch, d);
+      renderSheet();
+    }));
+    sheet.querySelectorAll('[data-dia-check]').forEach(input => input.addEventListener('change', () => { d[input.dataset.diaCheck] = input.checked; }));
+    sheet.querySelector('[data-dia-roll]').addEventListener('click', () => rollStrength(ch));
+    sheet.querySelector('[data-dia-reset]').addEventListener('click', resetAttempt);
+    sheet.querySelector('[data-dia-commit]').addEventListener('click', () => commitDiablerie(ch));
+    sheet.querySelectorAll('[data-dia-del]').forEach(button => button.addEventListener('click', () => {
+      const index = Number(button.dataset.diaDel);
+      const entry = ch.diablerie[index];
+      ch.diablerie.splice(index, 1);
+      if (xpSpent(ch) > xpBudget(ch) || freebieSpent(ch) > freebieBudget(ch)) {
+        ch.diablerie.splice(index, 0, entry);
+        return flash('No se puede deshacer: hay rasgos comprados que dependen de esta generación o disciplina.');
+      }
+      changed();
+      flash('Registro deshecho: la generación, la Humanidad y las disciplinas vuelven a su estado anterior.');
+    }));
   }
 
   function flushSave() {
@@ -592,7 +731,7 @@
     document.head.append(fonts);
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './vampire.css?v=2';
+    stylesheet.href = './vampire.css?v=3';
     document.head.append(stylesheet);
     host = document.createElement('section');
     host.id = 'nexoVampire';
