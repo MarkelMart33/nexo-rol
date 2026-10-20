@@ -26,7 +26,7 @@
 @keyframes nexo-stamp{from{opacity:0;transform:scale(1.8) rotate(-12deg)}}
 
 /* Pantalla de cuenta: una carta clavada sobre la mesa */
-html .auth-gate{position:fixed;inset:0;z-index:950;min-height:0;overflow:auto;padding:40px 18px;background:var(--nexo-wood)}
+html .auth-gate{position:fixed;inset:0;z-index:1150;min-height:0;overflow:auto;padding:40px 18px;background:var(--nexo-wood)}
 html .auth-gate[hidden]{display:none}
 html .auth-card{position:relative;margin:auto;width:min(100%,440px);padding:34px 34px 26px;border:0;border-radius:2px;background:var(--nexo-paper-lines),var(--nexo-paper);color:var(--nexo-ink);transform:rotate(-1deg);box-shadow:0 1px 0 #fff8 inset,0 26px 40px -16px #000d,0 4px 8px #0006;animation:nexo-letter .7s cubic-bezier(.2,.9,.3,1.15) backwards}
 html .auth-card:before{content:'';position:absolute;top:-13px;left:50%;width:96px;height:26px;transform:translateX(-50%) rotate(-3deg);background:#e9dfc7b8;box-shadow:0 1px 3px #0003;clip-path:polygon(3% 0,97% 4%,100% 100%,0 94%)}

@@ -127,6 +127,7 @@
   });
 
   function open(options = {}) {
+    window.NEXO_NAV?.away();
     ensureHost();
     exitHandler = options.onExit || exitHandler;
     render();
