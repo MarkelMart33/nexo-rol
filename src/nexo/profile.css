@@ -15,3 +15,4 @@
 .sys-profile{display:flex;align-items:center;gap:9px;padding:6px 12px 6px 6px;border:1px solid #28434a;background:#0b171c;color:#c9d8d5;font:9px var(--mono,monospace);letter-spacing:.12em;cursor:pointer}.sys-profile:hover{border-color:#55d9cf}.sys-profile span{width:28px;height:28px;border:1px solid #52d8d0;border-radius:50%;display:grid;place-items:center;color:#70eee0;font-size:11px}
 .sys-top-end{display:flex;align-items:center;gap:16px}
 @media(max-width:720px){.prf-main{padding:36px 16px 28px}.prf-grid{grid-template-columns:1fr}.prf-panel{padding:17px}.sys-top-end .sys-status{display:none}}
+.prf-mark svg{width:22px;height:22px}

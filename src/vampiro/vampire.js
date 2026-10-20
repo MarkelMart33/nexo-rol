@@ -392,7 +392,7 @@
 
   // Vistas
   function frame(body, status = 'MUNDO DE TINIEBLAS') {
-    host.innerHTML = `<header class="vtm-top"><button class="vtm-brand" data-exit aria-label="Volver al selector de sistemas"><span class="vtm-sigil">N</span><span><b>NEXO</b><small>VAMPIRO · LA MASCARADA</small></span></button><span class="vtm-status" data-save-status>${esc(status)}</span></header><main class="vtm-main">${body}</main><div class="vtm-flash" data-flash hidden role="status"></div>`;
+    host.innerHTML = `<header class="vtm-top"><button class="vtm-brand" data-exit aria-label="Volver al selector de sistemas"><span class="vtm-sigil">${window.NEXO_ICONS?.vampire || ''}</span><span><b>NEXO</b><small>VAMPIRO · LA MASCARADA</small></span></button><span class="vtm-status" data-save-status>${esc(status)}</span></header><main class="vtm-main">${body}</main><div class="vtm-flash" data-flash hidden role="status"></div>`;
     host.querySelectorAll('[data-exit]').forEach(button => button.addEventListener('click', close));
   }
 
@@ -746,7 +746,7 @@
     document.head.append(fonts);
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/vampiro/vampire.css?v=3';
+    stylesheet.href = './src/vampiro/vampire.css?v=4';
     document.head.append(stylesheet);
     host = document.createElement('section');
     host.id = 'nexoVampire';

@@ -17,7 +17,7 @@
     if (host) return;
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/nexo/profile.css?v=1';
+    stylesheet.href = './src/nexo/profile.css?v=2';
     document.head.append(stylesheet);
     host = document.createElement('section');
     host.className = 'nexo-profile';
@@ -32,8 +32,8 @@
       return `<section class="prf-panel prf-account"><h2>Cuenta</h2><p class="prf-note">Estás usando NEXO sin cuenta: tus partidas y fichas se guardan solo en este dispositivo. Con una cuenta se sincronizan entre tus dispositivos.</p><button class="prf-button" data-sign-in>INICIAR SESIÓN O CREAR CUENTA</button></section>`;
     }
     return `<section class="prf-panel prf-account"><h2>Cuenta</h2>
-      <div class="prf-identity"><span class="prf-avatar">${esc(initials(u))}</span><span><b>${esc(displayName(u) || 'Sin nombre visible')}</b><small>${esc(u.email)}</small></span></div>
-      <form class="prf-form" data-name-form><label class="prf-field"><span>NOMBRE VISIBLE</span><input name="name" maxlength="40" autocomplete="nickname" value="${esc(displayName(u))}" placeholder="Cómo quieres que te vean"></label><button class="prf-button" type="submit">GUARDAR NOMBRE</button></form>
+      <div class="prf-identity"><span class="prf-avatar">${esc(initials(u))}</span><span><b>${esc(displayName(u) || 'Sin nombre de usuario')}</b><small>${esc(u.email)}</small></span></div>
+      <form class="prf-form" data-name-form><label class="prf-field"><span>NOMBRE DE USUARIO</span><input name="name" maxlength="24" autocomplete="nickname" value="${esc(displayName(u))}" placeholder="Cómo quieres que te vean"></label><button class="prf-button" type="submit">GUARDAR NOMBRE DE USUARIO</button></form>
       <form class="prf-form" data-password-form><label class="prf-field"><span>CONTRASEÑA NUEVA</span><input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Mínimo 8 caracteres" required></label><label class="prf-field"><span>REPÍTELA</span><input name="confirm" type="password" minlength="8" autocomplete="new-password" required></label><button class="prf-button" type="submit">CAMBIAR CONTRASEÑA</button></form>
       <p class="prf-message" data-account-message aria-live="polite"></p>
       <button class="prf-button ghost" data-sign-out>CERRAR SESIÓN</button></section>`;
@@ -41,7 +41,7 @@
 
   function campaignsPanel() {
     const campaigns = window.NEXO_TRAVELLER?.campaigns() || [];
-    const rows = campaigns.map(c => `<button class="prf-row" data-campaign="${esc(c.id)}"><span class="prf-mark is-traveller">⌖</span><span class="prf-copy"><b>${esc(c.name)}</b><small>${esc(c.wallet)} Cr · ${c.characters} ${c.characters === 1 ? 'personaje' : 'personajes'}</small></span><span class="prf-go">ENTRAR →</span></button>`).join('');
+    const rows = campaigns.map(c => `<button class="prf-row" data-campaign="${esc(c.id)}"><span class="prf-mark is-traveller">${window.NEXO_ICONS?.traveller || ''}</span><span class="prf-copy"><b>${esc(c.name)}</b><small>${esc(c.wallet)} Cr · ${c.characters} ${c.characters === 1 ? 'personaje' : 'personajes'}</small></span><span class="prf-go">ENTRAR →</span></button>`).join('');
     return `<section class="prf-panel"><h2>Campañas de Traveller</h2>${rows || '<p class="prf-note">Aún no tienes campañas.</p>'}<button class="prf-button ghost" data-traveller>${rows ? 'GESTIONAR CAMPAÑAS' : 'CREAR UNA CAMPAÑA'}</button></section>`;
   }
 
@@ -51,7 +51,7 @@
       const rows = items.map(ch => `<button class="prf-row" data-character="${key}" data-id="${esc(ch.id)}"><span class="prf-mark is-${key}">${mark}</span><span class="prf-copy"><b>${esc(ch.name || 'Sin nombre')}</b><small>${esc(ch.summary)}</small></span><span class="prf-go">ABRIR →</span></button>`).join('');
       return `<h3>${title}</h3>${rows || '<p class="prf-note">Sin personajes todavía.</p>'}`;
     };
-    return `<section class="prf-panel"><h2>Personajes</h2>${group('vampire', 'Vampiro: La Mascarada', window.NEXO_VAMPIRE, '◈')}${group('dnd', 'Dungeons &amp; Dragons', window.NEXO_DND, '✧')}<p class="prf-note">Los personajes de Traveller están dentro de cada campaña.</p></section>`;
+    return `<section class="prf-panel"><h2>Personajes</h2>${group('vampire', 'Vampiro: La Mascarada', window.NEXO_VAMPIRE, window.NEXO_ICONS?.vampire || '')}${group('dnd', 'Dungeons &amp; Dragons', window.NEXO_DND, window.NEXO_ICONS?.dnd || '')}<p class="prf-note">Los personajes de Traveller están dentro de cada campaña.</p></section>`;
   }
 
   function render() {
@@ -82,11 +82,12 @@
   async function saveName(event) {
     event.preventDefault();
     const name = event.target.elements.namedItem('name').value.trim();
+    if (!/^[\p{L}\p{N}_.-]{3,24}$/u.test(name)) { message('El nombre de usuario debe tener entre 3 y 24 letras, números, puntos, guiones o guiones bajos, sin espacios.', true); return; }
     const { data, error } = await client().auth.updateUser({ data: { display_name: name } });
     if (error) { message('No se pudo guardar el nombre. Comprueba la conexión.', true); return; }
-    host.querySelector('.prf-identity b').textContent = displayName(data.user) || 'Sin nombre visible';
+    host.querySelector('.prf-identity b').textContent = displayName(data.user) || 'Sin nombre de usuario';
     host.querySelector('.prf-avatar').textContent = initials(data.user);
-    message('Nombre guardado.');
+    message('Nombre de usuario guardado.');
   }
 
   async function savePassword(event) {

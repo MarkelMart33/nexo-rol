@@ -459,7 +459,7 @@
 
   // Vistas
   function frame(body, status = 'REINOS OLVIDADOS Y POR FORJAR') {
-    host.innerHTML = `<header class="dnd-top"><button class="dnd-brand" data-exit aria-label="Volver al selector de sistemas"><span class="dnd-seal">N</span><span><b>NEXO</b><small>DUNGEONS &amp; DRAGONS · 5.5</small></span></button><span class="dnd-status" data-save-status>${esc(status)}</span></header><main class="dnd-main">${body}</main><div class="dnd-flash" data-flash hidden role="status"></div>`;
+    host.innerHTML = `<header class="dnd-top"><button class="dnd-brand" data-exit aria-label="Volver al selector de sistemas"><span class="dnd-seal">${window.NEXO_ICONS?.dnd || ''}</span><span><b>NEXO</b><small>DUNGEONS &amp; DRAGONS · 5.5</small></span></button><span class="dnd-status" data-save-status>${esc(status)}</span></header><main class="dnd-main">${body}</main><div class="dnd-flash" data-flash hidden role="status"></div>`;
     host.querySelectorAll('[data-exit]').forEach(button => button.addEventListener('click', close));
   }
 
@@ -795,7 +795,7 @@
     document.head.append(fonts);
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/dnd/dnd.css?v=3';
+    stylesheet.href = './src/dnd/dnd.css?v=4';
     document.head.append(stylesheet);
     host = document.createElement('section');
     host.id = 'nexoDnd';
