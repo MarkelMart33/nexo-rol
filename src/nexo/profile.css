@@ -27,7 +27,7 @@
 .prf-row:hover,.prf-row:focus-visible{background:#7d16200d;transform:translateX(3px)}
 .prf-mark{flex:none;width:38px;height:38px;display:grid;place-items:center;border:1.5px solid currentColor;border-radius:50%;transform:rotate(-8deg)}
 .prf-mark svg{width:22px;height:22px}
-.prf-mark.is-traveller{color:#2f6f68}.prf-mark.is-dnd{color:#8a5a14}.prf-mark.is-vampire{color:#8f1526}
+.prf-mark.is-traveller{color:#2f6f68}.prf-mark.is-dnd{color:#8a5a14}.prf-mark.is-vampire{color:#8f1526}.prf-mark.is-tormentas{color:#245d86}
 .prf-copy{flex:1;min-width:0}.prf-copy b{display:block;font:700 19px/1.15 var(--nexo-hand);color:#2f1f12;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.prf-copy small{display:block;margin-top:2px;font-size:13px;color:#8a6f4f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .prf-go{flex:none;font:400 16px var(--nexo-hand);color:#7d1620;text-decoration:underline;text-decoration-color:#7d162055;text-underline-offset:3px}
 .nexo-profile :focus-visible{outline:2px dashed #7d1620;outline-offset:3px}.prf-back:focus-visible{outline-color:var(--nexo-lamp)}

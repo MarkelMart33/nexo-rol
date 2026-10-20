@@ -15,7 +15,7 @@
     hub.hidden = true;
     hub.setAttribute('aria-label', 'Selector de sistemas NEXO');
     document.body.append(hub);
-    const labels = { dnd: 'NEXO D&D', vampire: 'NEXO VAMPIRO' };
+    const labels = { dnd: 'NEXO D&D', vampire: 'NEXO VAMPIRO', tormentas: 'NEXO TORMENTAS' };
 
     // El botón «atrás» del navegador vuelve a la mesa en lugar de salir de NEXO.
     const away = () => { if (history.state?.nexo !== 'away') history.pushState({ nexo: 'away' }, ''); };
@@ -24,6 +24,7 @@
       const root = document.documentElement.classList;
       if (root.contains('nexo-vampire-open')) window.NEXO_VAMPIRE?.close();
       else if (root.contains('nexo-dnd-open')) window.NEXO_DND?.close();
+      else if (root.contains('nexo-tormentas-open')) window.NEXO_TORMENTAS?.close();
       else if (document.querySelector('.nexo-profile:not([hidden])')) window.NEXO_PROFILE?.close();
       else if (hub.hidden && document.getElementById('authGate')?.hidden !== false) openHub();
     });
@@ -72,6 +73,11 @@
               <span class="codex"><span class="codex-page"><span class="codex-cap" aria-hidden="true">V</span><b>Edad Oscura</b><small>Anno Domini MCCXLII</small><span class="codex-lines" aria-hidden="true"></span></span>
                 <span class="codex-seal">${icons.vampire || ''}</span><span class="codex-ribbon" aria-hidden="true"></span></span>
             </button>
+            <button class="obj obj-reed" data-system="tormentas" style="--rest:-5deg;--d:.65s" aria-label="Abrir El Archivo de las Tormentas">
+              <span class="reed"><span class="reed-paper"><span class="reed-emblem">${icons.tormentas || ''}</span><b>El Archivo<br>de las Tormentas</b><small>Juego de rol del Cosmere</small>
+                <span class="reed-msg">Se acerca una alta tormenta.<br>¿Pronunciarás las palabras?</span></span>
+                <span class="reed-pen" aria-hidden="true"><i></i></span><span class="reed-gem" aria-hidden="true"></span></span>
+            </button>
           </div>
           <div class="mesa-props" aria-hidden="true"><span class="die die-a"><i></i><i></i><i></i><i></i><i></i></span><span class="die die-b"><i></i><i></i><i></i></span><span class="mesa-ring"></span></div>
         </div>`;
@@ -83,7 +89,8 @@
           traveller: () => { hub.hidden = true; document.documentElement.classList.add('nexo-system-selected'); },
           dnd: () => window.NEXO_DND ? window.NEXO_DND.open({ onExit: openHub }) : render('dnd'),
           vampire: () => window.NEXO_VAMPIRE ? window.NEXO_VAMPIRE.open({ era: 'v20', onExit: openHub }) : render('vampire'),
-          'vampire-da': () => window.NEXO_VAMPIRE ? window.NEXO_VAMPIRE.open({ era: 'da', onExit: openHub }) : render('vampire')
+          'vampire-da': () => window.NEXO_VAMPIRE ? window.NEXO_VAMPIRE.open({ era: 'da', onExit: openHub }) : render('vampire'),
+          tormentas: () => window.NEXO_TORMENTAS ? window.NEXO_TORMENTAS.open({ onExit: openHub }) : render('tormentas')
         };
         // Al elegir, el objeto se acerca a la cámara antes de abrir su sistema.
         hub.querySelectorAll('[data-system]').forEach(button => button.addEventListener('click', () => {

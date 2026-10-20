@@ -1,0 +1,21 @@
+/* Vinculacaña de El Archivo de las Tormentas sobre la mesa: tablero, papel y la caña con su rubí. */
+.reed{position:relative;display:block;width:228px;height:316px;padding:16px;border-radius:6px;background:linear-gradient(150deg,#2b2620,#191512 60%,#100d0b);box-shadow:inset 0 0 0 2px #4a3e30,inset 0 0 0 5px #1a1612,inset 0 0 0 6px #c79a4a66}
+.reed-gem{position:absolute;top:-10px;left:50%;width:62px;height:22px;margin-left:-31px;border-radius:5px 5px 10px 10px;background:linear-gradient(#e2bf6e,#9c7535);box-shadow:0 3px 4px #0008,inset 0 1px 0 #fbe6ad}
+.reed-gem:after{content:'';position:absolute;left:50%;top:4px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#effbff,#7fcff0 45%,#2a6f9c);box-shadow:0 0 10px #8fdcff;animation:reed-sphere 4s ease-in-out infinite}
+@keyframes reed-sphere{50%{box-shadow:0 0 18px #c6f0ff}}
+.reed-paper{position:relative;display:flex;flex-direction:column;align-items:center;height:100%;padding:16px 14px 10px;border-radius:2px;background:repeating-linear-gradient(transparent 0 23px,#9fb3c533 23px 24px),linear-gradient(#efe6d2,#e1d4b8);color:#22344a;text-align:center;box-shadow:inset 0 0 18px #6b553633}
+.reed-emblem{width:42px;height:42px;color:#1f5a85;filter:drop-shadow(0 0 6px #8fdcff99);transition:filter .4s}
+.reed-emblem svg{width:100%;height:100%}
+.reed-paper b{margin-top:8px;font:400 21px/1.05 var(--fell);color:#1d2f45;letter-spacing:.02em}
+.reed-paper small{margin-top:6px;font:400 12px var(--fell);color:#6b5d47;letter-spacing:.08em}
+.reed-msg{margin-top:auto;padding:10px 0 22px;align-self:stretch;text-align:left;font:400 15px/1.4 var(--hand);color:#8a1c2c;transform:rotate(-2deg)}
+/* La caña: un palo fino con punta y un rubí que brilla cuando alguien escribe al otro lado */
+.reed-pen{position:absolute;right:6px;bottom:26px;width:9px;height:150px;border-radius:4px 4px 1px 1px;background:linear-gradient(90deg,#6e4b25,#b48447 45%,#5e3e1d);transform:rotate(38deg);transform-origin:50% 100%;box-shadow:3px 6px 6px #0006}
+.reed-pen:after{content:'';position:absolute;bottom:-12px;left:1px;border-left:3.5px solid transparent;border-right:3.5px solid transparent;border-top:13px solid #2a1c10}
+.reed-pen i{position:absolute;top:-9px;left:50%;width:15px;height:15px;margin-left:-7.5px;background:radial-gradient(circle at 40% 35%,#ffc1c8,#d4273f 50%,#6e0f1c);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);animation:reed-ruby 3.2s ease-in-out infinite}
+@keyframes reed-ruby{0%,100%{filter:brightness(.9)}50%{filter:brightness(1.5) drop-shadow(0 0 4px #ff5a70)}}
+.obj-reed:hover .reed-pen,.obj-reed:focus-visible .reed-pen{animation:reed-write .9s ease-in-out infinite}
+.obj-reed:hover .reed-pen i,.obj-reed:focus-visible .reed-pen i{animation-duration:.6s}
+.obj-reed:hover .reed-emblem,.obj-reed:focus-visible .reed-emblem{filter:drop-shadow(0 0 12px #8fdcff)}
+@keyframes reed-write{0%,100%{transform:rotate(38deg) translate(0,0)}25%{transform:rotate(36deg) translate(-6px,-2px)}50%{transform:rotate(39deg) translate(-12px,1px)}75%{transform:rotate(37deg) translate(-5px,-1px)}}
+@media(prefers-reduced-motion:reduce){.reed *{animation:none!important}}

@@ -1,0 +1,174 @@
+/* NEXO · El Archivo de las Tormentas: noche de alta tormenta, luz tormentosa y latón vorin. */
+.tor{--tor-night:#0a111d;--tor-deep:#111c2e;--tor-slate:#18263c;--tor-panel:#152238;--tor-line:#2d4466;--tor-line-soft:#223652;--tor-text:#e3ecf6;--tor-muted:#9bb0c9;--tor-faint:#6f86a3;--tor-light:#a6e6ff;--tor-light-hi:#dff7ff;--tor-light-dim:#5eb6dd;--tor-brass:#d4b06a;--tor-brass-dim:#9c7c3e;--tor-ruby:#e2566b;--tor-head:'Cinzel','Trajan Pro','Palatino Linotype',Georgia,serif;--tor-body:'Spectral','Palatino Linotype','Book Antiqua',Georgia,serif;
+  position:fixed;inset:0;z-index:1100;overflow:auto;color:var(--tor-text);font-family:var(--tor-body);font-size:16px;
+  background:radial-gradient(ellipse 70% 45% at 75% -5%,#2a4f7a66,transparent 70%),radial-gradient(ellipse 60% 50% at 10% 110%,#1d3b5a55,transparent 70%),linear-gradient(170deg,#0d1726,var(--tor-night) 60%,#070c15)}
+.tor[hidden]{display:none}
+.tor *,.tor *:before,.tor *:after{box-sizing:border-box}
+.tor button,.tor input,.tor select,.tor textarea{font:inherit;color:inherit}
+html.nexo-tormentas-open,html.nexo-tormentas-open body{overflow:hidden}
+
+/* Lluvia de tormenta al fondo */
+.tor-storm{position:fixed;inset:0;pointer-events:none;opacity:.5;background:repeating-linear-gradient(104deg,transparent 0 22px,#a6e6ff0d 22px 23px,transparent 23px 61px);animation:tor-rain 1.4s linear infinite}
+@keyframes tor-rain{to{background-position:-60px 240px}}
+
+.tor-top{position:sticky;top:0;z-index:5;height:70px;max-width:1240px;margin:auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid var(--tor-line);background:linear-gradient(#0b1422f2,#0b1422d9);backdrop-filter:blur(8px)}
+.tor-brand{display:flex;align-items:center;gap:13px;padding:0;border:0;background:none;text-align:left;cursor:pointer}
+.tor-brand b{display:block;font:700 19px var(--tor-head);letter-spacing:.2em;color:var(--tor-light-hi)}
+.tor-brand small{display:block;margin-top:2px;color:var(--tor-muted);font:500 10.5px var(--tor-head);letter-spacing:.16em}
+.tor-sphere{width:44px;height:44px;display:grid;place-items:center;padding:9px;border-radius:50%;color:var(--tor-light-hi);background:radial-gradient(circle at 40% 35%,#e7f9ff,#6fc6ec 35%,#1e5f8c 75%);box-shadow:0 0 18px #6fc6ec88,inset 0 0 0 2px #d4b06a,inset 0 0 0 4px #0b1422;animation:tor-pulse 4s ease-in-out infinite}
+.tor-sphere svg{width:100%;height:100%;color:#0b1d30}
+@keyframes tor-pulse{50%{box-shadow:0 0 30px #a6e6ffbb,inset 0 0 0 2px #d4b06a,inset 0 0 0 4px #0b1422}}
+.tor-status{color:var(--tor-muted);font:500 10.5px var(--tor-head);letter-spacing:.14em;text-align:right}
+
+.tor-main{position:relative;max-width:1180px;margin:0 auto;padding:52px 24px 80px}
+.tor-kicker{margin:0;color:var(--tor-light-dim);font:500 12px var(--tor-head);letter-spacing:.2em}
+.tor-main h1{margin:14px 0;font:700 clamp(36px,6vw,60px)/1.08 var(--tor-head);letter-spacing:.02em}
+.tor-main h1 em{font-style:normal;color:var(--tor-light);text-shadow:0 0 24px #6fc6ec88}
+.tor-intro{max-width:680px;color:var(--tor-muted);line-height:1.6;font-size:18px}
+.tor-actions{display:flex;flex-wrap:wrap;gap:10px;margin:26px 0}
+.tor-button{padding:11px 18px;border:1px solid var(--tor-brass);border-radius:2px;background:linear-gradient(#2c5d86,#1b3f62);color:var(--tor-light-hi);font:700 12.5px var(--tor-head);letter-spacing:.12em;cursor:pointer;box-shadow:0 0 0 1px #0b1422 inset,0 0 16px -6px #6fc6ec;transition:box-shadow .25s,transform .1s}
+.tor-button:hover{box-shadow:0 0 0 1px #0b1422 inset,0 0 22px -4px #a6e6ff}
+.tor-button:active{transform:translateY(1px)}
+.tor-button.ghost{border-color:var(--tor-line);background:transparent;color:var(--tor-muted);box-shadow:none}
+.tor-button.ghost:hover{border-color:var(--tor-light-dim);color:var(--tor-light)}
+.tor-button.danger{border-color:#7a2a38;background:transparent;color:var(--tor-ruby);box-shadow:none}
+.tor-button.danger:hover{background:#e2566b14}
+.tor :focus-visible{outline:2px solid var(--tor-light);outline-offset:2px}
+
+.tor-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.tor-card{display:flex;align-items:center;gap:14px;padding:16px;border:1px solid var(--tor-line);border-radius:3px;background:linear-gradient(160deg,var(--tor-slate),var(--tor-deep));text-align:left;cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s}
+.tor-card:hover{transform:translateY(-3px);border-color:var(--tor-light-dim);box-shadow:0 0 24px -10px #6fc6ec}
+.tor-card-gem{flex:none;width:46px;height:46px;display:grid;place-items:center;color:#0b1d30;font:700 20px var(--tor-head);background:radial-gradient(circle at 40% 30%,#effbff,#7fcff0 45%,#2a6f9c);clip-path:polygon(50% 0,100% 38%,82% 100%,18% 100%,0 38%);box-shadow:0 0 14px #6fc6ec}
+.tor-card-copy{flex:1;min-width:0}
+.tor-card-copy b{display:block;font:700 17px var(--tor-head);letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tor-card-copy small{display:block;margin-top:3px;color:var(--tor-muted);font-size:15px}
+.tor-badge{flex:none;padding:5px 7px;border:1px solid var(--tor-line);border-radius:2px;color:var(--tor-muted);font:500 9.5px var(--tor-head);letter-spacing:.1em}
+.tor-badge.is-done{border-color:var(--tor-brass-dim);color:var(--tor-brass)}
+.tor-empty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:48px 16px;border:1px dashed var(--tor-line);border-radius:3px;color:var(--tor-muted);text-align:center}
+.tor-empty span{font-size:34px;color:var(--tor-light);text-shadow:0 0 18px #6fc6ec}
+.tor-empty b{font:700 19px var(--tor-head);color:var(--tor-text)}
+
+.tor-editor-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:20px}
+.tor-panel{position:relative;margin-bottom:16px;padding:22px;border:1px solid var(--tor-line-soft);border-radius:3px;background:linear-gradient(165deg,#172840ee,#101b2deE);box-shadow:0 10px 30px -18px #000}
+.tor-panel:before,.tor-panel:after{content:'';position:absolute;width:14px;height:14px;border:1.5px solid var(--tor-brass-dim)}
+.tor-panel:before{top:6px;left:6px;border-right:0;border-bottom:0}
+.tor-panel:after{right:6px;bottom:6px;border-left:0;border-top:0}
+.tor-panel h2{display:flex;align-items:baseline;flex-wrap:wrap;gap:12px;margin:0 0 18px;padding-bottom:10px;border-bottom:1px solid var(--tor-line);font:700 21px var(--tor-head);letter-spacing:.08em;color:var(--tor-light-hi)}
+.tor-panel h2 span{color:var(--tor-brass);font-size:15px}
+.tor-panel h2 small{margin-left:auto;color:var(--tor-faint);font:500 12px var(--tor-head);letter-spacing:.08em}
+.tor-panel h3{display:flex;align-items:center;gap:10px;margin:14px 0 8px;font:700 13px var(--tor-head);letter-spacing:.12em;color:var(--tor-brass)}
+.tor-panel h3:first-child{margin-top:0}
+.tor-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 16px}
+.tor-field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.tor-fields .tor-field{margin:0}
+.tor-fields+.tor-fields{margin-top:14px}
+.tor-field span{display:flex;flex-wrap:wrap;align-items:center;gap:8px;color:var(--tor-muted);font:500 11.5px var(--tor-head);letter-spacing:.1em}
+.tor-field input,.tor-field select,.tor-field textarea{min-width:0;padding:8px 10px;border:1px solid var(--tor-line);border-radius:2px;background:#0b1422;font-size:17px;outline:none;transition:border-color .2s,box-shadow .2s}
+.tor-field textarea{resize:vertical;line-height:1.5}
+.tor-field select{cursor:pointer}
+.tor-field input:focus,.tor-field select:focus,.tor-field textarea:focus{border-color:var(--tor-light-dim);box-shadow:0 0 0 3px #6fc6ec22}
+.tor-field input::placeholder,.tor-field textarea::placeholder{color:#5a6f8a}
+.tor-note{margin:6px 0 12px;color:var(--tor-muted);line-height:1.55}
+.tor-narr{margin:6px 0 12px;color:var(--tor-text);font-style:italic;line-height:1.55}
+.tor-left{padding:2px 8px;border:1px solid var(--tor-line);border-radius:10px;color:var(--tor-light);font:500 10.5px var(--tor-head);font-style:normal;letter-spacing:.08em;white-space:nowrap}
+.tor-left.is-done{border-color:var(--tor-brass-dim);color:var(--tor-brass)}
+.tor-left.is-over{border-color:#7a2a38;color:var(--tor-ruby)}
+
+.tor-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px 26px}
+.tor-cols-2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.tor-col{min-width:0}
+.tor-info{display:grid;gap:8px;margin:8px 0 0}
+.tor-info div{display:grid;grid-template-columns:150px 1fr;gap:10px;padding-bottom:7px;border-bottom:1px dashed var(--tor-line-soft)}
+.tor-info dt{color:var(--tor-faint);font:500 11px var(--tor-head);letter-spacing:.08em;padding-top:3px}
+.tor-info dd{margin:0}
+.tor-chips{display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 10px}
+.tor-chip{padding:6px 11px;border:1px solid var(--tor-line);border-radius:14px;background:#0b1422;color:var(--tor-muted);font-size:15px;cursor:pointer;transition:border-color .2s,color .2s,box-shadow .2s}
+.tor-chip:hover{border-color:var(--tor-light-dim);color:var(--tor-text)}
+.tor-chip.is-on{border-color:var(--tor-light);color:var(--tor-light-hi);background:#1f4566;box-shadow:0 0 12px -4px #6fc6ec}
+.tor-chip.is-fixed{cursor:default}
+.tor-level{display:flex;align-items:flex-end;gap:14px;margin-top:14px}
+.tor-level .tor-field{width:110px;margin:0}
+.tor-tier{padding-bottom:10px;color:var(--tor-brass);font:500 12px var(--tor-head);letter-spacing:.1em}
+.tor-advance{margin-top:14px}
+
+/* Seguimiento de elecciones */
+.tor-tracker{position:sticky;top:78px;z-index:4;margin-bottom:16px;padding:12px 16px;border:1px solid var(--tor-light-dim);border-radius:3px;background:#0d1828ee;backdrop-filter:blur(6px);box-shadow:0 0 26px -14px #6fc6ec}
+.tor-tracker-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px;font:700 14px var(--tor-head);letter-spacing:.06em}
+.tor-tracker-head span{color:var(--tor-faint);font-weight:500;font-size:11px;letter-spacing:.12em}
+.tor-pools{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.tor-pools li{display:flex;align-items:baseline;gap:6px;padding:4px 10px;border:1px solid var(--tor-line);border-radius:12px;font-size:14px;color:var(--tor-muted)}
+.tor-pools b{color:var(--tor-light)}
+.tor-pools small{color:var(--tor-faint)}
+.tor-pools li.is-done{border-color:var(--tor-brass-dim)}.tor-pools li.is-done b{color:var(--tor-brass)}
+.tor-pools li.is-over{border-color:#7a2a38}.tor-pools li.is-over b{color:var(--tor-ruby)}
+
+/* Atributos por reino */
+.tor-realms{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.tor-realm{padding:14px;border:1px solid var(--tor-line);border-radius:3px;background:#0c1626}
+.tor-realm.is-fisico{border-top:3px solid #c87a4a}.tor-realm.is-cognitivo{border-top:3px solid #6fc6ec}.tor-realm.is-espiritual{border-top:3px solid #b48be0}
+.tor-realm-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.tor-realm-head>b{font:700 14px var(--tor-head);letter-spacing:.12em}
+.tor-def{display:flex;align-items:center;gap:8px}
+.tor-def small{color:var(--tor-faint);font:500 10px var(--tor-head);letter-spacing:.08em;text-align:right}
+.tor-def b{display:grid;place-items:center;width:42px;height:46px;color:#0b1d30;font:700 20px var(--tor-head);background:linear-gradient(#e2f6ff,#8ed6f3);clip-path:polygon(0 0,100% 0,100% 70%,50% 100%,0 70%)}
+.tor-attr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px dashed var(--tor-line-soft)}
+.tor-attr-name{font-size:17px}
+.tor-stepper{display:flex;align-items:center;gap:6px}
+.tor-stepper b{width:30px;text-align:center;font:700 22px var(--tor-head);color:var(--tor-light-hi)}
+.tor-stepper button,.tor-mini button{width:30px;height:30px;border:1px solid var(--tor-line);border-radius:50%;background:#132238;color:var(--tor-light);font-size:17px;line-height:1;cursor:pointer}
+.tor-stepper button:hover:not(:disabled),.tor-mini button:hover:not(:disabled){border-color:var(--tor-light)}
+.tor-stepper button:disabled,.tor-mini button:disabled{opacity:.35;cursor:default}
+
+/* Habilidades */
+.tor-skills{margin:0;padding:0;list-style:none}
+.tor-skills li{display:grid;grid-template-columns:1fr auto auto 40px;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--tor-line-soft)}
+.tor-skills li.is-ranked .tor-skill-name{color:var(--tor-light-hi)}
+.tor-skill-name{color:var(--tor-muted)}
+.tor-skill-name small{color:var(--tor-faint);font:500 10px var(--tor-head);letter-spacing:.06em}
+.tor-pips{display:flex;gap:4px}
+.tor-pips i{width:10px;height:10px;border:1px solid var(--tor-line);transform:rotate(45deg)}
+.tor-pips i.is-on{border-color:var(--tor-light);background:var(--tor-light);box-shadow:0 0 6px var(--tor-light-dim)}
+.tor-pips i.is-path{border-color:var(--tor-brass);background:var(--tor-brass)}
+.tor-mini{display:flex;gap:4px}
+.tor-mini button{width:26px;height:26px;font-size:15px}
+.tor-skill-mod{text-align:right;font:700 16px var(--tor-head);color:var(--tor-light)}
+
+/* Hoja calculada */
+.tor-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:12px}
+.tor-stats div{padding:12px;border:1px solid var(--tor-line);border-radius:3px;background:#0c1626}
+.tor-stats small{display:block;color:var(--tor-faint);font:500 10.5px var(--tor-head);letter-spacing:.08em}
+.tor-stats b{display:block;margin-top:5px;font:700 20px var(--tor-head);color:var(--tor-light-hi)}
+
+/* Camino radiante */
+.tor-radiant.is-active{border-color:#3d6e98;box-shadow:0 0 40px -22px #a6e6ff}
+.tor-switch{display:flex;align-items:center;gap:10px;margin-bottom:14px;cursor:pointer;font-size:17px}
+.tor-switch input{width:20px;height:20px;accent-color:#6fc6ec}
+.tor-ideals{display:flex;gap:8px;margin-bottom:6px}
+.tor-ideal{width:46px;height:46px;border:1px solid var(--tor-line);background:#0c1626;color:var(--tor-faint);font:700 15px var(--tor-head);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);cursor:pointer;transition:background .25s,color .25s}
+.tor-ideal.is-on{background:radial-gradient(circle,#effbff,#7fcff0 60%,#2a6f9c);color:#0b1d30}
+.tor-surges{display:grid;gap:8px}
+.tor-surge{padding:10px 12px;border-left:3px solid var(--tor-light);background:#0c1626}
+.tor-surge b{display:block;font:700 14px var(--tor-head);letter-spacing:.08em;color:var(--tor-light-hi)}
+.tor-surge small{display:block;margin-top:3px;color:var(--tor-muted);font-size:15px}
+
+/* Modal y avisos */
+.tor-modal{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:20px;background:#03070dcc}
+.tor-modal[hidden]{display:none}
+.tor-modal-card{max-width:440px;padding:26px;border:1px solid var(--tor-line);border-radius:3px;background:var(--tor-deep);box-shadow:0 20px 60px #000}
+.tor-modal-card h3{margin:0 0 10px;font:700 20px var(--tor-head);letter-spacing:.04em}
+.tor-modal-card p{color:var(--tor-muted);line-height:1.5}
+.tor-flash{position:fixed;left:50%;bottom:24px;z-index:30;max-width:min(560px,calc(100vw - 32px));padding:12px 18px;transform:translateX(-50%);border:1px solid var(--tor-light-dim);border-radius:3px;background:#0d1828f5;color:var(--tor-light-hi);box-shadow:0 0 30px -10px #6fc6ec}
+.tor-flash[hidden]{display:none}
+
+@media(max-width:860px){
+  .tor-top{padding:0 16px}
+  .tor-status{display:none}
+  .tor-main{padding:30px 16px 64px}
+  .tor-fields,.tor-realms{grid-template-columns:1fr}
+  .tor-panel{padding:18px 16px}
+  .tor-panel h2 small{margin-left:0}
+  .tor-info div{grid-template-columns:1fr;gap:2px}
+  .tor-tracker{position:static}
+  .tor-list{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){.tor *,.tor-storm{animation:none!important;transition:none!important}}
