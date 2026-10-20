@@ -358,8 +358,21 @@
 
   // Vistas
   function frame(body, status = 'ARKHAM, MASSACHUSETTS · 1925') {
-    host.innerHTML = `<div class="cth-fog" aria-hidden="true"></div><header class="cth-top"><button class="cth-brand" data-exit aria-label="Volver a la mesa"><span class="cth-sign">${window.NEXO_ICONS?.cthulhu || ''}</span><span><b>NEXO</b><small>LA LLAMADA DE CTHULHU</small></span></button><span class="cth-status" data-save-status>${esc(status)}</span></header><main class="cth-main">${body}</main><div class="cth-flash" data-flash hidden role="status"></div>`;
+    host.innerHTML = `<div class="cth-fog" aria-hidden="true"></div><header class="cth-top"><button class="cth-brand" data-exit aria-label="Volver a la mesa"><span class="cth-sign">${window.NEXO_ICONS?.cthulhu || ''}</span><span><b>NEXO</b><small>LA LLAMADA DE CTHULHU</small></span></button><span class="cth-status" data-save-status>${esc(status)}</span><button class="nd-open" data-dice aria-label="Abrir los dados"><span aria-hidden="true">⚄</span><b>DADOS</b></button></header><main class="cth-main">${body}</main><div class="cth-flash" data-flash hidden role="status"></div>`;
     host.querySelectorAll('[data-exit]').forEach(button => button.addEventListener('click', close));
+    host.querySelector('[data-dice]').addEventListener('click', () => window.NEXO_DICE?.tray('cthulhu', { sources: diceSources }));
+  }
+  // Dados: pruebas de d100 contra las habilidades, características, Suerte y Cordura de la ficha.
+  function diceItems(ch) {
+    const skills = Object.keys(SKILLS).map(k => ['sk:' + k, SKILLS[k][0] + (ch.specs[k] ? ` (${ch.specs[k]})` : ''), skill(ch, k)]).sort((a, b) => a[1].localeCompare(b[1], 'es'));
+    const chars = CHARS.map(([k, name]) => ['ch:' + k, name, stat(ch, k)]);
+    const extra = [['luck', 'Suerte', ch.luck || 0], ['san', 'Cordura', stat(ch, 'pod')]];
+    return [...skills, ...chars, ...extra].filter(([, , v]) => v > 0);
+  }
+  function diceSources() { return current ? [{ label: 'Desde la ficha', items: diceItems(current) }] : []; }
+  function rollFromSheet(key) {
+    const item = diceItems(current).find(([k]) => k === key);
+    if (item) window.NEXO_DICE?.roll('cthulhu', { skill: Math.min(99, item[2]), label: item[1] });
   }
 
   function renderList() {
@@ -437,7 +450,7 @@
         ? `<select data-char="${k}" aria-label="${name}">${options(QUICK.filter((v, i, a) => a.indexOf(v) === i).map(v => [v, v]), ch.chars[k] || '', '—')}</select>`
         : `<input type="number" min="0" max="99" data-char="${k}" value="${ch.chars[k] || ''}" placeholder="—" aria-label="${name}">`;
       return `<div class="cth-char"><span class="cth-char-head"><b>${short}</b><small>${name}</small></span>${input}
-        <span class="cth-char-final ${changedByAge ? 'is-aged' : ''}" title="${changedByAge ? 'Valor tras aplicar la edad' : ''}"><b>${final || '—'}</b><small>${final ? `${Math.floor(final / 2)} · ${Math.floor(final / 5)}` : 'mitad · quinto'}</small></span></div>`;
+        <span class="cth-char-final ${changedByAge ? 'is-aged' : ''}" title="${changedByAge ? 'Valor tras aplicar la edad' : ''}">${final ? `<button class="nd-roll-btn" data-cth-roll="ch:${k}" aria-label="Tirar ${name}"><b>${final}</b></button>` : '<b>—</b>'}<small>${final ? `${Math.floor(final / 2)} · ${Math.floor(final / 5)}` : 'mitad · quinto'}</small></span></div>`;
     }).join('');
     const lossRows = band.loss ? band.from.map(k => `<div class="cth-loss"><span>${CH[k].name}</span><span class="cth-stepper"><button data-loss="${k}" data-d="-1" aria-label="Devolver punto a ${CH[k].name}" ${(ch.ageLoss[k] || 0) <= 0 ? 'disabled' : ''}>−</button><b>−${ch.ageLoss[k] || 0}</b><button data-loss="${k}" data-d="1" aria-label="Restar punto a ${CH[k].name}">+</button></span></div>`).join('') : '';
     return `<section class="cth-panel">${heading(2, 'Características', METHODS[ch.method][0])}
@@ -490,7 +503,7 @@
         <span class="cth-skill-base">${base(ch, k)}</span>
         <input type="number" min="0" max="99" data-alloc="${k}" data-kind="o" value="${alloc(ch, k, 'o') || ''}" placeholder="${isOcc ? '0' : ''}" ${isOcc ? '' : 'disabled'} aria-label="Puntos de ocupación en ${esc(SKILLS[k][0])}">
         <input type="number" min="0" max="99" data-alloc="${k}" data-kind="p" value="${alloc(ch, k, 'p') || ''}" placeholder="${pDisabled ? '' : '0'}" ${pDisabled ? 'disabled' : ''} aria-label="Puntos de interés personal en ${esc(SKILLS[k][0])}">
-        <b class="cth-skill-total" data-total>${total}</b><small class="cth-skill-split" data-split>${Math.floor(total / 2)} · ${Math.floor(total / 5)}</small></li>`;
+        <button class="nd-roll-btn cth-skill-roll" data-cth-roll="sk:${k}" aria-label="Tirar ${esc(SKILLS[k][0])}"><b class="cth-skill-total" data-total>${total}</b></button><small class="cth-skill-split" data-split>${Math.floor(total / 2)} · ${Math.floor(total / 5)}</small></li>`;
     }).join('');
     return `<section class="cth-panel">${heading(4, 'Habilidades', 'ocupación e interés personal')}
       <p class="cth-note">Reparte los puntos de ocupación (${occPoints(ch)}) entre las habilidades marcadas con ◆, Crédito incluido, y los de interés personal (INT×2 = ${personalPoints(ch)}) en cualquiera salvo Mitos de Cthulhu. Ninguna habilidad pasa de ${MAX_SKILL}.
@@ -545,6 +558,7 @@
     }));
     sheet.querySelectorAll('[data-char]').forEach(input => input.addEventListener('change', () => { current.chars[input.dataset.char] = Number(input.value) || 0; changed(); }));
     sheet.querySelectorAll('[data-num]').forEach(input => input.addEventListener('change', () => { current[input.dataset.num] = Number(input.value) || 0; changed(); }));
+    sheet.querySelectorAll('[data-cth-roll]').forEach(button => button.addEventListener('click', () => rollFromSheet(button.dataset.cthRoll)));
     sheet.querySelector('[data-roll-all]')?.addEventListener('click', rollAll);
     sheet.querySelector('[data-luck]').addEventListener('click', luck);
     sheet.querySelector('[data-edu]')?.addEventListener('click', eduChecks);
@@ -609,6 +623,7 @@
   }
   function close() {
     flushSave();
+    window.NEXO_DICE?.close();
     current = null;
     host.hidden = true;
     document.documentElement.classList.remove('nexo-cthulhu-open');

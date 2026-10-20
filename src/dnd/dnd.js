@@ -459,8 +459,30 @@
 
   // Vistas
   function frame(body, status = 'REINOS OLVIDADOS Y POR FORJAR') {
-    host.innerHTML = `<header class="dnd-top"><button class="dnd-brand" data-exit aria-label="Volver al selector de sistemas"><span class="dnd-seal">${window.NEXO_ICONS?.dnd || ''}</span><span><b>NEXO</b><small>DUNGEONS &amp; DRAGONS · 5.5</small></span></button><span class="dnd-status" data-save-status>${esc(status)}</span></header><main class="dnd-main"><div class="dnd-book"><span class="dnd-strap" aria-hidden="true"></span><div class="dnd-page">${body}</div></div></main><div class="dnd-flash" data-flash hidden role="status"></div>`;
+    host.innerHTML = `<header class="dnd-top"><button class="dnd-brand" data-exit aria-label="Volver al selector de sistemas"><span class="dnd-seal">${window.NEXO_ICONS?.dnd || ''}</span><span><b>NEXO</b><small>DUNGEONS &amp; DRAGONS · 5.5</small></span></button><span class="dnd-status" data-save-status>${esc(status)}</span><button class="nd-open" data-dice aria-label="Abrir los dados"><span aria-hidden="true">⚄</span><b>DADOS</b></button></header><main class="dnd-main"><div class="dnd-book"><span class="dnd-strap" aria-hidden="true"></span><div class="dnd-page">${body}</div></div></main><div class="dnd-flash" data-flash hidden role="status"></div>`;
     host.querySelectorAll('[data-exit]').forEach(button => button.addEventListener('click', close));
+    host.querySelector('[data-dice]').addEventListener('click', () => window.NEXO_DICE?.tray('dnd', { sources: diceSources }));
+  }
+
+  // Dados: pruebas de d20 con los modificadores de la ficha abierta.
+  function diceItems(ch) {
+    const pb = profBonus(ch);
+    const prof = proficientSkills(ch);
+    const saveProf = saveProficiencies(ch);
+    const items = [
+      ...ABILITIES.map(([k, name]) => ['ab:' + k, `Prueba de ${name}`, mod(ch, k)]),
+      ...ABILITIES.map(([k, name]) => ['sv:' + k, `Salvación de ${name}`, mod(ch, k) + (saveProf.includes(k) ? pb : 0)]),
+      ...ALL_SKILLS.map(k => ['sk:' + k, SKILLS[k][0], skillTotal(ch, k, prof)]),
+      ['init', 'Iniciativa', mod(ch, 'des') + (hasFeat(ch, 'alerta') ? pb : 0)]
+    ];
+    const cast = CLASSES[ch.cls]?.cast;
+    if (cast) items.push(['spell', 'Ataque de conjuro', pb + mod(ch, cast)]);
+    return items;
+  }
+  function diceSources() { return current ? [{ label: 'Tirada de la ficha', items: diceItems(current), show: signed }] : []; }
+  function rollFromSheet(key) {
+    const item = diceItems(current).find(([k]) => k === key);
+    if (item) window.NEXO_DICE?.roll('dnd', { mod: item[2], label: item[1], kind: key === 'spell' ? 'attack' : 'check' });
   }
 
   function describe(ch) {
@@ -579,7 +601,7 @@
     const cards = ABILITIES.map(([key, name]) => {
       const s = score(ch, key);
       const b = bonus(ch, key);
-      return `<div class="dnd-ability ${CLASSES[ch.cls]?.saves.includes(key) ? 'is-save' : ''}"><span class="dnd-ability-name">${name}</span><div class="dnd-ability-mod">${s == null ? '—' : signed(mod(ch, key))}</div><div class="dnd-ability-score">${s ?? '—'}${b ? `<i>+${b}</i>` : ''}</div><div class="dnd-ability-ctl">${abilityControl(ch, key)}</div></div>`;
+      return `<div class="dnd-ability ${CLASSES[ch.cls]?.saves.includes(key) ? 'is-save' : ''}"><span class="dnd-ability-name">${name}</span><div class="dnd-ability-mod">${s == null ? '—' : `<button class="nd-roll-btn" data-dnd-roll="ab:${key}" aria-label="Tirar prueba de ${name}">${signed(mod(ch, key))}</button>`}</div><div class="dnd-ability-score">${s ?? '—'}${b ? `<i>+${b}</i>` : ''}</div><div class="dnd-ability-ctl">${abilityControl(ch, key)}</div></div>`;
     }).join('');
     return `<section class="dnd-panel"><h2><span>III</span> Características</h2>
       <div class="dnd-method" role="tablist" aria-label="Método de generación">${methods.map(([k, l]) => `<button role="tab" aria-selected="${ch.method === k}" data-method="${k}">${l}</button>`).join('')}</div>
@@ -628,9 +650,9 @@
     const saveProf = saveProficiencies(ch);
     const saves = ABILITIES.map(([k, name]) => {
       const p = saveProf.includes(k);
-      return `<li class="${p ? 'is-prof' : ''}"><i></i><span>${name}</span><b>${signed(mod(ch, k) + (p ? pb : 0))}</b></li>`;
+      return `<li class="${p ? 'is-prof' : ''}"><i></i><span>${name}</span><button class="nd-roll-btn" data-dnd-roll="sv:${k}" aria-label="Tirar salvación de ${name}"><b>${signed(mod(ch, k) + (p ? pb : 0))}</b></button></li>`;
     }).join('');
-    const skills = ALL_SKILLS.map(k => `<li class="${prof.has(k) ? 'is-prof' : ''}"><i></i><span>${esc(SKILLS[k][0])} <small>${AB[SKILLS[k][1]].short}</small></span><b>${signed(skillTotal(ch, k, prof))}</b></li>`).join('');
+    const skills = ALL_SKILLS.map(k => `<li class="${prof.has(k) ? 'is-prof' : ''}"><i></i><span>${esc(SKILLS[k][0])} <small>${AB[SKILLS[k][1]].short}</small></span><button class="nd-roll-btn" data-dnd-roll="sk:${k}" aria-label="Tirar ${esc(SKILLS[k][0])}"><b>${signed(skillTotal(ch, k, prof))}</b></button></li>`).join('');
     const extra = unarmoredExtra(ch);
     const unarmored = extra ? `Defensa sin armadura: 10 + DES + ${AB[extra].short}.` : 'Sin armadura: 10 + DES.';
     return `<section class="dnd-panel"><h2><span>V</span> Hoja calculada <small>${esc(describe(ch))}</small></h2>
@@ -753,6 +775,7 @@
     sheet.querySelectorAll('[data-step]').forEach(button => button.addEventListener('click', () => stepBuy(button.dataset.step, Number(button.dataset.d))));
     sheet.querySelectorAll('[data-roll]').forEach(button => button.addEventListener('click', () => { current.base[button.dataset.roll] = roll4d6(); changed(); }));
     sheet.querySelector('[data-roll-all]')?.addEventListener('click', () => { ABILITIES.forEach(([k]) => { current.base[k] = roll4d6(); }); changed(); });
+    sheet.querySelectorAll('[data-dnd-roll]').forEach(button => button.addEventListener('click', () => rollFromSheet(button.dataset.dndRoll)));
     sheet.querySelectorAll('[data-pick]').forEach(button => button.addEventListener('click', () => togglePick(button.dataset.pick, button.dataset.skill)));
     sheet.querySelectorAll('[data-lang]').forEach(button => button.addEventListener('click', () => toggleLang(button.dataset.lang)));
     sheet.querySelectorAll('[data-levelup]').forEach(button => button.addEventListener('click', levelUp));
@@ -768,7 +791,8 @@
     }));
     sheet.querySelectorAll('[data-lvl-dice]').forEach(button => button.addEventListener('click', () => {
       const die = CLASSES[current.cls].die;
-      levelEntry(button.dataset.lvlDice).roll = (crypto.getRandomValues(new Uint32Array(1))[0] % die) + 1;
+      const shown = window.NEXO_DICE?.roll('dnd', { mode: 'damage', expr: `1d${die}`, label: `Puntos de golpe · nivel ${button.dataset.lvlDice}` });
+      levelEntry(button.dataset.lvlDice).roll = shown?.dice?.[0]?.value || (crypto.getRandomValues(new Uint32Array(1))[0] % die) + 1;
       changed();
     }));
     sheet.querySelectorAll('[data-lvl-mode]').forEach(select => select.addEventListener('change', () => {
@@ -820,6 +844,7 @@
   }
   function close() {
     flushSave();
+    window.NEXO_DICE?.close();
     current = null;
     host.hidden = true;
     document.documentElement.classList.remove('nexo-dnd-open');

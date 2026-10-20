@@ -245,8 +245,16 @@
 
   // Vistas
   function frame(body, status = 'VIDA ANTES QUE MUERTE') {
-    host.innerHTML = `<div class="tor-storm" aria-hidden="true"></div><header class="tor-top"><button class="tor-brand" data-exit aria-label="Volver a la mesa"><span class="tor-sphere">${window.NEXO_ICONS?.tormentas || ''}</span><span><b>NEXO</b><small>EL ARCHIVO DE LAS TORMENTAS</small></span></button><span class="tor-status" data-save-status>${esc(status)}</span></header><main class="tor-main">${body}</main><div class="tor-flash" data-flash hidden role="status"></div>`;
+    host.innerHTML = `<div class="tor-storm" aria-hidden="true"></div><header class="tor-top"><button class="tor-brand" data-exit aria-label="Volver a la mesa"><span class="tor-sphere">${window.NEXO_ICONS?.tormentas || ''}</span><span><b>NEXO</b><small>EL ARCHIVO DE LAS TORMENTAS</small></span></button><span class="tor-status" data-save-status>${esc(status)}</span><button class="nd-open" data-dice aria-label="Abrir los dados"><span aria-hidden="true">⚄</span><b>DADOS</b></button></header><main class="tor-main">${body}</main><div class="tor-flash" data-flash hidden role="status"></div>`;
     host.querySelectorAll('[data-exit]').forEach(button => button.addEventListener('click', close));
+    host.querySelector('[data-dice]').addEventListener('click', () => window.NEXO_DICE?.tray('tormentas', { sources: diceSources }));
+  }
+  // Dados: pruebas de habilidad con el modificador de la ficha (atributo + rango).
+  const diceItems = ch => Object.entries(SKILLS).map(([k, [n]]) => [k, n, skillMod(ch, k)]).sort((a, b) => a[1].localeCompare(b[1], 'es'));
+  function diceSources() { return current ? [{ label: 'Habilidad de la ficha', items: diceItems(current), show: signed }] : []; }
+  function rollSkill(key) {
+    const item = diceItems(current).find(([k]) => k === key);
+    if (item) window.NEXO_DICE?.roll('tormentas', { mod: item[2], label: item[1] });
   }
 
   function renderList() {
@@ -355,7 +363,7 @@
         const r = rank(ch, k);
         const fromPath = pathSkill(ch) === k;
         const pips = Array.from({ length: cap }, (_, i) => `<i class="${i < r ? (fromPath && i === 0 ? 'is-path' : 'is-on') : ''}"></i>`).join('');
-        return `<li class="${r ? 'is-ranked' : ''}"><span class="tor-skill-name">${esc(n)} <small>${AT[a].short}</small></span><span class="tor-pips" aria-label="Rango ${r}">${pips}</span><span class="tor-mini"><button data-rank="${k}" data-d="-1" aria-label="Quitar rango a ${esc(n)}" ${(ch.ranks[k] || 0) <= 0 ? 'disabled' : ''}>−</button><button data-rank="${k}" data-d="1" aria-label="Añadir rango a ${esc(n)}">+</button></span><b class="tor-skill-mod">${signed(skillMod(ch, k))}</b></li>`;
+        return `<li class="${r ? 'is-ranked' : ''}"><span class="tor-skill-name">${esc(n)} <small>${AT[a].short}</small></span><span class="tor-pips" aria-label="Rango ${r}">${pips}</span><span class="tor-mini"><button data-rank="${k}" data-d="-1" aria-label="Quitar rango a ${esc(n)}" ${(ch.ranks[k] || 0) <= 0 ? 'disabled' : ''}>−</button><button data-rank="${k}" data-d="1" aria-label="Añadir rango a ${esc(n)}">+</button></span><button class="nd-roll-btn tor-skill-mod" data-tor-roll="${k}" aria-label="Tirar ${esc(n)}"><b>${signed(skillMod(ch, k))}</b></button></li>`;
       }).join('');
       return `<div class="tor-col"><h3>${name}</h3><ul class="tor-skills">${rows}</ul></div>`;
     }).join('');
@@ -417,6 +425,7 @@
     sheet.querySelectorAll('[data-num]').forEach(input => input.addEventListener('change', () => { current[input.dataset.num] = Math.max(0, Math.trunc(Number(input.value)) || 0); changed(); }));
     sheet.querySelectorAll('[data-culture]').forEach(button => button.addEventListener('click', () => toggleCulture(button.dataset.culture)));
     sheet.querySelectorAll('[data-attr]').forEach(button => button.addEventListener('click', () => stepAttr(button.dataset.attr, Number(button.dataset.d))));
+    sheet.querySelectorAll('[data-tor-roll]').forEach(button => button.addEventListener('click', () => rollSkill(button.dataset.torRoll)));
     sheet.querySelectorAll('[data-rank]').forEach(button => button.addEventListener('click', () => stepRank(button.dataset.rank, Number(button.dataset.d))));
     const expertise = sheet.querySelector('[data-expertise]');
     expertise.addEventListener('input', () => { current.expertises = expertise.value; scheduleSave(); });
@@ -463,6 +472,7 @@
   }
   function close() {
     flushSave();
+    window.NEXO_DICE?.close();
     current = null;
     host.hidden = true;
     document.documentElement.classList.remove('nexo-tormentas-open');

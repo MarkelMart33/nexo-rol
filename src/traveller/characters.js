@@ -124,7 +124,7 @@
         <label class="field field-full"><span>ACTUALES</span><textarea data-cfield="vitals.current" placeholder="Daño, heridas o estado actual"></textarea></label>
       </div></section>
       <section class="character-sheet-section"><div class="panel-title"><div><span class="section-index">04 / DATOS DE HABILIDADES</span><h3>Habilidades</h3></div><div class="character-weeks"><span>SEMANAS</span><button type="button" data-week="-1" aria-label="Quitar una semana">−</button><output data-week-count>0</output><button type="button" data-week="1" aria-label="Añadir una semana">+</button></div></div>
-        <div class="character-skills-head"><span>HABILIDAD</span><span>ESPECIALIDAD</span><span>ATR.</span><span>NIVEL</span><span></span></div><div class="character-skills" data-skill-list></div><button class="small-action character-add-skill" type="button" data-add-skill>＋ AÑADIR HABILIDAD</button>
+        <div class="character-skills-head"><span>HABILIDAD</span><span>ESPECIALIDAD</span><span>ATR.</span><span>NIVEL</span><span></span><span></span></div><div class="character-skills" data-skill-list></div><button class="small-action character-add-skill" type="button" data-add-skill>＋ AÑADIR HABILIDAD</button>
       </section>
       <div class="character-editor-footer"><span data-character-save-status>CAMBIOS LOCALES</span><div><button type="button" class="cancel-button" data-back-to-characters>ATRÁS</button><button type="button" class="delete-character-button" data-delete-character ${savedDraft() ? '' : 'hidden'}>ELIMINAR</button><button type="button" class="confirm-button buy-confirm" data-save-character>GUARDAR</button></div></div>`;
   }
@@ -132,7 +132,19 @@
     const paired = args.at(-1) === true;
     const keys = paired ? args.slice(0, -1) : args;
     const valueField = key => `<label class="character-bio-slot"><small>${paired ? (key.endsWith('Initial') ? 'INICIAL' : 'ACTUAL') : 'VALOR'}</small><span class="character-score-control"><span class="character-score-steps"><button type="button" data-score-step="-1" aria-label="Restar uno a ${label.toLocaleLowerCase('es')} ${paired ? (key.endsWith('Initial') ? 'inicial' : 'actual') : ''}">−</button><button type="button" data-score-step="1" aria-label="Sumar uno a ${label.toLocaleLowerCase('es')} ${paired ? (key.endsWith('Initial') ? 'inicial' : 'actual') : ''}">+</button></span><span class="character-hex"><input type="number" min="0" max="99" data-score="${key}" data-cfield="biometrics.${key}" aria-label="${label} ${key}"><output data-modifier><span>—</span></output></span></span></label>`;
-    return `<div class="character-bio"><b>${shortName}<small>${label}</small></b><div>${keys.map(valueField).join('')}</div></div>`;
+    return `<div class="character-bio"><b>${shortName}<small>${label}</small><button type="button" class="character-char-roll" data-char-roll="${shortName}" aria-label="Tirar ${label.toLocaleLowerCase('es')}">⚄ TIRAR</button></b><div>${keys.map(valueField).join('')}</div></div>`;
+  }
+  // Prueba de Traveller desde la ficha: 2D + MD del atributo (valor actual si lo hay) + nivel de habilidad contra 8+.
+  const ATTRIBUTE_FIELDS = { FUE: ['strCurrent', 'strInitial'], DES: ['dexCurrent', 'dexInitial'], RES: ['endCurrent', 'endInitial'], INT: ['intelligence'], EDU: ['education'], CAR: ['charisma'], SOC: ['social'] };
+  function attributeDm(short) {
+    const raw = (ATTRIBUTE_FIELDS[short] || []).map(key => draft?.biometrics?.[key]).find(value => value !== undefined && value !== null && value !== '');
+    if (raw === undefined) return null;
+    return ranges.find(range => Number(raw) >= range.min && Number(raw) <= range.max)?.mod ?? null;
+  }
+  function rollTraveller(short, level, name) {
+    const dm = short ? attributeDm(short) : null;
+    const parts = [short && dm !== null ? `${short} ${dm >= 0 ? '+' : '−'}${Math.abs(dm)}` : '', level ? `nivel ${level}` : ''].filter(Boolean);
+    window.NEXO_DICE?.roll('traveller', { dm: (dm || 0) + level, target: 8, label: `${name}${parts.length ? ` (${parts.join(', ')})` : ''}` });
   }
   function setPath(object, path, value) {
     const keys = path.split('.');
@@ -158,7 +170,7 @@
     (draft.skills || []).forEach((skill, index) => {
       const row = document.createElement('div');
       row.className = 'character-skill-row';
-      row.innerHTML = `<input data-skill-field="name" aria-label="Nombre de habilidad" placeholder="Habilidad"><input data-skill-field="specialty" aria-label="Especialidad" placeholder="Especialidad"><select data-skill-field="attribute" aria-label="Atributo relacionado"><option value="">—</option><option>FUE</option><option>DES</option><option>RES</option><option>INT</option><option>EDU</option><option>CAR</option><option>SOC</option></select><span class="character-skill-level"><button type="button" data-skill-step="-1" aria-label="Bajar nivel">−</button><output></output><button type="button" data-skill-step="1" aria-label="Subir nivel">+</button></span><button type="button" class="character-remove-skill" data-remove-skill aria-label="Quitar habilidad">×</button>`;
+      row.innerHTML = `<input data-skill-field="name" aria-label="Nombre de habilidad" placeholder="Habilidad"><input data-skill-field="specialty" aria-label="Especialidad" placeholder="Especialidad"><select data-skill-field="attribute" aria-label="Atributo relacionado"><option value="">—</option><option>FUE</option><option>DES</option><option>RES</option><option>INT</option><option>EDU</option><option>CAR</option><option>SOC</option></select><span class="character-skill-level"><button type="button" data-skill-step="-1" aria-label="Bajar nivel">−</button><output></output><button type="button" data-skill-step="1" aria-label="Subir nivel">+</button></span><button type="button" class="character-skill-roll" data-skill-roll aria-label="Tirar esta habilidad" title="Tirar 2D + atributo + nivel">⚄</button><button type="button" class="character-remove-skill" data-remove-skill aria-label="Quitar habilidad">×</button>`;
       row.dataset.skillIndex = String(index);
       row.querySelector('[data-skill-field="name"]').value = skill.name || '';
       row.querySelector('[data-skill-field="specialty"]').value = skill.specialty || '';
@@ -287,6 +299,14 @@
       const skill = draft.skills[Number(row.dataset.skillIndex)];
       skill.level = Math.max(0, (Number(skill.level) || 0) + Number(step.dataset.skillStep));
       populateSkillRow(row); scheduleSave(); return;
+    }
+    const charRoll = event.target.closest('[data-char-roll]');
+    if (charRoll) { rollTraveller(charRoll.dataset.charRoll, 0, charRoll.getAttribute('aria-label').replace('Tirar ', '').toLocaleUpperCase('es')); return; }
+    const skillRoll = event.target.closest('[data-skill-roll]');
+    if (skillRoll) {
+      const skill = draft.skills[Number(skillRoll.closest('[data-skill-index]').dataset.skillIndex)];
+      rollTraveller(skill.attribute, Number(skill.level) || 0, [skill.name || 'Habilidad', skill.specialty].filter(Boolean).join(' · '));
+      return;
     }
     const removeSkill = event.target.closest('[data-remove-skill]');
     if (removeSkill) {
