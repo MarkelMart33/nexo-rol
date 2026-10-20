@@ -84,6 +84,8 @@
   let host = null;
   let store = load();
   let current = null;
+  // Cada ambientación es su propio apartado: 'v20' (noches modernas) o 'da' (Edad Oscura).
+  let side = 'v20';
   let dia = null;
   let exitHandler = null;
   let saveTimer = 0;
@@ -104,6 +106,8 @@
     ch.road = ROADS[ch.road] ? ch.road : 'humanidad';
     ch.attrs ||= {}; ch.abil ||= {}; ch.disc ||= {}; ch.bg ||= {}; ch.virt ||= {};
     ch.merits ||= [];
+    ch.attrPrio ||= { fisicos: 0, sociales: 1, mentales: 2 };
+    ch.abilPrio ||= { talentos: 0, tecnicas: 1, conocimientos: 2 };
     ch.diablerie = Array.isArray(ch.diablerie) ? ch.diablerie : [];
     ch.humF ||= 0; ch.wpF ||= 0; ch.humX ||= 0; ch.wpX ||= 0;
     if (!Array.isArray(ch.extraDisc)) ch.extraDisc = ch.clan === 'caitiff' ? Object.keys(ch.disc) : [];
@@ -329,22 +333,6 @@
     if (clan === 'nosferatu') ch.attrs.apariencia = { b: 0, f: 0, x: 0 };
     changed();
   }
-  function setEra(next) {
-    const ch = current;
-    ch.era = next;
-    if (!era(ch).clans[ch.clan]) ch.clan = 'brujah';
-    if (!era(ch).roads.includes(ch.road)) ch.road = 'humanidad';
-    ch.baseGen = era(ch).defaultGen;
-    // Las habilidades y trasfondos que no existen en la nueva ambientación se descartan para no cobrar puntos fantasma.
-    const abilKeys = new Set(era(ch).abilities.flatMap(g => g.traits.map(([k]) => k)));
-    const bgKeys = new Set(era(ch).backgrounds.map(([k]) => k));
-    Object.keys(ch.abil).forEach(key => { if (!abilKeys.has(key)) delete ch.abil[key]; });
-    Object.keys(ch.bg).forEach(key => { if (!bgKeys.has(key)) delete ch.bg[key]; });
-    const discKeys = new Set([...clanDiscKeys(ch), ...ch.extraDisc]);
-    Object.keys(ch.disc).forEach(key => { if (!discKeys.has(key)) delete ch.disc[key]; else if (!inClan(ch, key)) ch.disc[key].b = 0; });
-    renderEditor();
-    scheduleSave();
-  }
   function addDiscipline(key) {
     const ch = current;
     if (!key || shownDisciplines(ch).some(([k]) => k === key)) return;
@@ -392,19 +380,22 @@
 
   // Vistas
   function frame(body, status = 'MUNDO DE TINIEBLAS') {
-    host.innerHTML = `<header class="vtm-top"><button class="vtm-brand" data-exit aria-label="Volver al selector de sistemas"><span class="vtm-sigil">${window.NEXO_ICONS?.vampire || ''}</span><span><b>NEXO</b><small>VAMPIRO · LA MASCARADA</small></span></button><span class="vtm-status" data-save-status>${esc(status)}</span></header><main class="vtm-main">${body}</main><div class="vtm-flash" data-flash hidden role="status"></div>`;
+    host.innerHTML = `<header class="vtm-top"><button class="vtm-brand" data-exit aria-label="Volver al selector de sistemas"><span class="vtm-sigil">${window.NEXO_ICONS?.vampire || ''}</span><span><b>NEXO</b><small>${side === 'da' ? 'VAMPIRO · EDAD OSCURA' : 'VAMPIRO · NOCHES MODERNAS'}</small></span></button><span class="vtm-status" data-save-status>${esc(status)}</span></header><main class="vtm-main">${body}</main><div class="vtm-flash" data-flash hidden role="status"></div>`;
     host.querySelectorAll('[data-exit]').forEach(button => button.addEventListener('click', close));
   }
 
   function renderList() {
     flushSave();
     current = null;
-    const rows = store.characters;
+    const rows = store.characters.filter(ch => ch.era === side);
     const cards = rows.length ? rows.map(ch => {
       const done = isComplete(ch);
-      return `<button class="vtm-card" data-open="${esc(ch.id)}"><span class="vtm-card-sigil">${esc((ch.name || '?').trim().charAt(0).toUpperCase() || '?')}</span><span class="vtm-card-copy"><b>${esc(ch.name || 'Vástago sin nombre')}</b><small>${esc(clanOf(ch).name)} · ${generation(ch)}ª generación${ch.concept ? ' · ' + esc(ch.concept) : ''}</small><em class="vtm-era">${esc(era(ch).name)}</em></span><span class="vtm-badge ${done ? 'is-done' : ''}">${done ? 'COMPLETO' : 'EN CREACIÓN'}</span></button>`;
-    }).join('') : '<div class="vtm-empty"><span>☩</span><b>La noche aún está vacía</b><small>Abraza un nuevo vástago de las noches modernas o de la Edad Oscura.</small></div>';
-    frame(`<p class="vtm-kicker">NEXO / VAMPIRO: LA MASCARADA · 20º ANIVERSARIO</p><h1>Tus <em>vástagos</em></h1><p class="vtm-intro">Crea personajes con las reglas de V20 o de Edad Oscura V20: prioridades de atributos y habilidades, disciplinas, trasfondos, virtudes, puntos gratuitos y experiencia. Se guardan en este dispositivo.</p><div class="vtm-actions"><button class="vtm-button" data-new="v20">✚ NOCHES MODERNAS</button><button class="vtm-button" data-new="da">✚ EDAD OSCURA</button><button class="vtm-button ghost" data-exit>← VOLVER A SISTEMAS</button></div><div class="vtm-list">${cards}</div>`);
+      return `<button class="vtm-card" data-open="${esc(ch.id)}"><span class="vtm-card-sigil">${esc((ch.name || '?').trim().charAt(0).toUpperCase() || '?')}</span><span class="vtm-card-copy"><b>${esc(ch.name || 'Vástago sin nombre')}</b><small>${esc(clanOf(ch).name)} · ${generation(ch)}ª generación${ch.concept ? ' · ' + esc(ch.concept) : ''}</small></span><span class="vtm-badge ${done ? 'is-done' : ''}">${done ? 'COMPLETO' : 'EN CREACIÓN'}</span></button>`;
+    }).join('') : (side === 'da' ? '<div class="vtm-empty"><span>✠</span><b>El códice aún está en blanco</b><small>Escribe en él el nombre de tu primer Cainita.</small></div>' : '<div class="vtm-empty"><span>☩</span><b>La noche aún está vacía</b><small>Abraza a tu primer vástago de las noches modernas.</small></div>');
+    const intro = side === 'da'
+      ? `<p class="vtm-kicker">NEXO / VAMPIRO: EDAD OSCURA · 20º ANIVERSARIO</p><h1>Crónicas de los <em>Cainitas</em></h1><p class="vtm-intro">Anno Domini MCCXLII. Crea a tus Cainitas con las reglas de Edad Oscura V20: sus clanes, sus sendas, sus habilidades y trasfondos, puntos gratuitos y experiencia.</p><div class="vtm-actions"><button class="vtm-button" data-new="da">✚ ESCRIBIR UN NUEVO CAINITA</button><button class="vtm-button ghost" data-exit>← VOLVER A LA MESA</button></div>`
+      : `<p class="vtm-kicker">NEXO / VAMPIRO: LA MASCARADA · 20º ANIVERSARIO</p><h1>Tus <em>vástagos</em></h1><p class="vtm-intro">Crea personajes de las noches modernas con las reglas de V20: prioridades de atributos y habilidades, disciplinas, trasfondos, virtudes, puntos gratuitos y experiencia.</p><div class="vtm-actions"><button class="vtm-button" data-new="v20">✚ ABRAZAR UN NUEVO VÁSTAGO</button><button class="vtm-button ghost" data-exit>← VOLVER A LA MESA</button></div>`;
+    frame(`${intro}<div class="vtm-list">${cards}</div>`);
     host.querySelectorAll('[data-new]').forEach(button => button.addEventListener('click', () => openEditor(newCharacter(button.dataset.new))));
     host.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
       const ch = store.characters.find(item => item.id === button.dataset.open);
@@ -434,7 +425,7 @@
     const options = (entries, selected) => entries.map(([key, label]) => `<option value="${key}" ${key === selected ? 'selected' : ''}>${esc(label)}</option>`).join('');
     const clanOptions = options(Object.entries(e.clans).map(([key, clan]) => [key, clan.name]), ch.clan);
     const roadOptions = options(e.roads.map(key => [key, ROADS[key].name]), ch.road);
-    frame(`<div class="vtm-editor-head"><button class="vtm-button ghost" data-back>← TUS VÁSTAGOS</button><span class="vtm-era-tag">${esc(e.name)}</span><button class="vtm-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
+    frame(`<div class="vtm-editor-head"><button class="vtm-button ghost" data-back>← ${side === 'da' ? 'TUS CAINITAS' : 'TUS VÁSTAGOS'}</button><span class="vtm-era-tag">${esc(e.name)}</span><button class="vtm-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
       <section class="vtm-panel"><h2><span>I</span> Concepto</h2><div class="vtm-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del vástago' })}${field('Jugador', 'player')}${field('Crónica', 'chronicle')}
         ${field('Concepto', 'concept', { placeholder: ch.era === 'da' ? 'Ej.: Caballero desheredado' : 'Ej.: Detective caído en desgracia' })}${field('Naturaleza', 'nature', { list: 'vtmArchetypes' })}${field('Conducta', 'demeanor', { list: 'vtmArchetypes' })}
@@ -442,7 +433,6 @@
         ${e.roads.length > 1 ? `<label class="vtm-field"><span>Senda</span><select data-road>${roadOptions}</select></label>` : ''}
       </div><datalist id="vtmArchetypes">${ARCHETYPES.map(a => `<option value="${esc(a)}">`).join('')}</datalist><datalist id="vtmSects">${e.sects.map(s => `<option value="${esc(s)}">`).join('')}</datalist><p class="vtm-weak" data-weakness></p></section>
       <section class="vtm-panel"><h2><span>II</span> Reglas de creación</h2><div class="vtm-fields">
-        <label class="vtm-field"><span>Ambientación</span><select data-era>${options(Object.entries(ERAS).map(([key, item]) => [key, item.name]), ch.era)}</select></label>
         <label class="vtm-field"><span>Generación base</span><select data-basegen>${options([['13', '13ª generación'], ['12', '12ª generación']], String(ch.baseGen))}</select></label>
         ${numberField('Puntos gratuitos', 'freebies', 99)}${numberField('PX iniciales', 'xpStart', 9999)}
       </div><p class="vtm-note">V20 parte de la 13ª generación y Edad Oscura de la 12ª; el trasfondo Generación baja desde ahí. Por defecto hay ${DEFAULT_FREEBIES} puntos gratuitos y 0 PX, pero tu Narrador puede dar otros valores.</p></section>
@@ -463,7 +453,6 @@
     }));
     host.querySelector('[data-clan]').addEventListener('change', event => setClan(event.target.value));
     host.querySelector('[data-road]')?.addEventListener('change', event => { current.road = event.target.value; changed(); });
-    host.querySelector('[data-era]').addEventListener('change', event => setEra(event.target.value));
     host.querySelector('[data-basegen]').addEventListener('change', event => { current.baseGen = Number(event.target.value); changed(); });
     const modal = host.querySelector('[data-modal]');
     host.querySelector('[data-delete]').addEventListener('click', () => { modal.hidden = false; host.querySelector('[data-cancel]').focus(); });
@@ -742,11 +731,11 @@
     if (host) return;
     const fonts = document.createElement('link');
     fonts.rel = 'stylesheet';
-    fonts.href = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=EB+Garamond:wght@400;600&display=swap';
+    fonts.href = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=EB+Garamond:wght@400;600&family=IM+Fell+English:ital@0;1&family=UnifrakturMaguntia&display=swap';
     document.head.append(fonts);
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/vampiro/vampire.css?v=4';
+    stylesheet.href = './src/vampiro/vampire.css?v=5';
     document.head.append(stylesheet);
     host = document.createElement('section');
     host.id = 'nexoVampire';
@@ -763,8 +752,11 @@
     ensureHost();
     exitHandler = options.onExit || null;
     store = load();
-    renderList();
     const requested = options.characterId && store.characters.find(ch => ch.id === options.characterId);
+    side = requested ? requested.era : options.era === 'da' ? 'da' : 'v20';
+    host.classList.toggle('vtm-da', side === 'da');
+    host.setAttribute('aria-label', side === 'da' ? 'NEXO Vampiro: Edad Oscura' : 'NEXO Vampiro: La Mascarada');
+    renderList();
     if (requested) openEditor(requested);
     host.hidden = false;
     pullFromCloud();
@@ -781,6 +773,15 @@
 
   // Resumen de las fichas para el perfil.
   const list = () => load().characters.map(ch => ({ id: ch.id, name: ch.name, summary: `${clanOf(ch).name} · ${era(ch).name}` }));
+
+  // El manuscrito de Edad Oscura vive en la mesa del selector: sus estilos se cargan desde el inicio.
+  const tableStyles = document.createElement('link');
+  tableStyles.rel = 'stylesheet';
+  tableStyles.href = './src/vampiro/vampire-mesa.css?v=1';
+  const tableFonts = document.createElement('link');
+  tableFonts.rel = 'stylesheet';
+  tableFonts.href = 'https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=UnifrakturMaguntia&display=swap';
+  document.head.append(tableFonts, tableStyles);
 
   window.NEXO_VAMPIRE = { open, close, list };
 })();

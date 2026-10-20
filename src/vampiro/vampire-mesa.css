@@ -1,0 +1,20 @@
+/* Manuscrito de Vampiro: Edad Oscura sobre la mesa del selector, junto al móvil de las noches modernas. */
+@media(min-width:861px){.nexo-systems .mesa-objects{grid-template-columns:repeat(4,auto);gap:28px}}
+.codex{position:relative;display:block;width:214px;height:296px}
+.codex-page{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding:30px 22px 22px;border-radius:3px 6px 4px 8px;color:#3b2412;text-align:center;overflow:hidden;
+  background:
+    radial-gradient(ellipse at 18% 12%,#fff5d855,transparent 45%),
+    radial-gradient(ellipse at 85% 92%,#8a5a2a55,transparent 50%),
+    radial-gradient(ellipse at 50% 50%,transparent 60%,#7a4e2466 100%),
+    linear-gradient(170deg,#ecdcb2,#dcc48f 60%,#cfb27a);
+  box-shadow:inset 0 0 0 8px #e9d6a600,inset 0 0 30px #7a4e2455;clip-path:polygon(0 1%,4% 0,30% 1.2%,62% 0,96% .8%,100% 3%,99.4% 40%,100% 78%,98.6% 100%,62% 99.2%,30% 100%,2% 99%,0 70%,.8% 34%)}
+.codex-page:before{content:'';position:absolute;inset:12px;border:1px solid #8a1a1a88;outline:1px solid #8a1a1a44;outline-offset:3px;pointer-events:none}
+.codex-cap{display:grid;place-items:center;width:58px;height:58px;margin-bottom:12px;border:2px solid #9c7a2c;background:radial-gradient(circle,#8e1414,#5a0909);color:#f1d27a;font:400 40px/1 'UnifrakturMaguntia','IM Fell English',Georgia,serif;box-shadow:inset 0 0 0 3px #5a0909,inset 0 0 0 4px #c9a24a}
+.codex-page b{font:400 30px/1.05 'UnifrakturMaguntia','IM Fell English',Georgia,serif;color:#7d0f0f;letter-spacing:.01em}
+.codex-page small{margin-top:6px;font:italic 14px 'IM Fell English',Georgia,serif;color:#5b3a1c}
+.codex-lines{flex:1;width:100%;margin-top:14px;background:repeating-linear-gradient(transparent 0 9px,#5b3a1c40 9px 10px);-webkit-mask:linear-gradient(90deg,#000 0 82%,transparent 82% 86%,#000 86%);mask:linear-gradient(90deg,#000 0 82%,transparent 82% 86%,#000 86%);opacity:.9}
+.codex-seal{position:absolute;right:-10px;bottom:34px;width:58px;height:58px;padding:13px;border-radius:47% 53% 50% 50%/52% 48% 52% 48%;background:radial-gradient(circle at 38% 32%,#c0242b,#7a0b12 70%);color:#f3c9b8;box-shadow:0 4px 6px #0008,inset 0 -3px 6px #3d0306,inset 0 2px 3px #ff8f8f66;transition:transform .45s cubic-bezier(.3,1.6,.5,1),filter .45s}
+.codex-seal svg{width:100%;height:100%;display:block}
+.codex-ribbon{position:absolute;left:36px;bottom:-26px;width:16px;height:46px;background:linear-gradient(90deg,#5c0a0e,#8e1418,#5c0a0e);clip-path:polygon(0 0,100% 0,100% 100%,50% 82%,0 100%)}
+.obj-codex:hover .codex-seal,.obj-codex:focus-visible .codex-seal{transform:rotate(-14deg) scale(1.08);filter:drop-shadow(0 0 10px #e0213f88)}
+.obj-codex:hover .codex-page,.obj-codex:focus-visible .codex-page{filter:brightness(1.06)}
