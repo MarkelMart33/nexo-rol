@@ -15,7 +15,7 @@
     hub.hidden = true;
     hub.setAttribute('aria-label', 'Selector de sistemas NEXO');
     document.body.append(hub);
-    const labels = { dnd: 'NEXO D&D', vampire: 'NEXO VAMPIRO', tormentas: 'NEXO TORMENTAS' };
+    const labels = { dnd: 'NEXO D&D', vampire: 'NEXO VAMPIRO', tormentas: 'NEXO TORMENTAS', cthulhu: 'NEXO CTHULHU' };
 
     // El botón «atrás» del navegador vuelve a la mesa en lugar de salir de NEXO.
     const away = () => { if (history.state?.nexo !== 'away') history.pushState({ nexo: 'away' }, ''); };
@@ -25,6 +25,7 @@
       if (root.contains('nexo-vampire-open')) window.NEXO_VAMPIRE?.close();
       else if (root.contains('nexo-dnd-open')) window.NEXO_DND?.close();
       else if (root.contains('nexo-tormentas-open')) window.NEXO_TORMENTAS?.close();
+      else if (root.contains('nexo-cthulhu-open')) window.NEXO_CTHULHU?.close();
       else if (document.querySelector('.nexo-profile:not([hidden])')) window.NEXO_PROFILE?.close();
       else if (hub.hidden && document.getElementById('authGate')?.hidden !== false) openHub();
     });
@@ -78,6 +79,11 @@
                 <span class="reed-msg">Se acerca una alta tormenta.<br>¿Pronunciarás las palabras?</span></span>
                 <span class="reed-pen" aria-hidden="true"><i></i></span><span class="reed-gem" aria-hidden="true"></span></span>
             </button>
+            <button class="obj obj-file" data-system="cthulhu" style="--rest:6deg;--d:.8s" aria-label="Abrir La llamada de Cthulhu">
+              <span class="file"><span class="file-photo" aria-hidden="true"><i>${icons.cthulhu || ''}</i></span><span class="file-clip" aria-hidden="true"></span>
+                <span class="file-cover"><span class="file-tab">EXP. 1925-03</span><span class="file-label"><b>La llamada<br>de Cthulhu</b><small>Arkham · Massachusetts</small></span>
+                  <span class="file-emblem" aria-hidden="true">${icons.cthulhu || ''}</span><span class="file-note">No lo leas<br>en voz alta.</span><span class="file-stamp">ARCHIVADO</span></span></span>
+            </button>
           </div>
           <div class="mesa-props" aria-hidden="true"><span class="die die-a"><i></i><i></i><i></i><i></i><i></i></span><span class="die die-b"><i></i><i></i><i></i></span><span class="mesa-ring"></span></div>
         </div>`;
@@ -90,7 +96,8 @@
           dnd: () => window.NEXO_DND ? window.NEXO_DND.open({ onExit: openHub }) : render('dnd'),
           vampire: () => window.NEXO_VAMPIRE ? window.NEXO_VAMPIRE.open({ era: 'v20', onExit: openHub }) : render('vampire'),
           'vampire-da': () => window.NEXO_VAMPIRE ? window.NEXO_VAMPIRE.open({ era: 'da', onExit: openHub }) : render('vampire'),
-          tormentas: () => window.NEXO_TORMENTAS ? window.NEXO_TORMENTAS.open({ onExit: openHub }) : render('tormentas')
+          tormentas: () => window.NEXO_TORMENTAS ? window.NEXO_TORMENTAS.open({ onExit: openHub }) : render('tormentas'),
+          cthulhu: () => window.NEXO_CTHULHU ? window.NEXO_CTHULHU.open({ onExit: openHub }) : render('cthulhu')
         };
         // Al elegir, el objeto se acerca a la cámara antes de abrir su sistema.
         hub.querySelectorAll('[data-system]').forEach(button => button.addEventListener('click', () => {

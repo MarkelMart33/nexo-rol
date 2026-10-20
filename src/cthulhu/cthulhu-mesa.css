@@ -1,0 +1,22 @@
+/* Expediente de La llamada de Cthulhu sobre la mesa: carpeta de cartón, sello rojo y una fotografía que asoma. */
+.file{position:relative;display:block;width:236px;height:316px}
+.file-photo{position:absolute;top:26px;right:-10px;width:118px;height:132px;padding:7px 7px 22px;background:#f1ead8;box-shadow:0 4px 8px #0007;transform:rotate(9deg);transition:transform .55s cubic-bezier(.3,1.3,.5,1)}
+.file-photo i{display:grid;place-items:center;width:100%;height:100%;background:radial-gradient(ellipse at 50% 40%,#6e6250,#2c261d 80%);color:#d6c9a6;filter:sepia(.6)}
+.file-photo i svg{width:54px;height:54px;opacity:.85}
+.file-photo:after{content:'¿R\'lyeh?';position:absolute;left:8px;bottom:3px;font:400 12px var(--hand);color:#4a3a28}
+.file-cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:flex-start;padding:30px 18px 18px;border-radius:0 6px 6px 6px;background:radial-gradient(ellipse at 30% 20%,#dcc48e,#c3a66a 70%,#b0915a);color:#3a2c1a;box-shadow:inset 0 0 0 1px #8f7344,inset 0 0 26px #7a5c2c55}
+.file-cover:before{content:'';position:absolute;inset:9px 9px 9px 9px;border:1px dashed #7a5c2c66;border-radius:2px;pointer-events:none}
+.file-tab{position:absolute;left:0;top:-17px;padding:3px 14px 2px;border-radius:5px 5px 0 0;background:#d3b97f;box-shadow:inset 0 1px 0 #ead6a4;font:400 11px 'Courier New',Courier,monospace;letter-spacing:.12em;color:#5a4527}
+.file-label{display:block;padding:8px 10px 9px;background:#f1e9d4;box-shadow:0 1px 2px #0003;transform:rotate(-1.5deg)}
+.file-label b{display:block;font:400 22px/1.05 var(--fell);color:#1e2a26;letter-spacing:.02em}
+.file-label small{display:block;margin-top:4px;font:400 11px 'Courier New',Courier,monospace;letter-spacing:.08em;color:#6b5d47}
+.file-emblem{width:58px;height:58px;margin:22px 0 0 14px;color:#2f4a40;opacity:.8;transition:color .4s,filter .4s,opacity .4s}
+.file-emblem svg{width:100%;height:100%}
+.file-stamp{position:absolute;right:14px;bottom:26px;padding:3px 9px;border:3px double #9c2a1c;border-radius:3px;color:#9c2a1c;font:700 14px 'Courier New',Courier,monospace;letter-spacing:.14em;transform:rotate(-13deg);opacity:.82;mix-blend-mode:multiply}
+.file-note{position:absolute;left:18px;bottom:20px;max-width:118px;font:400 14px/1.25 var(--hand);color:#3c2f1d;transform:rotate(-3deg)}
+.file-clip{position:absolute;z-index:2;top:16px;right:46px;width:16px;height:46px;border:2.5px solid #9aa0a3;border-radius:8px;border-bottom-color:transparent;transform:rotate(9deg);transition:transform .55s cubic-bezier(.3,1.3,.5,1)}
+.obj-file:hover .file-photo,.obj-file:focus-visible .file-photo{transform:translate(26px,-22px) rotate(14deg)}
+.obj-file:hover .file-clip,.obj-file:focus-visible .file-clip{transform:translate(20px,-18px) rotate(14deg)}
+.obj-file:hover .file-emblem,.obj-file:focus-visible .file-emblem{color:#3fbf86;opacity:1;filter:drop-shadow(0 0 8px #7fd1a8cc);animation:file-throb 1.6s ease-in-out infinite}
+@keyframes file-throb{50%{filter:drop-shadow(0 0 16px #7fd1a8)}}
+@media(prefers-reduced-motion:reduce){.file *{animation:none!important;transition:none!important}}
