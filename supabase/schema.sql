@@ -41,14 +41,18 @@ $$;
 drop trigger if exists campaigns_set_updated_at on public.campaigns;
 create trigger campaigns_set_updated_at before update on public.campaigns for each row execute function public.set_campaign_updated_at();
 
--- NEXO character games (Vampiro, D&D): one private save per owner and game.
+-- NEXO character games (Vampiro, D&D, Tormentas): one private save per owner and game.
 create table if not exists public.game_saves (
   owner_id uuid not null references auth.users (id) on delete cascade,
-  game text not null check (game in ('vampiro', 'dnd')),
+  game text not null check (game in ('vampiro', 'dnd', 'tormentas')),
   data jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now(),
   primary key (owner_id, game)
 );
+
+-- Existing projects: widen the list of games (safe to run again).
+alter table public.game_saves drop constraint if exists game_saves_game_check;
+alter table public.game_saves add constraint game_saves_game_check check (game in ('vampiro', 'dnd', 'tormentas'));
 
 alter table public.game_saves enable row level security;
 
