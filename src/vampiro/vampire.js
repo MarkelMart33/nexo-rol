@@ -764,6 +764,8 @@
     exitHandler = options.onExit || null;
     store = load();
     renderList();
+    const requested = options.characterId && store.characters.find(ch => ch.id === options.characterId);
+    if (requested) openEditor(requested);
     host.hidden = false;
     pullFromCloud();
     document.documentElement.classList.add('nexo-vampire-open');
@@ -777,5 +779,8 @@
   }
   window.addEventListener('pagehide', flushSave);
 
-  window.NEXO_VAMPIRE = { open, close };
+  // Resumen de las fichas para el perfil.
+  const list = () => load().characters.map(ch => ({ id: ch.id, name: ch.name, summary: `${clanOf(ch).name} · ${era(ch).name}` }));
+
+  window.NEXO_VAMPIRE = { open, close, list };
 })();

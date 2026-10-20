@@ -13,7 +13,7 @@ Terminal multiverso para NEXO, con el módulo Traveller como sistema disponible.
 ## Estructura del proyecto
 
 - `index.html`, `sw.js` y `manifest.webmanifest` quedan en la raíz: son la página de entrada, el servicio offline y el manifiesto de instalación, y necesitan estar ahí para que la app funcione e instale bien.
-- `src/nexo/`: terminal multisistema (selector de sistemas de rol).
+- `src/nexo/`: terminal multisistema (selector de sistemas de rol), perfil y sincronización en la nube.
 - `src/traveller/`: apartado Traveller (aplicación principal, índice del manual, visor PDF, hangar, personajes y estilos generales).
 - `src/vampiro/`: apartado Vampiro: La Mascarada.
 - `src/dnd/`: apartado Dungeons & Dragons 5.5 y sus datos de progresión.
@@ -40,6 +40,10 @@ La ficha incluye un apartado de diablerie (Amaranto en Edad Oscura) con explicac
 ## Dungeons & Dragons 5.5
 
 El apartado D&D tiene estética medieval propia en tonos cálidos (ámbar, dorado y grises) y un creador de personajes basado en el Manual del Jugador de 2024: 12 clases, 10 especies (con su linaje y tamaño cuando corresponde) y 16 trasfondos. Las características se generan con matriz estándar (15, 14, 13, 12, 10, 8), compra de 27 puntos (de 8 a 15) o tiradas de 4d6 descartando el dado más bajo; el trasfondo aplica su mejora de +2/+1 o +1/+1/+1 a sus tres características, con un máximo de 20. Se eligen las habilidades de la clase, las de la especie (elfo y humano) y las de la dote Habilidoso, además de dos idiomas junto al Común; la dote de origen la da el trasfondo y el humano elige otra. NEXO calcula modificadores, bonificador de competencia, puntos de golpe por nivel (incluidos enano y Duro), CA sin armadura, iniciativa (con Alerta), percepción pasiva, salvaciones, habilidades y CD y ataque de conjuros, y muestra las elecciones pendientes. Con «Subir de nivel» el personaje avanza del nivel 1 al 20: en cada nivel se elige entre la media del dado de golpe o una tirada, a nivel 3 se elige subclase y en los niveles de Mejora de característica (y el Don épico a nivel 19) se reparte el +2/+1+1 o se anota una dote. El apartado muestra los rasgos de las 12 clases y sus 48 subclases del Manual de 2024, cada uno con una breve explicación narrativa y otra mecánica (`src/dnd/dnd-progresion.js`), y calcula recursos por nivel: furias, ataque furtivo, puntos de concentración y de hechicería, canalizar divinidad, ataques por acción y espacios de conjuro. Las fichas se guardan en este dispositivo (`localStorage`, clave `nexo-dnd-v1`) y, con cuenta, también en la nube.
+
+## Perfil
+
+El botón «Perfil» del selector de sistemas abre `src/nexo/profile.js`. Con cuenta muestra el correo y permite guardar un nombre visible, cambiar la contraseña y cerrar sesión; sin cuenta ofrece iniciar sesión o crear una. También lista las campañas de Traveller y los personajes de Vampiro y D&D, y cada uno se abre directamente desde ahí; al salir del personaje se vuelve al perfil.
 
 ## Cuentas personales y sincronización
 
