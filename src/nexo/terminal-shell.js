@@ -6,7 +6,7 @@
     stylesheet.href = './src/nexo/terminal-shell.css?v=1';
     const table = document.createElement('link');
     table.rel = 'stylesheet';
-    table.href = './src/nexo/mesa.css?v=2';
+    table.href = './src/nexo/mesa.css?v=3';
     document.head.append(stylesheet, table);
 
     const hub = document.createElement('section');
@@ -17,7 +17,19 @@
     document.body.append(hub);
     const labels = { dnd: 'NEXO D&D', vampire: 'NEXO VAMPIRO' };
 
+    // El botón «atrás» del navegador vuelve a la mesa en lugar de salir de NEXO.
+    const away = () => { if (history.state?.nexo !== 'away') history.pushState({ nexo: 'away' }, ''); };
+    window.NEXO_NAV = { away };
+    window.addEventListener('popstate', () => {
+      const root = document.documentElement.classList;
+      if (root.contains('nexo-vampire-open')) window.NEXO_VAMPIRE?.close();
+      else if (root.contains('nexo-dnd-open')) window.NEXO_DND?.close();
+      else if (document.querySelector('.nexo-profile:not([hidden])')) window.NEXO_PROFILE?.close();
+      else if (hub.hidden && document.getElementById('authGate')?.hidden !== false) openHub();
+    });
+
     function openHub() {
+      if (history.state?.nexo === 'away') history.back();
       render('home');
       hub.hidden = false;
       document.documentElement.classList.remove('nexo-system-selected');
@@ -60,6 +72,7 @@
           <div class="mesa-props" aria-hidden="true"><span class="die die-a"><i></i><i></i><i></i><i></i><i></i></span><span class="die die-b"><i></i><i></i><i></i></span><span class="mesa-ring"></span></div>
         </div>`;
         hub.querySelector('[data-profile]').addEventListener('click', () => {
+          away();
           if (window.NEXO_PROFILE) window.NEXO_PROFILE.open({ onExit: openHub });
         });
         const launch = {
@@ -70,6 +83,7 @@
         // Al elegir, el objeto se acerca a la cámara antes de abrir su sistema.
         hub.querySelectorAll('[data-system]').forEach(button => button.addEventListener('click', () => {
           if (hub.querySelector('.obj.is-picked')) return;
+          away();
           if (matchMedia('(prefers-reduced-motion: reduce)').matches) { launch[button.dataset.system](); return; }
           button.classList.add('is-picked');
           hub.querySelector('.mesa').classList.add('is-picking');
@@ -96,15 +110,23 @@
     render();
     // Actualiza el estado de la cuenta y las iniciales del perfil al iniciar sesión.
     document.addEventListener('nexo:account-ready', () => render());
-    let initialHubShown = false;
-    const showHub = () => {
-      // Espera a que se cierre la pantalla de cuenta para no taparla.
-      if (initialHubShown || document.getElementById('introScreen') || document.getElementById('authGate')?.hidden === false) return;
-      initialHubShown = true;
-      hub.hidden = false;
-    };
-    new MutationObserver(showHub).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
-    window.setTimeout(showHub, 2400);
+    // La mesa está lista bajo la pantalla de carga, así que nunca asoma el listado de Traveller.
+    // La pantalla de cuenta queda por encima y, al cerrarse, deja ver la mesa.
+    hub.hidden = false;
+    // Los objetos esperan a que se desvanezca la carga para caer sobre la mesa.
+    const intro = document.getElementById('introScreen');
+    if (intro) {
+      hub.style.setProperty('--intro-wait', '1.75s');
+      new MutationObserver((_, observer) => {
+        if (intro.isConnected) return;
+        observer.disconnect();
+        setTimeout(() => hub.style.removeProperty('--intro-wait'), 1500);
+      }).observe(document.body, { childList: true });
+    }
+    const authGate = document.getElementById('authGate');
+    if (authGate) new MutationObserver(([change]) => {
+      if (change.oldValue === null && authGate.hidden) openHub();
+    }).observe(authGate, { attributes: true, attributeFilter: ['hidden'], attributeOldValue: true });
 
     const homeBrand = document.getElementById('nexoHome');
     if (homeBrand) {

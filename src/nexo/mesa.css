@@ -8,7 +8,7 @@
 
 /* Nota escrita a mano y etiqueta de cuero del perfil */
 .mesa-head{position:relative;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
-.mesa-note{position:relative;max-width:420px;padding:26px 30px 22px;background:linear-gradient(#f3e7cb,#e8d8b4);color:var(--ink);transform:rotate(-2deg);box-shadow:0 1px 0 #fff8 inset,0 14px 24px -10px #000c,0 3px 6px #0006;background-image:repeating-linear-gradient(transparent 0 27px,#b8a07a55 27px 28px),linear-gradient(#f3e7cb,#e8d8b4);animation:mesa-drop .7s cubic-bezier(.2,.9,.3,1.2) backwards}
+.mesa-note{position:relative;max-width:420px;padding:26px 30px 22px;background:linear-gradient(#f3e7cb,#e8d8b4);color:var(--ink);transform:rotate(-2deg);box-shadow:0 1px 0 #fff8 inset,0 14px 24px -10px #000c,0 3px 6px #0006;background-image:repeating-linear-gradient(transparent 0 27px,#b8a07a55 27px 28px),linear-gradient(#f3e7cb,#e8d8b4);animation:mesa-drop .7s cubic-bezier(.2,.9,.3,1.2) var(--intro-wait,0s) backwards}
 .mesa-note h1{margin:0;font:700 clamp(28px,4vw,40px)/1.05 var(--hand);letter-spacing:-.01em;color:#2f1f12}
 .mesa-note p{margin:10px 0 0;font:400 19px var(--hand);color:#6b5236}
 .mesa-tape{position:absolute;top:-12px;left:50%;width:92px;height:26px;transform:translateX(-50%) rotate(3deg);background:#e9dfc7b8;box-shadow:0 1px 3px #0003;clip-path:polygon(3% 0,97% 4%,100% 100%,0 94%)}
@@ -21,7 +21,7 @@
 
 /* Objetos sobre la mesa */
 .mesa-objects{position:relative;z-index:1;flex:1;display:grid;grid-template-columns:repeat(3,auto);justify-content:space-evenly;align-items:center;gap:36px;padding:48px 0 24px}
-.obj{--rest:0deg;--r:var(--rest);--d:0s;--lift:0px;position:relative;padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer;transform:translate(calc(var(--px)*-14px),calc(var(--py)*-10px + var(--lift))) rotate(var(--r));transition:transform .45s cubic-bezier(.2,.9,.3,1.15),filter .45s;filter:drop-shadow(0 18px 14px #0009) drop-shadow(0 4px 3px #0007);animation:mesa-place .9s cubic-bezier(.2,.9,.3,1.1) var(--d) backwards}
+.obj{--rest:0deg;--r:var(--rest);--d:0s;--lift:0px;position:relative;padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer;transform:translate(calc(var(--px)*-14px),calc(var(--py)*-10px + var(--lift))) rotate(var(--r));transition:transform .45s cubic-bezier(.2,.9,.3,1.15),filter .45s;filter:drop-shadow(0 18px 14px #0009) drop-shadow(0 4px 3px #0007);animation:mesa-place .9s cubic-bezier(.2,.9,.3,1.1) calc(var(--d) + var(--intro-wait,0s)) backwards}
 .obj:hover,.obj:focus-visible{--lift:-16px;--r:0deg;filter:drop-shadow(0 34px 26px #000a) drop-shadow(0 8px 6px #0006)}
 .obj:focus-visible{outline:2px dashed var(--lamp);outline-offset:14px}
 @keyframes mesa-place{from{opacity:0;transform:translate(0,90px) rotate(calc(var(--r) - 14deg)) scale(1.06)}}
