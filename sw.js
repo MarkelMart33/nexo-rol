@@ -1,6 +1,6 @@
-const CACHE = 'nexo-static-v57';
+const CACHE = 'nexo-static-v58';
 const FILES = [
-  './', './index.html', './src/traveller/styles.css?v=52', './src/traveller/app.js?v=50', './src/traveller/traveller-index.js?v=38', './src/traveller/traveller-pdf.js?v=38', './src/traveller/hangar.js?v=38', './src/traveller/characters.js?v=2', './src/vampiro/vampire.js?v=3', './src/vampiro/vampire.css?v=3', './src/dnd/dnd-progresion.js?v=1', './src/dnd/dnd.js?v=3', './src/dnd/dnd.css?v=3', './src/nexo/terminal-shell.js?v=41', './src/nexo/terminal-shell.css?v=1', './manifest.webmanifest', './assets/fondos/nexo-bridge-background.jpg', './assets/fondos/nexo-home-planet.jpg',
+  './', './index.html', './src/traveller/styles.css?v=52', './supabase/cloud-config.js?v=2', './src/nexo/cloud-sync.js?v=1', './src/traveller/app.js?v=51', './src/traveller/traveller-index.js?v=38', './src/traveller/traveller-pdf.js?v=38', './src/traveller/hangar.js?v=38', './src/traveller/characters.js?v=2', './src/vampiro/vampire.js?v=4', './src/vampiro/vampire.css?v=3', './src/dnd/dnd-progresion.js?v=1', './src/dnd/dnd.js?v=4', './src/dnd/dnd.css?v=3', './src/nexo/terminal-shell.js?v=42', './src/nexo/terminal-shell.css?v=1', './manifest.webmanifest', './assets/fondos/nexo-bridge-background.jpg', './assets/fondos/nexo-home-planet.jpg',
   './assets/iconos/icon.svg', './assets/iconos/icon-192.png', './assets/iconos/icon-512.png'
 ];
 self.addEventListener('install', event => {
