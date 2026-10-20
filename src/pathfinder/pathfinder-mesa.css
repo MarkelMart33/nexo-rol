@@ -1,0 +1,33 @@
+/* Brújula de explorador (wayfinder) de Pathfinder sobre un mapa plegado del Mar Interior. */
+.wf{position:relative;display:block;width:232px;height:312px}
+.wf-map{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding:20px 16px;border-radius:3px;color:#2c1d33;text-align:center;overflow:hidden;
+  background:
+    linear-gradient(90deg,transparent 32.6%,#7a5a3033 33%,#fff6 33.4%,transparent 34%,transparent 65.9%,#7a5a3033 66.3%,#fff6 66.7%,transparent 67.3%),
+    linear-gradient(transparent 49.4%,#7a5a3026 50%,#fff5 50.5%,transparent 51%),
+    radial-gradient(ellipse 34% 20% at 44% 64%,#6fb5b0 0 60%,transparent 62%),
+    radial-gradient(ellipse 30% 15% at 66% 72%,#6fb5b0 0 58%,transparent 60%),
+    radial-gradient(ellipse 22% 26% at 26% 74%,#6fb5b0 0 55%,transparent 57%),
+    radial-gradient(ellipse 48% 34% at 48% 68%,#9fcfc455 0 62%,transparent 66%),
+    linear-gradient(170deg,#f0e2bf,#e2cc98 70%,#d4b97f);
+  box-shadow:inset 0 0 0 1px #b39461,inset 0 0 26px #8a6a3655}
+.wf-map b{display:block;font:700 23px/1 var(--fell);letter-spacing:.08em;color:#8e2a17}
+.wf-map small{display:block;margin-top:5px;font:400 12px var(--fell);color:#6b5236;letter-spacing:.1em}
+.wf-route{position:absolute;left:58px;top:148px;width:96px;height:46px;border:2px dashed #b2361f;border-color:#b2361f transparent transparent transparent;border-radius:50%;transform:rotate(-14deg);opacity:.75}
+.wf-route:after{content:'✕';position:absolute;right:-8px;top:-4px;font:700 13px sans-serif;color:#b2361f}
+.wf-label{position:absolute;left:30px;top:196px;font:italic 400 12px var(--fell);color:#22524f;letter-spacing:.06em}
+.wf-label:before{content:'';display:inline-block;width:6px;height:6px;margin-right:5px;border-radius:50%;background:#b2361f;vertical-align:1px}
+.wf-sea{align-self:flex-start;margin:24px 0 0 6px;font:italic 400 13px var(--fell);color:#22524fcc;letter-spacing:.2em;text-transform:uppercase;transform:rotate(-8deg)}
+.wf-note{position:absolute;left:14px;bottom:14px;max-width:130px;font:400 14px/1.25 var(--hand);color:#3c2f1d;text-align:left;transform:rotate(-3deg)}
+/* La brújula: caja de latón, esfera con marcas, aguja y la piedra eón que brilla en el centro */
+.wf-chain{position:absolute;z-index:1;right:20px;top:86px;width:70px;height:84px;border:3px dotted #b88a32;border-left-color:transparent;border-bottom-color:transparent;border-radius:50%;transform:rotate(18deg)}
+.wf-case{position:absolute;z-index:2;right:22px;top:132px;width:112px;height:112px;padding:8px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f6dd94,#c8963b 45%,#7a5419 90%);box-shadow:0 8px 12px -4px #000c,inset 0 -3px 4px #5a3a0e,inset 0 2px 3px #fff3c4}
+.wf-case:before{content:'';position:absolute;left:50%;top:-11px;width:20px;height:16px;margin-left:-10px;border:3.5px solid #b88a32;border-radius:50% 50% 40% 40%}
+.wf-face{position:relative;display:block;width:100%;height:100%;border-radius:50%;background:repeating-conic-gradient(from -2deg,#e0b65a 0 4deg,transparent 4deg 45deg),radial-gradient(circle,#2d1a3c 58%,#1a0f24);box-shadow:inset 0 0 0 2px #7a5419,inset 0 0 12px #000}
+.wf-face:after{content:'N';position:absolute;left:50%;top:5px;transform:translateX(-50%);font:700 10px var(--fell);color:#e0b65a}
+.wf-needle{position:absolute;left:50%;top:50%;width:12px;height:76px;margin:-38px 0 0 -6px;background:linear-gradient(#e2533a 0 50%,#e8dcc0 50%);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);transform:rotate(32deg);transition:transform 1.1s cubic-bezier(.3,1.6,.4,1)}
+.wf-stone{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#e8fffb,#5fd6c6 45%,#1f6f6a);box-shadow:0 0 10px #5fd6c6aa;animation:wf-glow 3.6s ease-in-out infinite}
+@keyframes wf-glow{50%{box-shadow:0 0 18px #9ff3e6}}
+.obj-wayfinder:hover .wf-needle,.obj-wayfinder:focus-visible .wf-needle{transform:rotate(-356deg)}
+.obj-wayfinder:hover .wf-stone,.obj-wayfinder:focus-visible .wf-stone{animation-duration:1s;box-shadow:0 0 22px #9ff3e6}
+.obj-wayfinder:hover .wf-route,.obj-wayfinder:focus-visible .wf-route{opacity:1}
+@media(prefers-reduced-motion:reduce){.wf *{animation:none!important;transition:none!important}}

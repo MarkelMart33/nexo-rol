@@ -1,12 +1,12 @@
 /*
- * NEXO cloud saves for the character-based games (Vampiro, D&D, Tormentas, Cthulhu).
+ * NEXO cloud saves for the character-based games (Vampiro, D&D, Tormentas, Cthulhu, Pathfinder).
  * Each account keeps one private row per game in public.game_saves.
  * The browser copy stays as the working copy; "<key>-cloud" records whether
  * it has been uploaded ("clean") or still has changes the cloud lacks.
  */
 (() => {
   const client = window.nexoSupabaseClient || null;
-  const LOCAL_KEYS = ['nexo-vampire-v1', 'nexo-dnd-v1', 'nexo-tormentas-v1', 'nexo-cthulhu-v1'];
+  const LOCAL_KEYS = ['nexo-vampire-v1', 'nexo-dnd-v1', 'nexo-tormentas-v1', 'nexo-cthulhu-v1', 'nexo-pathfinder-v1'];
   const chains = {};
   let user = null;
 

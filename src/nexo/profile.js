@@ -17,7 +17,7 @@
     if (host) return;
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/nexo/profile.css?v=5';
+    stylesheet.href = './src/nexo/profile.css?v=6';
     document.head.append(stylesheet);
     host = document.createElement('section');
     host.className = 'nexo-profile';
@@ -51,7 +51,7 @@
       const rows = items.map(ch => `<button class="prf-row" data-character="${key}" data-id="${esc(ch.id)}"><span class="prf-mark is-${key}">${mark}</span><span class="prf-copy"><b>${esc(ch.name || 'Sin nombre')}</b><small>${esc(ch.summary)}</small></span><span class="prf-go">Abrir</span></button>`).join('');
       return `<h3>${title}</h3>${rows || '<p class="prf-note">Sin personajes todavía.</p>'}`;
     };
-    return `<section class="prf-panel"><h2>Personajes</h2>${group('vampire', 'Vampiro: La Mascarada', window.NEXO_VAMPIRE, window.NEXO_ICONS?.vampire || '')}${group('dnd', 'Dungeons &amp; Dragons', window.NEXO_DND, window.NEXO_ICONS?.dnd || '')}${group('tormentas', 'El Archivo de las Tormentas', window.NEXO_TORMENTAS, window.NEXO_ICONS?.tormentas || '')}${group('cthulhu', 'La llamada de Cthulhu', window.NEXO_CTHULHU, window.NEXO_ICONS?.cthulhu || '')}<p class="prf-note">Los personajes de Traveller están dentro de cada campaña.</p></section>`;
+    return `<section class="prf-panel"><h2>Personajes</h2>${group('vampire', 'Vampiro: La Mascarada', window.NEXO_VAMPIRE, window.NEXO_ICONS?.vampire || '')}${group('dnd', 'Dungeons &amp; Dragons', window.NEXO_DND, window.NEXO_ICONS?.dnd || '')}${group('tormentas', 'El Archivo de las Tormentas', window.NEXO_TORMENTAS, window.NEXO_ICONS?.tormentas || '')}${group('cthulhu', 'La llamada de Cthulhu', window.NEXO_CTHULHU, window.NEXO_ICONS?.cthulhu || '')}${group('pathfinder', 'Pathfinder', window.NEXO_PATHFINDER, window.NEXO_ICONS?.pathfinder || '')}<p class="prf-note">Los personajes de Traveller están dentro de cada campaña.</p></section>`;
   }
 
   function render() {
@@ -67,7 +67,7 @@
     host.querySelector('[data-traveller]').addEventListener('click', () => { hide(); window.NEXO_TRAVELLER?.showCampaigns(); });
     host.querySelectorAll('[data-campaign]').forEach(button => button.addEventListener('click', () => { hide(); window.NEXO_TRAVELLER?.openCampaign(button.dataset.campaign); }));
     host.querySelectorAll('[data-character]').forEach(button => button.addEventListener('click', () => {
-      const api = { vampire: window.NEXO_VAMPIRE, dnd: window.NEXO_DND, tormentas: window.NEXO_TORMENTAS, cthulhu: window.NEXO_CTHULHU }[button.dataset.character];
+      const api = { vampire: window.NEXO_VAMPIRE, dnd: window.NEXO_DND, tormentas: window.NEXO_TORMENTAS, cthulhu: window.NEXO_CTHULHU, pathfinder: window.NEXO_PATHFINDER }[button.dataset.character];
       hide();
       api?.open({ characterId: button.dataset.id, onExit: () => open({ onExit: exitHandler }) });
     }));
