@@ -380,9 +380,22 @@
 
   // Vistas
   function frame(body, status = 'MUNDO DE TINIEBLAS') {
-    host.innerHTML = `<header class="vtm-top"><button class="vtm-brand" data-exit aria-label="Volver al selector de sistemas"><span class="vtm-sigil">${window.NEXO_ICONS?.vampire || ''}</span><span><b>NEXO</b><small>${side === 'da' ? 'VAMPIRO · EDAD OSCURA' : 'VAMPIRO · NOCHES MODERNAS'}</small></span></button><span class="vtm-status" data-save-status>${esc(status)}</span></header><main class="vtm-main">${body}</main><div class="vtm-flash" data-flash hidden role="status"></div>`;
+    host.innerHTML = `<header class="vtm-top"><button class="vtm-brand" data-exit aria-label="Volver al selector de sistemas"><span class="vtm-sigil">${window.NEXO_ICONS?.vampire || ''}</span><span><b>NEXO</b><small>${side === 'da' ? 'VAMPIRO · EDAD OSCURA' : 'VAMPIRO · NOCHES MODERNAS'}</small></span></button><span class="vtm-status" data-save-status>${esc(status)}</span><button class="nd-open" data-dice aria-label="Abrir los dados"><span aria-hidden="true">⚄</span><b>DADOS</b></button></header><main class="vtm-main">${body}</main><div class="vtm-flash" data-flash hidden role="status"></div>`;
     host.querySelectorAll('[data-exit]').forEach(button => button.addEventListener('click', close));
+    host.querySelector('[data-dice]').addEventListener('click', openDice);
   }
+  // Dados: la reserva sale de sumar un atributo y una habilidad o disciplina de la ficha abierta.
+  const diceTheme = () => (side === 'da' ? 'vtm-da' : 'vampiro');
+  function diceSources() {
+    const ch = current;
+    if (!ch) return [];
+    const attrs = ATTRS.flatMap(g => g.traits).map(([k, n]) => [k, n, value(ch, 'attrs', k)]);
+    const abil = abilityGroups(ch).flatMap(g => g.traits).map(([k, n]) => ['abil:' + k, n, value(ch, 'abil', k)]);
+    const disc = shownDisciplines(ch).map(([k, n]) => ['disc:' + k, n, value(ch, 'disc', k)]);
+    const more = [...virtues(ch).map(([k, n]) => ['virt:' + k, n, value(ch, 'virt', k)]), ['wp', 'Fuerza de Voluntad', willpower(ch)]];
+    return [{ label: 'Atributo', items: attrs }, { label: 'Habilidad, disciplina o virtud', none: 'Ninguna', items: [...abil, ...disc, ...more] }];
+  }
+  function openDice() { window.NEXO_DICE?.tray('vampiro', { theme: diceTheme(), sources: diceSources }); }
 
   function renderList() {
     flushSave();
@@ -607,7 +620,14 @@
     const d = diaDraft(ch);
     if (d.failed || d.successes >= d.victimWP) return;
     const dicePool = Math.max(1, value(ch, 'attrs', 'fuerza'));
-    const dice = Array.from({ length: dicePool }, () => 1 + Math.floor(Math.random() * 10));
+    if (window.NEXO_DICE) {
+      // El lanzador común anima los dados; «Repetir» en su ventana sigue sumando al intento.
+      window.NEXO_DICE.roll('vampiro', { pool: dicePool, diff: d.difficulty, label: `${crimeName(ch)} · Fuerza`, onResult: r => { if (current === ch && dia === d && !d.failed && d.successes < d.victimWP) applyStrength(ch, d, r.dice.map(x => x.value)); } }, { theme: diceTheme() });
+      return;
+    }
+    applyStrength(ch, d, Array.from({ length: dicePool }, () => 1 + Math.floor(Math.random() * 10)));
+  }
+  function applyStrength(ch, d, dice) {
     const hits = dice.filter(n => n >= d.difficulty).length;
     const ones = dice.filter(n => n === 1).length;
     d.turns += 1;
@@ -764,6 +784,7 @@
   }
   function close() {
     flushSave();
+    window.NEXO_DICE?.close();
     current = null;
     host.hidden = true;
     document.documentElement.classList.remove('nexo-vampire-open');

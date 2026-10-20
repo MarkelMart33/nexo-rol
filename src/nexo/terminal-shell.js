@@ -32,6 +32,7 @@
     });
 
     function openHub() {
+      window.NEXO_DICE?.close();
       if (history.state?.nexo === 'away') history.back();
       render('home');
       hub.hidden = false;

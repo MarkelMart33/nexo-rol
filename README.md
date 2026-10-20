@@ -13,7 +13,7 @@ Terminal multiverso para NEXO, con el módulo Traveller como sistema disponible.
 ## Estructura del proyecto
 
 - `index.html`, `sw.js` y `manifest.webmanifest` quedan en la raíz: son la página de entrada, el servicio offline y el manifiesto de instalación, y necesitan estar ahí para que la app funcione e instale bien.
-- `src/nexo/`: terminal multisistema (selector de sistemas de rol), perfil y sincronización en la nube.
+- `src/nexo/`: terminal multisistema (selector de sistemas de rol), perfil, sincronización en la nube y el lanzador de dados común a todos los sistemas (`dice.js` y `dice.css`).
 - `src/traveller/`: apartado Traveller (aplicación principal, índice del manual, visor PDF, hangar, personajes y estilos generales).
 - `src/vampiro/`: apartado Vampiro: La Mascarada.
 - `src/dnd/`: apartado Dungeons & Dragons 5.5 y sus datos de progresión.
@@ -51,6 +51,17 @@ El apartado La llamada de Cthulhu (7ª edición) se abre desde el expediente de 
 ## Pathfinder 2ª edición
 
 El apartado Pathfinder (2ª edición Remaster, clases del Player Core 1 y 2) se abre desde la brújula de explorador que descansa sobre un mapa del Mar Interior y tiene su propio estilo de carta de navegación bajo un cielo violeta, con latón, turquesa de piedra eón y bermellón. Su creador de personajes de nivel 1 cubre 8 ascendencias con su herencia (más changeling y nefilim como herencias versátiles), 23 bagajes y un bagaje propio, y 16 clases (alquimista, bárbaro, bardo, bruja, campeón, clérigo, druida, espadachín, explorador, guerrero, hechicero, investigador, mago, monje, oráculo y pícaro). Las mejoras de atributo siguen el Remaster: todo empieza en +0, la ascendencia da sus mejoras fijas y libres y su defecto (o dos libres con las mejoras alternativas), el bagaje da dos (una entre sus dos atributos), la clase el atributo clave y hay 4 libres, sin repetir atributo en un mismo apartado. Se entrenan las habilidades de la clase y del bagaje y se eligen las demás (las de la clase más INT, una más si el bagaje repite una de clase y otra por humano habilidoso), incluidos Saberes. NEXO calcula puntos de golpe, CA según la armadura y la competencia de la clase, Percepción, Fortaleza, Reflejos, Voluntad, velocidad, CD de clase, ataque y CD de conjuros, ataques cuerpo a cuerpo y a distancia, impedimenta e idiomas adicionales. La subclase (musa, doctrina, orden, truhanería…), las dotes y el equipo se anotan a mano. Los términos de la edición española de Devir se usan donde se conocen (bagaje, Saber, impedimenta, rangos de competencia); los nombres de herencias, dotes y subclases son traducciones propias, y los textos, resúmenes propios. Las fichas se guardan en este dispositivo (`localStorage`, clave `nexo-pathfinder-v1`) y, con cuenta, también en la nube.
+
+## Dados
+
+Cada sistema tiene su lanzador de dados (`src/nexo/dice.js`), con el aspecto de su apartado. Se abre con el botón «Dados» de la cabecera (en Traveller, desde la aplicación Dados) y también se tira directamente desde la ficha pulsando una habilidad, salvación, característica o atributo. Los dados cruzan la pantalla, rebotan y quedan mostrando su cara; después aparece una ventana flotante con el resultado, el detalle y las últimas tiradas. Con «reducir movimiento» activado no hay animación y el resultado aparece directamente.
+
+- Traveller: 2D + MD contra la dificultad (8+ por defecto) con el Efecto, ventaja y desventaja (3D, se quedan los dos mejores o peores), dados D6 libres y D66. Desde la ficha suma el MD del atributo y el nivel de la habilidad.
+- Vampiro (noches modernas y Edad Oscura): reserva de d10 contra la dificultad; los 1 cancelan éxitos, sin éxitos y con algún 1 es un fracaso estrepitoso, la especialización cuenta los 10 como dos éxitos y la Fuerza de Voluntad da un éxito automático. La reserva se elige sumando un atributo y una habilidad, disciplina o virtud de la ficha. El tirador de Fuerza de la diablerie usa este lanzador.
+- D&D 5.5: d20 + modificador con ventaja o desventaja y CD opcional; en los ataques el 20 natural es crítico y el 1 falla. Tiradas de daño con dados doblados en el crítico.
+- El Archivo de las Tormentas: d20 + modificador con ventaja o desventaja, el dado de trama (complicación de +2 o +4, oportunidad o nada) y el 20 y el 1 naturales como oportunidad y complicación; con dificultad indica «Sí, y además…», «Sí, pero…», «No, pero…» o «No, y además…».
+- La llamada de Cthulhu: d100 contra la habilidad con éxito normal, difícil (mitad), extremo (quinto) y crítico (01), dados de bonificación y penalización y pifias (100, o de 96 a 100 con menos de 50).
+- Pathfinder 2ª edición: d20 + modificador contra la CD con cuatro grados de éxito (±10 marca el crítico) y el 20 o el 1 naturales subiendo o bajando un grado; fortuna e infortunio y daño doble en el crítico.
 
 ## Vista principal
 

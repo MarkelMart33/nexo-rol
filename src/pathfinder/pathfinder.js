@@ -327,8 +327,28 @@
 
   // Vistas
   function frame(body, status = 'ABSALOM · MAR INTERIOR') {
-    host.innerHTML = `<div class="pf-stars" aria-hidden="true"></div><header class="pf-top"><button class="pf-brand" data-exit aria-label="Volver a la mesa"><span class="pf-sign">${window.NEXO_ICONS?.pathfinder || ''}</span><span><b>NEXO</b><small>PATHFINDER · 2ª EDICIÓN</small></span></button><span class="pf-status" data-save-status>${esc(status)}</span></header><main class="pf-main">${body}</main><div class="pf-flash" data-flash hidden role="status"></div>`;
+    host.innerHTML = `<div class="pf-stars" aria-hidden="true"></div><header class="pf-top"><button class="pf-brand" data-exit aria-label="Volver a la mesa"><span class="pf-sign">${window.NEXO_ICONS?.pathfinder || ''}</span><span><b>NEXO</b><small>PATHFINDER · 2ª EDICIÓN</small></span></button><span class="pf-status" data-save-status>${esc(status)}</span><button class="nd-open" data-dice aria-label="Abrir los dados"><span aria-hidden="true">⚄</span><b>DADOS</b></button></header><main class="pf-main">${body}</main><div class="pf-flash" data-flash hidden role="status"></div>`;
     host.querySelectorAll('[data-exit]').forEach(button => button.addEventListener('click', close));
+    host.querySelector('[data-dice]').addEventListener('click', () => window.NEXO_DICE?.tray('pathfinder', { sources: diceSources }));
+  }
+  // Dados: Percepción, salvaciones, ataques y habilidades de la ficha, contra la CD que diga el DJ.
+  function diceItems(ch) {
+    const c = cls(ch);
+    const items = [];
+    if (c) {
+      items.push(['perc', 'Percepción', mod(ch, 'sab') + prof(c.perc)], ['fort', 'Fortaleza', mod(ch, 'con') + prof(c.fort)], ['ref', 'Reflejos', mod(ch, 'des') + prof(c.ref)], ['vol', 'Voluntad', mod(ch, 'sab') + prof(c.vol)],
+        ['melee', 'Ataque cuerpo a cuerpo', mod(ch, 'fue') + prof(c.weapon)], ['ranged', 'Ataque a distancia', mod(ch, 'des') + prof(c.weapon)]);
+      if (c.spells) items.push(['spell', 'Ataque de conjuro', mod(ch, keyAttr(ch)) + prof(1)]);
+    }
+    SKILL_KEYS.forEach(k => items.push(['sk:' + k, SKILLS[k][0], skillMod(ch, k)]));
+    const bgLore = bg(ch) ? (ch.bgLore || bg(ch).lore) : '';
+    [bgLore, ...ch.lores].filter(Boolean).forEach((name, i) => items.push(['lore:' + i, `Saber (${name})`, loreMod(ch)]));
+    return items;
+  }
+  function diceSources() { return current ? [{ label: 'Tirada de la ficha', items: diceItems(current), show: signed }] : []; }
+  function rollFromSheet(key) {
+    const item = diceItems(current).find(([k]) => k === key);
+    if (item) window.NEXO_DICE?.roll('pathfinder', { mod: item[2], label: item[1] });
   }
 
   function renderList() {
@@ -475,12 +495,12 @@
       const locked = source === 'clase' || source === 'bagaje';
       const total = skillMod(ch, k);
       return `<li class="${source ? 'is-trained' : ''}"><button class="pf-skill-pick" data-skill="${k}" aria-pressed="${Boolean(source)}" ${locked || !c ? 'disabled' : ''} title="${locked ? `Entrenada por ${source === 'clase' ? 'la clase' : 'el bagaje'}` : 'Entrenar esta habilidad'}">${source ? '●' : '○'}</button>
-        <span class="pf-skill-name">${esc(SKILLS[k][0])} <small>${ATTR[SKILLS[k][1]].short}</small></span><span class="pf-skill-src">${source ? `${RANK_SHORT[1]} · ${source}` : 'N'}</span><b class="pf-skill-total">${signed(total)}</b></li>`;
+        <span class="pf-skill-name">${esc(SKILLS[k][0])} <small>${ATTR[SKILLS[k][1]].short}</small></span><span class="pf-skill-src">${source ? `${RANK_SHORT[1]} · ${source}` : 'N'}</span><button class="nd-roll-btn pf-skill-roll" data-pf-roll="sk:${k}" aria-label="Tirar ${esc(SKILLS[k][0])}"><b class="pf-skill-total">${signed(total)}</b></button></li>`;
     }).join('');
     const bgLore = bg(ch) ? (ch.bgLore || bg(ch).lore) : '';
     const lores = [
-      ...(bgLore ? [`<li class="is-trained"><span class="pf-skill-pick is-fixed">●</span><span class="pf-skill-name">Saber (${esc(bgLore)}) <small>INT</small></span><span class="pf-skill-src">E · bagaje</span><b class="pf-skill-total">${signed(loreMod(ch))}</b></li>`] : []),
-      ...ch.lores.map((name, i) => `<li class="is-trained"><button class="pf-skill-pick" data-lore-del="${i}" aria-label="Quitar Saber (${esc(name)})">×</button><span class="pf-skill-name">Saber (${esc(name)}) <small>INT</small></span><span class="pf-skill-src">E · elegida</span><b class="pf-skill-total">${signed(loreMod(ch))}</b></li>`)
+      ...(bgLore ? [`<li class="is-trained"><span class="pf-skill-pick is-fixed">●</span><span class="pf-skill-name">Saber (${esc(bgLore)}) <small>INT</small></span><span class="pf-skill-src">E · bagaje</span><button class="nd-roll-btn pf-skill-roll" data-pf-roll="lore:0" aria-label="Tirar Saber (${esc(bgLore)})"><b class="pf-skill-total">${signed(loreMod(ch))}</b></button></li>`] : []),
+      ...ch.lores.map((name, i) => `<li class="is-trained"><button class="pf-skill-pick" data-lore-del="${i}" aria-label="Quitar Saber (${esc(name)})">×</button><span class="pf-skill-name">Saber (${esc(name)}) <small>INT</small></span><span class="pf-skill-src">E · elegida</span><button class="nd-roll-btn pf-skill-roll" data-pf-roll="lore:${i + (bgLore ? 1 : 0)}" aria-label="Tirar Saber (${esc(name)})"><b class="pf-skill-total">${signed(loreMod(ch))}</b></button></li>`)
     ].join('');
     return `<section class="pf-panel">${heading(6, 'Habilidades', 'entrenadas a nivel 1')}
       <p class="pf-note">${c ? `Tu clase te deja entrenar ${skillPicks(ch)} habilidades más (${c.free} ${mod(ch, 'int') >= 0 ? '+' : '−'} ${Math.abs(mod(ch, 'int'))} por INT${bgSkill(ch) && classSkills(ch).includes(bgSkill(ch)) ? ', +1 porque el bagaje repite una de clase' : ''}${ch.heritage === 'Humano habilidoso' ? ', +1 por humano habilidoso' : ''}). Pulsa el círculo para entrenarla; también puedes gastar una en un Saber.` : 'Elige una clase para repartir habilidades.'} Entrenado suma +2 más el nivel; sin entrenar solo cuenta el atributo.
@@ -490,6 +510,7 @@
       ${c ? '<div class="pf-lore-add"><input data-lore-name maxlength="40" placeholder="Saber nuevo: Absalom, Ingeniería…" aria-label="Nombre del Saber"><button class="pf-button ghost" data-lore-add>AÑADIR SABER</button></div>' : ''}</section>`;
   }
 
+  const ROLLABLE = { 'Percepción': 'perc', 'Fortaleza': 'fort', 'Reflejos': 'ref', 'Voluntad': 'vol', 'Cuerpo a cuerpo': 'melee', 'A distancia': 'ranged', 'Ataque de conjuro': 'spell' };
   function sheetPanel(ch) {
     const c = cls(ch);
     const a = anc(ch);
@@ -507,7 +528,7 @@
     ];
     const armors = Object.entries(ARMORS).map(([k, v]) => [k, `${v.name}${v.ac ? ` (+${v.ac}, DES máx. ${v.cap})` : ''}${v.cat ? ` · ${ARMOR_CATS[v.cat]}` : ''}`]);
     return `<section class="pf-panel pf-sheet">${heading(7, 'Hoja calculada', esc(describe(ch)))}
-      <div class="pf-stats">${stats.map(([k, v]) => `<div><small>${k}</small><b>${esc(v)}</b></div>`).join('')}</div>
+      <div class="pf-stats">${stats.map(([k, v]) => { const roll = c && ROLLABLE[k]; return `<div><small>${k}</small>${roll ? `<button class="nd-roll-btn" data-pf-roll="${roll}" aria-label="Tirar ${k}"><b>${esc(v)}</b></button>` : `<b>${esc(v)}</b>`}</div>`; }).join('')}</div>
       <label class="pf-field pf-field-wide"><span>Armadura</span><select data-choice="armor">${options(armors, ch.armor)}</select></label>
       ${c && !ac.trained ? '<p class="pf-note pf-warn">Tu clase no está entrenada en esa armadura: no sumas competencia a la CA.</p>' : ''}
       <p class="pf-note">Competencia: entrenado +2, experto +4, maestro +6 y legendario +8, más el nivel; sin entrenar, +0. Puntos de golpe: los de la ascendencia más los de la clase y CON por nivel. CA: 10 + DES (hasta el máximo de la armadura) + competencia + armadura; un escudo alzado suma su bonificador. CD de clase: 10 + atributo clave + competencia. Impedimenta: impedido a partir de 5 + FUE y máximo 10 + FUE.</p></section>`;
@@ -547,6 +568,7 @@
     sheet.querySelectorAll('[data-text]').forEach(input => input.addEventListener('input', () => { current[input.dataset.text] = input.value; scheduleSave(); }));
     sheet.querySelector('[data-text="bgLore"]')?.addEventListener('change', () => changed());
     sheet.querySelectorAll('[data-boost]').forEach(button => button.addEventListener('click', () => toggleBoost(button.dataset.boost, button.dataset.attr)));
+    sheet.querySelectorAll('[data-pf-roll]').forEach(button => button.addEventListener('click', () => rollFromSheet(button.dataset.pfRoll)));
     sheet.querySelectorAll('[data-skill]').forEach(button => button.addEventListener('click', () => toggleSkill(button.dataset.skill)));
     sheet.querySelectorAll('[data-lore-del]').forEach(button => button.addEventListener('click', () => { current.lores.splice(Number(button.dataset.loreDel), 1); changed(); }));
     const loreInput = sheet.querySelector('[data-lore-name]');
@@ -586,6 +608,7 @@
   }
   function close() {
     flushSave();
+    window.NEXO_DICE?.close();
     current = null;
     host.hidden = true;
     document.documentElement.classList.remove('nexo-pathfinder-open');
