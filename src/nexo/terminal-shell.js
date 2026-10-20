@@ -22,7 +22,13 @@
 
     function render(view = 'home') {
       if (view === 'home') {
-        hub.innerHTML = '<header class="sys-top"><div class="sys-brand"><span class="sys-orbit">N</span><span><b>NEXO</b><small>TERMINAL DE SISTEMAS DE ROL</small></span></div><span class="sys-status"><i></i> TERMINAL LOCAL</span></header><main class="sys-main"><p class="sys-kicker">PLATAFORMA DE CAMPAÑA · MULTISISTEMA</p><h1>Un terminal.<br><em>Todos tus universos.</em></h1><p class="sys-intro">Elige el sistema de juego para abrir las herramientas de tu campaña.</p><div class="sys-grid"><button class="sys-card sys-traveller" data-system="traveller"><span class="sys-icon">⌖</span><span class="sys-tag">SISTEMA DISPONIBLE</span><b>NEXO TRAVELLER</b><small>Comercio, partidas, inventario, mapa y reglas.</small><span class="sys-open">ABRIR SISTEMA →</span></button><button class="sys-card sys-dnd" data-system="dnd"><span class="sys-icon">✧</span><span class="sys-tag">SISTEMA DISPONIBLE</span><b>NEXO D&amp;D</b><small>Creador de personajes de D&amp;D 5.5 (reglas de 2024).</small><span class="sys-open">ABRIR SISTEMA →</span></button><button class="sys-card sys-vampire" data-system="vampire"><span class="sys-icon">◈</span><span class="sys-tag">SISTEMA DISPONIBLE</span><b>NEXO VAMPIRO</b><small>Creador de personajes de La Mascarada 20º Aniversario.</small><span class="sys-open">ABRIR SISTEMA →</span></button></div><footer class="sys-footer"><span>NEXO · SISTEMAS DE ROL</span><span>SELECCIONA UN MÓDULO</span></footer></main>';
+        hub.innerHTML = '<header class="sys-top"><div class="sys-brand"><span class="sys-orbit">N</span><span><b>NEXO</b><small>TERMINAL DE SISTEMAS DE ROL</small></span></div><span class="sys-top-end"><span class="sys-status"><i></i> ' + (window.NEXO_CLOUD?.signedIn ? 'CUENTA SINCRONIZADA' : 'TERMINAL LOCAL') + '</span><button class="sys-profile" data-profile aria-label="Abrir tu perfil"><span></span>PERFIL</button></span></header><main class="sys-main"><p class="sys-kicker">PLATAFORMA DE CAMPAÑA · MULTISISTEMA</p><h1>Un terminal.<br><em>Todos tus universos.</em></h1><p class="sys-intro">Elige el sistema de juego para abrir las herramientas de tu campaña.</p><div class="sys-grid"><button class="sys-card sys-traveller" data-system="traveller"><span class="sys-icon">⌖</span><span class="sys-tag">SISTEMA DISPONIBLE</span><b>NEXO TRAVELLER</b><small>Comercio, partidas, inventario, mapa y reglas.</small><span class="sys-open">ABRIR SISTEMA →</span></button><button class="sys-card sys-dnd" data-system="dnd"><span class="sys-icon">✧</span><span class="sys-tag">SISTEMA DISPONIBLE</span><b>NEXO D&amp;D</b><small>Creador de personajes de D&amp;D 5.5 (reglas de 2024).</small><span class="sys-open">ABRIR SISTEMA →</span></button><button class="sys-card sys-vampire" data-system="vampire"><span class="sys-icon">◈</span><span class="sys-tag">SISTEMA DISPONIBLE</span><b>NEXO VAMPIRO</b><small>Creador de personajes de La Mascarada 20º Aniversario.</small><span class="sys-open">ABRIR SISTEMA →</span></button></div><footer class="sys-footer"><span>NEXO · SISTEMAS DE ROL</span><span>SELECCIONA UN MÓDULO</span></footer></main>';
+        const profileButton = hub.querySelector('[data-profile]');
+        const user = window.NEXO_CLOUD?.user;
+        profileButton.querySelector('span').textContent = (user?.user_metadata?.display_name || user?.email || 'N').trim().slice(0, 2).toLocaleUpperCase('es');
+        profileButton.addEventListener('click', () => {
+          if (window.NEXO_PROFILE) window.NEXO_PROFILE.open({ onExit: openHub });
+        });
         hub.querySelector('[data-system="traveller"]').addEventListener('click', () => {
           hub.hidden = true;
           document.documentElement.classList.add('nexo-system-selected');
@@ -42,6 +48,8 @@
     }
 
     render();
+    // Actualiza el estado de la cuenta y las iniciales del perfil al iniciar sesión.
+    document.addEventListener('nexo:account-ready', () => render());
     let initialHubShown = false;
     const showHub = () => {
       // Espera a que se cierre la pantalla de cuenta para no taparla.

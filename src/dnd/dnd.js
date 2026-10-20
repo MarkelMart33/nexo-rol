@@ -812,6 +812,8 @@
     exitHandler = options.onExit || null;
     store = load();
     renderList();
+    const requested = options.characterId && store.characters.find(ch => ch.id === options.characterId);
+    if (requested) openEditor(requested);
     host.hidden = false;
     pullFromCloud();
     document.documentElement.classList.add('nexo-dnd-open');
@@ -825,5 +827,8 @@
   }
   window.addEventListener('pagehide', flushSave);
 
-  window.NEXO_DND = { open, close };
+  // Resumen de las fichas para el perfil.
+  const list = () => load().characters.map(ch => ({ id: ch.id, name: ch.name, summary: describe(ch) }));
+
+  window.NEXO_DND = { open, close, list };
 })();

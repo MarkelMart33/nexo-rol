@@ -61,5 +61,5 @@
     return store;
   }
 
-  window.NEXO_CLOUD = { get signedIn() { return Boolean(client && user); }, save, syncCharacters };
+  window.NEXO_CLOUD = { get signedIn() { return Boolean(client && user); }, get user() { return user; }, save, syncCharacters };
 })();
