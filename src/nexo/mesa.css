@@ -22,10 +22,12 @@
 /* Objetos sobre la mesa */
 .mesa-objects{position:relative;z-index:1;flex:1;display:grid;grid-template-columns:repeat(3,auto);justify-content:space-evenly;align-items:center;gap:36px;padding:48px 0 24px}
 .obj{--rest:0deg;--r:var(--rest);--d:0s;--lift:0px;position:relative;padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer;transform:translate(calc(var(--px)*-14px),calc(var(--py)*-10px + var(--lift))) rotate(var(--r));transition:transform .45s cubic-bezier(.2,.9,.3,1.15),filter .45s;filter:drop-shadow(0 18px 14px #0009) drop-shadow(0 4px 3px #0007);animation:mesa-place .9s cubic-bezier(.2,.9,.3,1.1) calc(var(--d) + var(--intro-wait,0s)) backwards}
-.obj:hover,.obj:focus-visible{--lift:-16px;--r:0deg;filter:drop-shadow(0 34px 26px #000a) drop-shadow(0 8px 6px #0006)}
+.obj:hover,.obj:focus-visible{z-index:2;--lift:-16px;--r:0deg;filter:drop-shadow(0 34px 26px #000a) drop-shadow(0 8px 6px #0006)}
 .obj:focus-visible{outline:2px dashed var(--lamp);outline-offset:14px}
 @keyframes mesa-place{from{opacity:0;transform:translate(0,90px) rotate(calc(var(--r) - 14deg)) scale(1.06)}}
 @keyframes mesa-drop{from{opacity:0;transform:translateY(-30px) rotate(-6deg)}}
+/* Los objetos se reparten en filas que se ajustan al ancho, sin salirse de la mesa ni pisarse. */
+.nexo-systems .mesa .mesa-objects{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:40px 48px}
 .mesa.is-picking .obj:not(.is-picked){opacity:.35;transition:opacity .4s,transform .45s}
 .obj.is-picked{animation:mesa-pick .55s cubic-bezier(.5,0,.7,.4) forwards}
 @keyframes mesa-pick{to{transform:translateY(-30px) rotate(0) scale(1.35);opacity:0}}

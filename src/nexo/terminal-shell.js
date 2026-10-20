@@ -6,7 +6,7 @@
     stylesheet.href = './src/nexo/terminal-shell.css?v=1';
     const table = document.createElement('link');
     table.rel = 'stylesheet';
-    table.href = './src/nexo/mesa.css?v=3';
+    table.href = './src/nexo/mesa.css?v=4';
     document.head.append(stylesheet, table);
 
     const hub = document.createElement('section');
