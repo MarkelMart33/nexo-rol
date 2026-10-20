@@ -3,7 +3,7 @@
     if (document.getElementById('nexoSystems')) return;
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './terminal-shell.css?v=1';
+    stylesheet.href = './src/nexo/terminal-shell.css?v=1';
     document.head.append(stylesheet);
 
     const hub = document.createElement('section');

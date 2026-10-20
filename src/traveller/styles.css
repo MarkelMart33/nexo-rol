@@ -142,7 +142,7 @@
 #appWorkspace[data-view=dice] .hero,#appWorkspace[data-view=dice] .summary-grid,#appWorkspace[data-view=dice] .content-grid,#appWorkspace[data-view=dice] .notes-panel,#appWorkspace[data-view=dice] .map-panel,#appWorkspace[data-view=dice] .traveller-panel,#appWorkspace[data-view=dice] .hangar-panel,#appWorkspace[data-view=dice] .characters-panel{display:none}#appWorkspace[data-view=dice] .dice-panel{display:block}
 @media(max-width:520px){.dice-panel{padding:14px}.dice-result-area{gap:8px;margin:28px auto 24px}.die-card,.dice-total-card{padding:9px;gap:10px}.die-card output{width:48px;height:48px;font-size:28px}.dice-plus,.dice-equals{font-size:16px}}
 
-body:has(#gameApp:not([hidden]) #appHome:not([hidden])){background-color:#050d15;background-image:linear-gradient(180deg,#06101891 0%,#06101838 37%,#06101870 100%),url("./assets/nexo-bridge-background.jpg");background-position:center,center 48%;background-repeat:no-repeat;background-size:cover;background-attachment:fixed}
+body:has(#gameApp:not([hidden]) #appHome:not([hidden])){background-color:#050d15;background-image:linear-gradient(180deg,#06101891 0%,#06101838 37%,#06101870 100%),url("../../assets/fondos/nexo-bridge-background.jpg");background-position:center,center 48%;background-repeat:no-repeat;background-size:cover;background-attachment:fixed}
 body:has(#gameApp:not([hidden]) #appHome:not([hidden])) .app-shell{max-width:1660px;padding-inline:clamp(16px,3vw,48px)}
 body:has(#gameApp:not([hidden]) #appHome:not([hidden])) .topbar{border-color:#75e7df3d;background:linear-gradient(180deg,#06101866,transparent)}
 body:has(#gameApp:not([hidden]) #appHome:not([hidden])) .pda-home{max-width:1280px;min-height:calc(100vh - 116px);margin:0 auto;padding:clamp(36px,7vh,72px) clamp(6px,1.5vw,20px) 46px}
@@ -178,7 +178,7 @@ body:has(#gameApp:not([hidden]) #appHome:not([hidden])) .app-tile:hover::after,b
 body:has(#gameApp:not([hidden]) #appHome:not([hidden])) .app-tile.app-tile-pulse{border-color:#d5ff79}
 
 /* Portada NEXO Traveller inspirada en la vista orbital */
-body:has(#gameApp:not([hidden]) #appHome:not([hidden])){background-color:#04111d;background-image:linear-gradient(180deg,#03101c29 0%,#03111d06 31%,#04111dc4 100%),url("./assets/nexo-home-planet.jpg");background-position:center,center 39%;background-repeat:no-repeat;background-size:cover;background-attachment:scroll}
+body:has(#gameApp:not([hidden]) #appHome:not([hidden])){background-color:#04111d;background-image:linear-gradient(180deg,#03101c29 0%,#03111d06 31%,#04111dc4 100%),url("../../assets/fondos/nexo-home-planet.jpg");background-position:center,center 39%;background-repeat:no-repeat;background-size:cover;background-attachment:scroll}
 body:has(#gameApp:not([hidden]) #appHome:not([hidden])) .app-shell{position:relative;max-width:1480px;min-height:100vh;padding-inline:clamp(12px,3vw,42px)}
 body:has(#gameApp:not([hidden]) #appHome:not([hidden])) .topbar{position:absolute;z-index:4;top:8px;right:clamp(12px,3vw,42px);left:clamp(12px,3vw,42px);height:auto;min-height:0;margin:0;padding:0;border:0;background:transparent;justify-content:flex-end}
 body:has(#gameApp:not([hidden]) #appHome:not([hidden])) .topbar .brand{display:none}

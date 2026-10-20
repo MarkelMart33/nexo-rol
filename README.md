@@ -5,10 +5,21 @@ Terminal multiverso para NEXO, con el módulo Traveller como sistema disponible.
 ## Abrir y publicar
 
 - Para consultar el proyecto en tu ordenador, abre `index.html`; el guardado local funciona en ese modo. Este modo no permite instalar NEXO ni habilita el servicio offline.
-- NEXO ya incluye manifiesto de instalación, iconos de 192 y 512 px y caché de recursos. En esta beta, las partidas se guardan localmente por navegador y no requieren correo. El código de autenticación y sincronización se conserva para una futura activación. Para instalarlo en móvil/ordenador y usar la interfaz sin conexión, publica el contenido de `outputs` en un alojamiento web con HTTPS.
-- En desarrollo, sirve la carpeta `outputs` con cualquier servidor HTTP estático. La app de Mapa necesita conexión incluso cuando la interfaz está instalada.
+- NEXO ya incluye manifiesto de instalación, iconos de 192 y 512 px y caché de recursos. En esta beta, las partidas se guardan localmente por navegador y no requieren correo. El código de autenticación y sincronización se conserva para una futura activación. Para instalarlo en móvil/ordenador y usar la interfaz sin conexión, publica el contenido de esta carpeta en un alojamiento web con HTTPS.
+- En desarrollo, sirve esta carpeta con cualquier servidor HTTP estático. La app de Mapa necesita conexión incluso cuando la interfaz está instalada.
 - La versión pública necesitará un dominio o una dirección web del alojamiento. Después se podrá verificar el sitio en Google Search Console y enviar el sitemap; Google decide cuándo indexarlo y en qué posición mostrarlo.
 - Al pasar del archivo local al dominio, el navegador lo considera otra instalación. En el primer acceso a una cuenta vacía, NEXO copia las partidas locales encontradas en ese navegador a la cuenta. Conserva una copia JSON como respaldo.
+
+## Estructura del proyecto
+
+- `index.html`, `sw.js` y `manifest.webmanifest` quedan en la raíz: son la página de entrada, el servicio offline y el manifiesto de instalación, y necesitan estar ahí para que la app funcione e instale bien.
+- `src/nexo/`: terminal multisistema (selector de sistemas de rol).
+- `src/traveller/`: apartado Traveller (aplicación principal, índice del manual, visor PDF, hangar, personajes y estilos generales).
+- `src/vampiro/`: apartado Vampiro: La Mascarada.
+- `src/dnd/`: apartado Dungeons & Dragons 5.5 y sus datos de progresión.
+- `assets/iconos/` y `assets/fondos/`: iconos de la app e imágenes de fondo.
+- `supabase/`: esquema de base de datos y configuración de la conexión en la nube.
+- Si añades o mueves un archivo, actualiza también la lista `FILES` de `sw.js` y sube el número de `CACHE` para que los dispositivos instalados reciban el cambio.
 
 ## Partidas y datos
 
@@ -28,13 +39,13 @@ La ficha incluye un apartado de diablerie (Amaranto en Edad Oscura) con explicac
 
 ## Dungeons & Dragons 5.5
 
-El apartado D&D tiene estética medieval propia en tonos cálidos (ámbar, dorado y grises) y un creador de personajes basado en el Manual del Jugador de 2024: 12 clases, 10 especies (con su linaje y tamaño cuando corresponde) y 16 trasfondos. Las características se generan con matriz estándar (15, 14, 13, 12, 10, 8), compra de 27 puntos (de 8 a 15) o tiradas de 4d6 descartando el dado más bajo; el trasfondo aplica su mejora de +2/+1 o +1/+1/+1 a sus tres características, con un máximo de 20. Se eligen las habilidades de la clase, las de la especie (elfo y humano) y las de la dote Habilidoso, además de dos idiomas junto al Común; la dote de origen la da el trasfondo y el humano elige otra. NEXO calcula modificadores, bonificador de competencia, puntos de golpe por nivel (incluidos enano y Duro), CA sin armadura, iniciativa (con Alerta), percepción pasiva, salvaciones, habilidades y CD y ataque de conjuros, y muestra las elecciones pendientes. Con «Subir de nivel» el personaje avanza del nivel 1 al 20: en cada nivel se elige entre la media del dado de golpe o una tirada, a nivel 3 se elige subclase y en los niveles de Mejora de característica (y el Don épico a nivel 19) se reparte el +2/+1+1 o se anota una dote. El apartado muestra los rasgos de las 12 clases y sus 48 subclases del Manual de 2024, cada uno con una breve explicación narrativa y otra mecánica (`dnd-progresion.js`), y calcula recursos por nivel: furias, ataque furtivo, puntos de concentración y de hechicería, canalizar divinidad, ataques por acción y espacios de conjuro. Las fichas se guardan en este dispositivo (`localStorage`, clave `nexo-dnd-v1`).
+El apartado D&D tiene estética medieval propia en tonos cálidos (ámbar, dorado y grises) y un creador de personajes basado en el Manual del Jugador de 2024: 12 clases, 10 especies (con su linaje y tamaño cuando corresponde) y 16 trasfondos. Las características se generan con matriz estándar (15, 14, 13, 12, 10, 8), compra de 27 puntos (de 8 a 15) o tiradas de 4d6 descartando el dado más bajo; el trasfondo aplica su mejora de +2/+1 o +1/+1/+1 a sus tres características, con un máximo de 20. Se eligen las habilidades de la clase, las de la especie (elfo y humano) y las de la dote Habilidoso, además de dos idiomas junto al Común; la dote de origen la da el trasfondo y el humano elige otra. NEXO calcula modificadores, bonificador de competencia, puntos de golpe por nivel (incluidos enano y Duro), CA sin armadura, iniciativa (con Alerta), percepción pasiva, salvaciones, habilidades y CD y ataque de conjuros, y muestra las elecciones pendientes. Con «Subir de nivel» el personaje avanza del nivel 1 al 20: en cada nivel se elige entre la media del dado de golpe o una tirada, a nivel 3 se elige subclase y en los niveles de Mejora de característica (y el Don épico a nivel 19) se reparte el +2/+1+1 o se anota una dote. El apartado muestra los rasgos de las 12 clases y sus 48 subclases del Manual de 2024, cada uno con una breve explicación narrativa y otra mecánica (`src/dnd/dnd-progresion.js`), y calcula recursos por nivel: furias, ataque furtivo, puntos de concentración y de hechicería, canalizar divinidad, ataques por acción y espacios de conjuro. Las fichas se guardan en este dispositivo (`localStorage`, clave `nexo-dnd-v1`).
 
 ## Cuentas personales y sincronización
 
 La autenticación y la sincronización con Supabase están desactivadas durante la beta. Cada navegador mantiene sus propias partidas locales; abrir NEXO desde otro teléfono u ordenador muestra un espacio independiente. Para mover una partida entre dispositivos, usa exportar/importar JSON. El código de cuentas personales se conserva para poder reactivar esta función más adelante. Compartir partidas entre cuentas no está incluido.
 
-El proyecto Supabase debe tener la tabla `public.campaigns` y las políticas del archivo `supabase/schema.sql`. `cloud-config.js` contiene la URL del proyecto y una clave pública diseñada para usarse en el navegador; la protección depende de las políticas RLS. Nunca pongas una contraseña de base de datos ni una clave secreta en archivos web. El SMTP predeterminado de Supabase es limitado; para permitir registros por parte de otros jugadores habrá que configurar un proveedor SMTP propio.
+El proyecto Supabase debe tener la tabla `public.campaigns` y las políticas del archivo `supabase/schema.sql`. `supabase/cloud-config.js` contiene la URL del proyecto y una clave pública diseñada para usarse en el navegador; la protección depende de las políticas RLS. Nunca pongas una contraseña de base de datos ni una clave secreta en archivos web. El SMTP predeterminado de Supabase es limitado; para permitir registros por parte de otros jugadores habrá que configurar un proveedor SMTP propio.
 
 La importación JSON reemplaza los datos de la partida abierta. Úsala como respaldo manual.
 
