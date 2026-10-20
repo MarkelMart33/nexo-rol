@@ -17,7 +17,7 @@
     if (host) return;
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/nexo/profile.css?v=2';
+    stylesheet.href = './src/nexo/profile.css?v=3';
     document.head.append(stylesheet);
     host = document.createElement('section');
     host.className = 'nexo-profile';
@@ -29,26 +29,26 @@
   function accountPanel() {
     const u = user();
     if (!u) {
-      return `<section class="prf-panel prf-account"><h2>Cuenta</h2><p class="prf-note">Estás usando NEXO sin cuenta: tus partidas y fichas se guardan solo en este dispositivo. Con una cuenta se sincronizan entre tus dispositivos.</p><button class="prf-button" data-sign-in>INICIAR SESIÓN O CREAR CUENTA</button></section>`;
+      return `<section class="prf-panel prf-account"><h2>Cuenta</h2><p class="prf-note">Estás usando NEXO sin cuenta: tus partidas y fichas se guardan solo en este dispositivo. Con una cuenta se sincronizan entre tus dispositivos.</p><button class="prf-button" data-sign-in>Iniciar sesión o crear cuenta</button></section>`;
     }
     return `<section class="prf-panel prf-account"><h2>Cuenta</h2>
-      <div class="prf-identity"><span class="prf-avatar">${esc(initials(u))}</span><span><b>${esc(displayName(u) || 'Sin nombre de usuario')}</b><small>${esc(u.email)}</small></span></div>
-      <form class="prf-form" data-name-form><label class="prf-field"><span>NOMBRE DE USUARIO</span><input name="name" maxlength="24" autocomplete="nickname" value="${esc(displayName(u))}" placeholder="Cómo quieres que te vean"></label><button class="prf-button" type="submit">GUARDAR NOMBRE DE USUARIO</button></form>
-      <form class="prf-form" data-password-form><label class="prf-field"><span>CONTRASEÑA NUEVA</span><input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Mínimo 8 caracteres" required></label><label class="prf-field"><span>REPÍTELA</span><input name="confirm" type="password" minlength="8" autocomplete="new-password" required></label><button class="prf-button" type="submit">CAMBIAR CONTRASEÑA</button></form>
+      <div class="prf-identity"><span><b>${esc(displayName(u) || 'Sin nombre de usuario')}</b><small>${esc(u.email)}</small></span></div>
+      <form class="prf-form" data-name-form><label class="prf-field"><span>Nombre de usuario</span><input name="name" maxlength="24" autocomplete="nickname" value="${esc(displayName(u))}" placeholder="Cómo quieres que te vean"></label><button class="prf-button" type="submit">Guardar nombre de usuario</button></form>
+      <form class="prf-form" data-password-form><label class="prf-field"><span>Contraseña nueva</span><input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Mínimo 8 caracteres" required></label><label class="prf-field"><span>Repítela</span><input name="confirm" type="password" minlength="8" autocomplete="new-password" required></label><button class="prf-button" type="submit">Cambiar contraseña</button></form>
       <p class="prf-message" data-account-message aria-live="polite"></p>
-      <button class="prf-button ghost" data-sign-out>CERRAR SESIÓN</button></section>`;
+      <button class="prf-button ghost" data-sign-out>Cerrar sesión</button></section>`;
   }
 
   function campaignsPanel() {
     const campaigns = window.NEXO_TRAVELLER?.campaigns() || [];
-    const rows = campaigns.map(c => `<button class="prf-row" data-campaign="${esc(c.id)}"><span class="prf-mark is-traveller">${window.NEXO_ICONS?.traveller || ''}</span><span class="prf-copy"><b>${esc(c.name)}</b><small>${esc(c.wallet)} Cr · ${c.characters} ${c.characters === 1 ? 'personaje' : 'personajes'}</small></span><span class="prf-go">ENTRAR →</span></button>`).join('');
-    return `<section class="prf-panel"><h2>Campañas de Traveller</h2>${rows || '<p class="prf-note">Aún no tienes campañas.</p>'}<button class="prf-button ghost" data-traveller>${rows ? 'GESTIONAR CAMPAÑAS' : 'CREAR UNA CAMPAÑA'}</button></section>`;
+    const rows = campaigns.map(c => `<button class="prf-row" data-campaign="${esc(c.id)}"><span class="prf-mark is-traveller">${window.NEXO_ICONS?.traveller || ''}</span><span class="prf-copy"><b>${esc(c.name)}</b><small>${esc(c.wallet)} Cr · ${c.characters} ${c.characters === 1 ? 'personaje' : 'personajes'}</small></span><span class="prf-go">Entrar</span></button>`).join('');
+    return `<section class="prf-panel"><h2>Campañas de Traveller</h2>${rows || '<p class="prf-note">Aún no tienes campañas.</p>'}<button class="prf-button ghost" data-traveller>${rows ? 'Gestionar campañas' : 'Crear una campaña'}</button></section>`;
   }
 
   function charactersPanel() {
     const group = (key, title, api, mark) => {
       const items = api?.list() || [];
-      const rows = items.map(ch => `<button class="prf-row" data-character="${key}" data-id="${esc(ch.id)}"><span class="prf-mark is-${key}">${mark}</span><span class="prf-copy"><b>${esc(ch.name || 'Sin nombre')}</b><small>${esc(ch.summary)}</small></span><span class="prf-go">ABRIR →</span></button>`).join('');
+      const rows = items.map(ch => `<button class="prf-row" data-character="${key}" data-id="${esc(ch.id)}"><span class="prf-mark is-${key}">${mark}</span><span class="prf-copy"><b>${esc(ch.name || 'Sin nombre')}</b><small>${esc(ch.summary)}</small></span><span class="prf-go">Abrir</span></button>`).join('');
       return `<h3>${title}</h3>${rows || '<p class="prf-note">Sin personajes todavía.</p>'}`;
     };
     return `<section class="prf-panel"><h2>Personajes</h2>${group('vampire', 'Vampiro: La Mascarada', window.NEXO_VAMPIRE, window.NEXO_ICONS?.vampire || '')}${group('dnd', 'Dungeons &amp; Dragons', window.NEXO_DND, window.NEXO_ICONS?.dnd || '')}<p class="prf-note">Los personajes de Traveller están dentro de cada campaña.</p></section>`;
@@ -56,8 +56,9 @@
 
   function render() {
     const u = user();
-    host.innerHTML = `<header class="sys-top"><button class="sys-brand" data-back aria-label="Volver al selector de sistemas"><span class="sys-orbit">N</span><span><b>NEXO</b><small>TERMINAL DE SISTEMAS DE ROL</small></span></button><span class="sys-status"><i></i> ${u ? 'CUENTA SINCRONIZADA' : 'SIN CUENTA · ESTE DISPOSITIVO'}</span></header>
-      <main class="prf-main"><p class="sys-kicker">NEXO / PERFIL</p><h1>Tu <em>perfil</em></h1><div class="prf-grid">${accountPanel()}<div class="prf-stack">${campaignsPanel()}${charactersPanel()}</div></div><button class="sys-back" data-back>← VOLVER A SISTEMAS</button></main>`;
+    host.innerHTML = `<div class="prf-wrap"><button class="prf-back" data-back>← Volver a la mesa</button>
+      <header class="prf-title"><span class="nexo-seal prf-seal" aria-hidden="true">${esc(initials(u))}</span><div><h1>Tu perfil</h1><p>${u ? 'Tus partidas y fichas se sincronizan con tu cuenta.' : 'Sin cuenta: todo se guarda en este dispositivo.'}</p></div></header>
+      <div class="prf-grid">${accountPanel()}<div class="prf-stack">${campaignsPanel()}${charactersPanel()}</div></div></div>`;
     host.querySelectorAll('[data-back]').forEach(button => button.addEventListener('click', close));
     host.querySelector('[data-sign-in]')?.addEventListener('click', signIn);
     host.querySelector('[data-sign-out]')?.addEventListener('click', signOut);
@@ -86,7 +87,7 @@
     const { data, error } = await client().auth.updateUser({ data: { display_name: name } });
     if (error) { message('No se pudo guardar el nombre. Comprueba la conexión.', true); return; }
     host.querySelector('.prf-identity b').textContent = displayName(data.user) || 'Sin nombre de usuario';
-    host.querySelector('.prf-avatar').textContent = initials(data.user);
+    host.querySelector('.prf-seal').textContent = initials(data.user);
     message('Nombre de usuario guardado.');
   }
 
