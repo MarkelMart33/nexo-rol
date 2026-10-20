@@ -459,7 +459,7 @@
 
   // Vistas
   function frame(body, status = 'REINOS OLVIDADOS Y POR FORJAR') {
-    host.innerHTML = `<header class="dnd-top"><button class="dnd-brand" data-exit aria-label="Volver al selector de sistemas"><span class="dnd-seal">${window.NEXO_ICONS?.dnd || ''}</span><span><b>NEXO</b><small>DUNGEONS &amp; DRAGONS · 5.5</small></span></button><span class="dnd-status" data-save-status>${esc(status)}</span><button class="nd-open" data-dice aria-label="Abrir los dados"><span aria-hidden="true">⚄</span><b>DADOS</b></button></header><main class="dnd-main"><div class="dnd-book"><span class="dnd-strap" aria-hidden="true"></span><div class="dnd-page">${body}</div></div></main><div class="dnd-flash" data-flash hidden role="status"></div>`;
+    host.innerHTML = `<header class="dnd-top"><button class="dnd-brand" data-exit aria-label="Volver al selector de sistemas"><span class="dnd-seal">${window.NEXO_ICONS?.dnd || ''}</span><span><b>NEXO</b><small>DUNGEONS &amp; DRAGONS · 5.5</small></span></button><span class="dnd-status" data-save-status>${esc(status)}</span></header><main class="dnd-main"><div class="dnd-book"><span class="dnd-strap" aria-hidden="true"></span><div class="dnd-page">${body}</div></div></main><button class="nd-fab" data-dice aria-label="Abrir los dados"><span aria-hidden="true">⚄</span><b>Dados</b></button><div class="dnd-flash" data-flash hidden role="status"></div>`;
     host.querySelectorAll('[data-exit]').forEach(button => button.addEventListener('click', close));
     host.querySelector('[data-dice]').addEventListener('click', () => window.NEXO_DICE?.tray('dnd', { sources: diceSources }));
   }

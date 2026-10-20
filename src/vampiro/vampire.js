@@ -380,7 +380,7 @@
 
   // Vistas
   function frame(body, status = 'MUNDO DE TINIEBLAS') {
-    host.innerHTML = `<header class="vtm-top"><button class="vtm-brand" data-exit aria-label="Volver al selector de sistemas"><span class="vtm-sigil">${window.NEXO_ICONS?.vampire || ''}</span><span><b>NEXO</b><small>${side === 'da' ? 'VAMPIRO · EDAD OSCURA' : 'VAMPIRO · NOCHES MODERNAS'}</small></span></button><span class="vtm-status" data-save-status>${esc(status)}</span><button class="nd-open" data-dice aria-label="Abrir los dados"><span aria-hidden="true">⚄</span><b>DADOS</b></button></header><main class="vtm-main">${body}</main><div class="vtm-flash" data-flash hidden role="status"></div>`;
+    host.innerHTML = `<header class="vtm-top"><button class="vtm-brand" data-exit aria-label="Volver al selector de sistemas"><span class="vtm-sigil">${window.NEXO_ICONS?.vampire || ''}</span><span><b>NEXO</b><small>${side === 'da' ? 'VAMPIRO · EDAD OSCURA' : 'VAMPIRO · NOCHES MODERNAS'}</small></span></button><span class="vtm-status" data-save-status>${esc(status)}</span></header><main class="vtm-main">${body}</main><button class="nd-fab" data-dice aria-label="Abrir los dados"><span aria-hidden="true">⚄</span><b>Dados</b></button><div class="vtm-flash" data-flash hidden role="status"></div>`;
     host.querySelectorAll('[data-exit]').forEach(button => button.addEventListener('click', close));
     host.querySelector('[data-dice]').addEventListener('click', openDice);
   }

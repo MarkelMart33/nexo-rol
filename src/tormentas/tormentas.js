@@ -245,7 +245,7 @@
 
   // Vistas
   function frame(body, status = 'VIDA ANTES QUE MUERTE') {
-    host.innerHTML = `<div class="tor-storm" aria-hidden="true"></div><header class="tor-top"><button class="tor-brand" data-exit aria-label="Volver a la mesa"><span class="tor-sphere">${window.NEXO_ICONS?.tormentas || ''}</span><span><b>NEXO</b><small>EL ARCHIVO DE LAS TORMENTAS</small></span></button><span class="tor-status" data-save-status>${esc(status)}</span><button class="nd-open" data-dice aria-label="Abrir los dados"><span aria-hidden="true">⚄</span><b>DADOS</b></button></header><main class="tor-main">${body}</main><div class="tor-flash" data-flash hidden role="status"></div>`;
+    host.innerHTML = `<div class="tor-storm" aria-hidden="true"></div><header class="tor-top"><button class="tor-brand" data-exit aria-label="Volver a la mesa"><span class="tor-sphere">${window.NEXO_ICONS?.tormentas || ''}</span><span><b>NEXO</b><small>EL ARCHIVO DE LAS TORMENTAS</small></span></button><span class="tor-status" data-save-status>${esc(status)}</span></header><main class="tor-main">${body}</main><button class="nd-fab" data-dice aria-label="Abrir los dados"><span aria-hidden="true">⚄</span><b>Dados</b></button><div class="tor-flash" data-flash hidden role="status"></div>`;
     host.querySelectorAll('[data-exit]').forEach(button => button.addEventListener('click', close));
     host.querySelector('[data-dice]').addEventListener('click', () => window.NEXO_DICE?.tray('tormentas', { sources: diceSources }));
   }
