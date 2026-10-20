@@ -44,11 +44,12 @@
     render();
     let initialHubShown = false;
     const showHub = () => {
-      if (initialHubShown || document.getElementById('introScreen')) return;
+      // Espera a que se cierre la pantalla de cuenta para no taparla.
+      if (initialHubShown || document.getElementById('introScreen') || document.getElementById('authGate')?.hidden === false) return;
       initialHubShown = true;
       hub.hidden = false;
     };
-    new MutationObserver(showHub).observe(document.body, { childList: true, subtree: true });
+    new MutationObserver(showHub).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
     window.setTimeout(showHub, 2400);
 
     const homeBrand = document.getElementById('nexoHome');

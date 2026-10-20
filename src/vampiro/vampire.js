@@ -111,7 +111,22 @@
     return ch;
   }
   function persist() {
-    try { localStorage.setItem(KEY, JSON.stringify(store)); return true; } catch { return false; }
+    try { localStorage.setItem(KEY, JSON.stringify(store)); } catch { return false; }
+    window.NEXO_CLOUD?.save('vampiro', KEY, store).then(ok => {
+      if (ok !== null) setStatus(ok ? 'GUARDADO EN LA NUBE' : 'SIN CONEXIÓN · GUARDADO EN ESTE DISPOSITIVO');
+    });
+    return true;
+  }
+  // Trae las fichas de la cuenta sin perder la que se esté editando.
+  async function pullFromCloud() {
+    const synced = await window.NEXO_CLOUD?.syncCharacters('vampiro', KEY, store).catch(error => { console.error('NEXO sync error', error); return null; });
+    if (!synced) return;
+    store = { characters: synced.characters.map(normalize) };
+    if (current) {
+      const index = store.characters.findIndex(ch => ch.id === current.id);
+      if (index >= 0) store.characters[index] = current;
+      else store.characters.unshift(current);
+    } else if (host && !host.hidden) renderList();
   }
   function esc(value) {
     return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -750,6 +765,7 @@
     store = load();
     renderList();
     host.hidden = false;
+    pullFromCloud();
     document.documentElement.classList.add('nexo-vampire-open');
   }
   function close() {

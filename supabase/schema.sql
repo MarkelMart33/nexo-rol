@@ -40,3 +40,32 @@ $$;
 
 drop trigger if exists campaigns_set_updated_at on public.campaigns;
 create trigger campaigns_set_updated_at before update on public.campaigns for each row execute function public.set_campaign_updated_at();
+
+-- NEXO character games (Vampiro, D&D): one private save per owner and game.
+create table if not exists public.game_saves (
+  owner_id uuid not null references auth.users (id) on delete cascade,
+  game text not null check (game in ('vampiro', 'dnd')),
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now(),
+  primary key (owner_id, game)
+);
+
+alter table public.game_saves enable row level security;
+
+revoke all on table public.game_saves from anon, authenticated;
+grant select, insert, update, delete on table public.game_saves to authenticated;
+
+drop policy if exists "Owners can read their game saves" on public.game_saves;
+create policy "Owners can read their game saves" on public.game_saves for select to authenticated using (owner_id = (select auth.uid()));
+
+drop policy if exists "Owners can create their game saves" on public.game_saves;
+create policy "Owners can create their game saves" on public.game_saves for insert to authenticated with check (owner_id = (select auth.uid()));
+
+drop policy if exists "Owners can update their game saves" on public.game_saves;
+create policy "Owners can update their game saves" on public.game_saves for update to authenticated using (owner_id = (select auth.uid())) with check (owner_id = (select auth.uid()));
+
+drop policy if exists "Owners can delete their game saves" on public.game_saves;
+create policy "Owners can delete their game saves" on public.game_saves for delete to authenticated using (owner_id = (select auth.uid()));
+
+drop trigger if exists game_saves_set_updated_at on public.game_saves;
+create trigger game_saves_set_updated_at before update on public.game_saves for each row execute function public.set_campaign_updated_at();
