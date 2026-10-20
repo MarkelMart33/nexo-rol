@@ -160,4 +160,57 @@ html.nexo-vampire-open,html.nexo-vampire-open body{overflow:hidden}
 .vtm-sub{margin:24px 0 10px;font:600 14px var(--vtm-serif);letter-spacing:.14em;text-transform:uppercase;color:var(--vtm-red-hi)}
 @media(max-width:900px){.vtm-cols{grid-template-columns:1fr 1fr}.vtm-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.vtm-fields{grid-template-columns:1fr 1fr}}
 @media(max-width:640px){.vtm-top{height:62px;padding:0 16px}.vtm-tracker{position:static;padding:10px 12px}.vtm-main{padding:36px 16px 70px}.vtm-cols,.vtm-fields{grid-template-columns:1fr}.vtm-stats{grid-template-columns:1fr 1fr}.vtm-panel{padding:16px}.vtm-list{grid-template-columns:1fr}.vtm-merit{grid-template-columns:96px 1fr 58px 34px;gap:6px}.vtm-status{font-size:8px;max-width:130px}.vtm-phase{display:flex}.vtm-phase button{flex:1;padding:9px 4px;font-size:9px;letter-spacing:.06em}.vtm-phase button b{min-width:0;margin-left:3px}.vtm-xp-form{grid-template-columns:1fr}.vtm-era-tag{order:3;flex:1 1 100%;text-align:center;margin:0}.vtm-stats-xp{grid-template-columns:repeat(3,minmax(0,1fr))}.vtm-xp-log li{grid-template-columns:auto 1fr auto;gap:8px}.vtm-xp-log small{display:none}.vtm-rolls li{grid-template-columns:1fr}.vtm-rolls li small{grid-column:1}.vtm-lore{font-size:16px}.vtm-pools li{font-size:12px;padding:4px 7px}.vtm-legend{display:none}}
-.vtm-sigil:before{content:none}.vtm-sigil svg{width:24px;height:24px;transform:rotate(-45deg)}
+.vtm-brand .vtm-sigil:before{content:none}.vtm-sigil svg{width:24px;height:24px;transform:rotate(-45deg)}
+/* Edad Oscura: el apartado se viste de manuscrito iluminado (pergamino, tinta sepia y rúbricas en rojo). */
+.vtm.vtm-da{--vtm-bg:#e4cf9f;--vtm-panel:#f0e2bd;--vtm-panel-2:#f5e9c9;--vtm-line:#a8834f;--vtm-line-soft:#c9ad7c;--vtm-text:#2e1c0e;--vtm-muted:#5b4128;--vtm-faint:#86673f;--vtm-red:#8e1414;--vtm-red-hi:#9e1418;--vtm-blood:#7a0b12;--vtm-free:#c0563c;--vtm-ok:#6f5a12;--vtm-serif:'IM Fell English','Palatino Linotype','Book Antiqua',Georgia,serif;--vtm-body:'IM Fell English','EB Garamond','Palatino Linotype',Georgia,serif;--vtm-black:'UnifrakturMaguntia','IM Fell English',Georgia,serif;
+  background:radial-gradient(ellipse 120% 90% at 50% 40%,transparent 55%,#7a4e2470 100%) fixed,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.3 0 0 0 0 0.12 0 0 0 0.22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E"),linear-gradient(175deg,#efdfb5,#e2cb98 55%,#d6bb84);color:var(--vtm-text)}
+.vtm-da .vtm-top{background:linear-gradient(#ead8aef2,#e4cf9fe6);border-bottom:2px double var(--vtm-red)}
+.vtm-da .vtm-brand b,.vtm-da .vtm-main h1,.vtm-da .vtm-panel h2,.vtm-da .vtm-modal-card h3{font-family:var(--vtm-black);font-weight:400;letter-spacing:.01em;text-transform:none}
+.vtm-da .vtm-brand b{font-size:24px}
+.vtm-da .vtm-sigil{border-color:var(--vtm-red);background:#7a0b12;color:#f1d27a;box-shadow:inset 0 0 0 3px #e4cf9f,inset 0 0 0 4px #b08a3c}
+.vtm-da .vtm-main h1{font-size:clamp(40px,6vw,68px);color:#2e1c0e}
+.vtm-da .vtm-main h1:first-letter{float:left;margin:4px 12px 0 0;padding:6px 12px 10px;border:2px solid #b08a3c;background:radial-gradient(circle,#8e1414,#5a0909);color:#f1d27a;font-size:1.25em;line-height:.9;box-shadow:inset 0 0 0 3px #5a0909,inset 0 0 0 4px #c9a24a}
+.vtm-da .vtm-main h1 em{color:var(--vtm-red);text-shadow:none}
+.vtm-da .vtm-kicker,.vtm-da .vtm-field span,.vtm-da .vtm-stats small,.vtm-da .vtm-status,.vtm-da .vtm-brand small,.vtm-da .vtm-badge,.vtm-da .vtm-era-tag{font-family:var(--vtm-serif);font-variant:small-caps;text-transform:lowercase;letter-spacing:.12em}
+.vtm-da .vtm-kicker{font-size:14px;color:var(--vtm-red)}
+.vtm-da .vtm-field span,.vtm-da .vtm-stats small{font-size:14px}
+.vtm-da .vtm-intro,.vtm-da .vtm-lore{color:var(--vtm-muted);font-size:19px}
+.vtm-da .vtm-button{background:linear-gradient(#8e1414,#6a0c0c);border-color:#5a0909;color:#f6e7c4;font-family:var(--vtm-serif);font-size:13px;letter-spacing:.1em}
+.vtm-da .vtm-button:hover{background:linear-gradient(#a3191a,#7a0b12)}
+.vtm-da .vtm-button.ghost{background:transparent;border-color:var(--vtm-line);color:var(--vtm-muted)}
+.vtm-da .vtm-button.ghost:hover{border-color:var(--vtm-red);color:var(--vtm-red)}
+.vtm-da .vtm-button.danger{background:transparent;border-color:var(--vtm-red);color:var(--vtm-red)}
+.vtm-da .vtm-button.danger:hover{background:#8e14141a}
+.vtm-da .vtm-card,.vtm-da .vtm-panel{background:linear-gradient(170deg,#f6ebcbe6,#ecdcb2e6);border-color:var(--vtm-line);box-shadow:0 1px 0 #fff8 inset,0 10px 24px -14px #5b3a1c99}
+.vtm-da .vtm-panel:before{border-color:var(--vtm-red);border-width:3px 0 0 3px}
+.vtm-da .vtm-panel h2{font-size:28px;color:#2e1c0e}
+.vtm-da .vtm-panel h2 span{font-family:var(--vtm-serif);color:var(--vtm-red);font-size:18px}
+.vtm-da .vtm-card-sigil{background:#7a0b12;border-color:#b08a3c;color:#f1d27a;font-family:var(--vtm-black);font-size:26px}
+.vtm-da .vtm-empty span{color:var(--vtm-red)}
+.vtm-da .vtm-field input,.vtm-da .vtm-field select,.vtm-da .vtm-notes,.vtm-da .vtm-merit input,.vtm-da .vtm-merit select,.vtm-da .vtm-prio,.vtm-da .vtm-add select{background:#fbf3dc99;border-bottom-color:var(--vtm-line);color:var(--vtm-text)}
+.vtm-da .vtm-field select option,.vtm-da .vtm-merit select option,.vtm-da .vtm-prio option,.vtm-da .vtm-add select option{background:#f5e9c9;color:#2e1c0e}
+.vtm-da .vtm-weak,.vtm-da .vtm-attempt{background:#f8eed3aa}
+.vtm-da .vtm-tracker{background:#efe0b9f2;border-color:var(--vtm-line)}
+.vtm-da .vtm-phase button[aria-selected=true]{background:var(--vtm-red);color:#f6e7c4}
+.vtm-da .vtm-phase button b{background:#8e14141f;color:var(--vtm-red)}
+.vtm-da .vtm-phase button[aria-selected=true] b{background:#0003;color:#f6e7c4}
+.vtm-da .vtm-pools li,.vtm-da .vtm-stats div,.vtm-da .vtm-xp-log li{background:#f8eed3aa;border-color:var(--vtm-line-soft)}
+.vtm-da .vtm-pools li.is-over{color:var(--vtm-red)}
+.vtm-da .vtm-pools li.is-xp b,.vtm-da .vtm-xp-log b{color:#6f5a12}
+.vtm-da .vtm-col-head h3,.vtm-da .vtm-sub{font-family:var(--vtm-serif);font-variant:small-caps;text-transform:lowercase;font-size:19px;letter-spacing:.08em;color:var(--vtm-red)}
+.vtm-da .vtm-stats b{font-family:var(--vtm-black);font-weight:400;font-size:32px;color:var(--vtm-red)}
+.vtm-da .vtm-dot{border-color:#7d5a32}
+.vtm-da .vtm-dot.inn{background:#4a2e17;border-color:#4a2e17}
+.vtm-da .vtm-dot.base{background:radial-gradient(circle at 35% 30%,#d24a3a,#8e1414 60%,#5a0909);border-color:#5a0909;box-shadow:none}
+.vtm-da .vtm-dot.free{background:radial-gradient(circle at 35% 30%,#f2b48f,#c0563c 65%,#8a3520);border-color:#8a3520}
+.vtm-da .vtm-dot.xp{background:radial-gradient(circle,#c9a24a 0 30%,#f5e9c9 34%);border-color:#8a6a14;box-shadow:none}
+.vtm-da .vtm-dot.dia{background:radial-gradient(circle at 35% 30%,#555,#111 70%);border-color:#8e1414;box-shadow:none}
+.vtm-da .vtm-blood i{background:linear-gradient(135deg,#a3191a,#5a0909);box-shadow:none}
+.vtm-da .vtm-diablerie{background:linear-gradient(170deg,#f1dcc0e6,#e3c9a0e6);border-color:#8e1414}
+.vtm-da .vtm-dice i{border-color:var(--vtm-line);color:var(--vtm-muted)}
+.vtm-da .vtm-dice i.hit{background:var(--vtm-red);color:#f6e7c4}
+.vtm-da .vtm-dice i.one{background:#2e1c0e;border-color:#2e1c0e;color:#f1d27a}
+.vtm-da .vtm-flash{background:#f6ebcb;color:#2e1c0e;border-color:var(--vtm-red);box-shadow:0 10px 30px #5b3a1c88}
+.vtm-da .vtm-modal{background:#2e1c0eaa}
+.vtm-da .vtm-modal-card{background:#f3e6c4;border-color:var(--vtm-red)}
+.vtm-da .vtm-x{border-color:var(--vtm-line);color:var(--vtm-muted)}

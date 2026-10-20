@@ -68,6 +68,10 @@
                   <span class="phone-notif"><span class="phone-app">${icons.vampire || ''}</span><span><b>Vampiro: La Mascarada</b><small>Tus vástagos te esperan.</small></span></span>
                   <span class="phone-bar" aria-hidden="true"></span></span></span>
             </button>
+            <button class="obj obj-codex" data-system="vampire-da" style="--rest:-4deg;--d:.5s" aria-label="Abrir Vampiro: Edad Oscura">
+              <span class="codex"><span class="codex-page"><span class="codex-cap" aria-hidden="true">V</span><b>Edad Oscura</b><small>Anno Domini MCCXLII</small><span class="codex-lines" aria-hidden="true"></span></span>
+                <span class="codex-seal">${icons.vampire || ''}</span><span class="codex-ribbon" aria-hidden="true"></span></span>
+            </button>
           </div>
           <div class="mesa-props" aria-hidden="true"><span class="die die-a"><i></i><i></i><i></i><i></i><i></i></span><span class="die die-b"><i></i><i></i><i></i></span><span class="mesa-ring"></span></div>
         </div>`;
@@ -78,7 +82,8 @@
         const launch = {
           traveller: () => { hub.hidden = true; document.documentElement.classList.add('nexo-system-selected'); },
           dnd: () => window.NEXO_DND ? window.NEXO_DND.open({ onExit: openHub }) : render('dnd'),
-          vampire: () => window.NEXO_VAMPIRE ? window.NEXO_VAMPIRE.open({ onExit: openHub }) : render('vampire')
+          vampire: () => window.NEXO_VAMPIRE ? window.NEXO_VAMPIRE.open({ era: 'v20', onExit: openHub }) : render('vampire'),
+          'vampire-da': () => window.NEXO_VAMPIRE ? window.NEXO_VAMPIRE.open({ era: 'da', onExit: openHub }) : render('vampire')
         };
         // Al elegir, el objeto se acerca a la cámara antes de abrir su sistema.
         hub.querySelectorAll('[data-system]').forEach(button => button.addEventListener('click', () => {
