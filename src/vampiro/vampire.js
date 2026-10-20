@@ -731,7 +731,7 @@
     document.head.append(fonts);
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './vampire.css?v=3';
+    stylesheet.href = './src/vampiro/vampire.css?v=3';
     document.head.append(stylesheet);
     host = document.createElement('section');
     host.id = 'nexoVampire';
