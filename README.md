@@ -43,7 +43,7 @@ El apartado D&D tiene estética medieval propia en tonos cálidos (ámbar, dorad
 
 ## Vista principal
 
-El selector de sistemas (`src/nexo/terminal-shell.js` y `mesa.css`) es una mesa de madera con un objeto por sistema: una PDA para Traveller, un cuaderno de cuero para D&D y un móvil para Vampiro. Los objetos llegan a la mesa con una animación, se levantan al pasar por encima (el cuaderno se entreabre, la PDA ilumina la pantalla y el móvil vibra) y se acercan al elegirlos. Con «reducir movimiento» activado no hay animaciones. Los emblemas de cada sistema están en `src/nexo/icons.js`.
+El selector de sistemas (`src/nexo/terminal-shell.js` y `mesa.css`) es una mesa de madera con un objeto por sistema: una PDA para Traveller, un cuaderno de cuero para D&D y un móvil para Vampiro. Los objetos llegan a la mesa con una animación, se levantan al pasar por encima (el cuaderno se entreabre, la PDA ilumina la pantalla y el móvil vibra) y se acercan al elegirlos. Con «reducir movimiento» activado no hay animaciones. Los emblemas de cada sistema están en `src/nexo/icons.js`. La pantalla de carga, la de cuenta y el perfil comparten la misma madera, papel y cuero (`src/nexo/nexo.css`).
 
 ## Perfil
 

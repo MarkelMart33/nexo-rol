@@ -1,0 +1,59 @@
+/* NEXO · vistas generales (carga, cuenta, perfil y mesa) con la misma madera, papel y cuero. */
+:root{
+  --nexo-wood:
+    radial-gradient(ellipse 60% 50% at 28% 12%,#f6c77d38,transparent 70%),
+    radial-gradient(ellipse 120% 90% at 50% 45%,transparent 50%,#0d0704e6 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='520'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5 0.011' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.13 0 0 0 0 0.07 0 0 0 0 0.03 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(90deg,#2e1b0f 0 2px,transparent 2px 210px),
+    linear-gradient(90deg,#5b3920,#4a2d1a 22%,#5d3b22 47%,#472b19 71%,#573620);
+  --nexo-paper:linear-gradient(#f3e7cb,#e8d8b4);
+  --nexo-paper-lines:repeating-linear-gradient(transparent 0 27px,#b8a07a55 27px 28px);
+  --nexo-ink:#3a2817;--nexo-ink-soft:#6b5236;--nexo-leather:#6b351b;--nexo-brass:#c79a4a;--nexo-lamp:#f6c77d;
+  --nexo-hand:'Kalam','Segoe Print','Bradley Hand',cursive;--nexo-fell:'IM Fell English SC','Palatino Linotype',Georgia,serif;
+}
+
+/* Sello de lacre con la N de NEXO */
+.nexo-seal{position:relative;display:grid;place-items:center;width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#b0303a,#7d1620 62%,#5a0e16);color:#f1c9b0;font:400 34px/1 var(--nexo-fell);text-shadow:0 -1px 0 #3c070c;box-shadow:0 0 0 4px #8a1c26,0 0 0 6px #6a1119,0 8px 14px -4px #000c,inset 0 2px 4px #ffffff30;clip-path:polygon(50% 0,61% 4%,72% 2%,79% 11%,90% 13%,92% 25%,100% 33%,97% 45%,100% 57%,93% 66%,93% 79%,82% 84%,76% 95%,63% 94%,52% 100%,41% 95%,29% 98%,22% 88%,10% 85%,9% 72%,1% 63%,4% 51%,0 39%,8% 30%,9% 17%,21% 13%,27% 3%,39% 5%)}
+
+/* Pantalla de carga inicial (las transiciones internas de Traveller conservan su estilo) */
+.intro-screen:not(.transition-overlay){background:var(--nexo-wood)}
+.intro-screen:not(.transition-overlay) .intro-content{width:min(260px,72vw)}
+.intro-screen:not(.transition-overlay) .intro-mark{width:84px;height:84px;border:0;border-radius:50%;color:#f1c9b0;font:400 40px/1 var(--nexo-fell);text-shadow:0 -1px 0 #3c070c;background:radial-gradient(circle at 38% 32%,#b0303a,#7d1620 62%,#5a0e16);box-shadow:0 0 0 4px #8a1c26,0 0 0 6px #6a1119,0 10px 18px -4px #000c;animation:nexo-stamp .6s cubic-bezier(.2,1.4,.4,1) .15s backwards}
+.intro-screen:not(.transition-overlay) .intro-mark:after{display:none}
+.intro-screen:not(.transition-overlay) p{margin:22px 0 10px;font:400 22px var(--nexo-hand);letter-spacing:0;color:#f3e2c2;text-shadow:0 2px 6px #0009}
+.intro-screen:not(.transition-overlay) .intro-progress{height:3px;border:0;border-radius:2px;background:#ffffff14}
+.intro-screen:not(.transition-overlay) .intro-progress span{background:#efe2c4;box-shadow:none;border-radius:2px}
+@keyframes nexo-stamp{from{opacity:0;transform:scale(1.8) rotate(-12deg)}}
+
+/* Pantalla de cuenta: una carta clavada sobre la mesa */
+html .auth-gate{position:fixed;inset:0;z-index:950;min-height:0;overflow:auto;padding:40px 18px;background:var(--nexo-wood)}
+html .auth-gate[hidden]{display:none}
+html .auth-card{position:relative;margin:auto;width:min(100%,440px);padding:34px 34px 26px;border:0;border-radius:2px;background:var(--nexo-paper-lines),var(--nexo-paper);color:var(--nexo-ink);transform:rotate(-1deg);box-shadow:0 1px 0 #fff8 inset,0 26px 40px -16px #000d,0 4px 8px #0006;animation:nexo-letter .7s cubic-bezier(.2,.9,.3,1.15) backwards}
+html .auth-card:before{content:'';position:absolute;top:-13px;left:50%;width:96px;height:26px;transform:translateX(-50%) rotate(-3deg);background:#e9dfc7b8;box-shadow:0 1px 3px #0003;clip-path:polygon(3% 0,97% 4%,100% 100%,0 94%)}
+@keyframes nexo-letter{from{opacity:0;transform:translateY(-36px) rotate(-5deg)}}
+html .auth-card .auth-mark{width:64px;height:64px;margin:0 0 18px;border:0;border-radius:50%;color:#f1c9b0;font:400 30px/1 var(--nexo-fell);text-shadow:0 -1px 0 #3c070c;background:radial-gradient(circle at 38% 32%,#b0303a,#7d1620 62%,#5a0e16);box-shadow:0 0 0 3px #8a1c26,0 0 0 5px #6a1119,0 6px 10px -3px #000a}
+html .auth-card .auth-mark:after,html .auth-card .section-index{display:none}
+html .auth-card h1{margin:0 0 6px;font:700 clamp(30px,6vw,38px)/1.05 var(--nexo-hand);letter-spacing:-.01em;color:#2f1f12}
+html .auth-card>p{margin:0;font:400 18px/1.4 var(--nexo-hand);color:var(--nexo-ink-soft)}
+html .auth-card form{gap:16px;margin-top:22px}
+html .auth-card .field{margin:0;gap:4px}
+html .auth-card .field span{font:600 13px var(--nexo-fell);letter-spacing:.04em;color:var(--nexo-ink-soft);text-transform:lowercase}
+html .auth-card .field span:first-letter{text-transform:uppercase}
+html .auth-card .field input{height:auto;padding:6px 2px;border:0;border-bottom:1.5px solid #8a6b45;border-radius:0;background:transparent;color:#2b1d12;font:400 20px var(--nexo-hand);box-shadow:none}
+html .auth-card .field input::placeholder{color:#a48a68}
+html .auth-card .field input:focus{outline:none;border-bottom-color:#7d1620}
+html .auth-card .confirm-button,html .auth-card .local-mode-button{width:100%;min-height:46px;margin:0;border-radius:6px;font:400 15px var(--nexo-fell);letter-spacing:.05em;text-transform:lowercase;cursor:pointer;transition:transform .2s,box-shadow .2s}
+html .auth-card .confirm-button{border:0;background:radial-gradient(circle at 60% 30%,#8f4c29,#6b351b 70%);color:#f8e4c6;box-shadow:inset 0 0 0 1px #3c1b0b,inset 0 0 0 4px #6b351b,inset 0 0 0 5px #e8c39a66,0 6px 10px -4px #000a}
+html .auth-card .confirm-button:hover{transform:translateY(-1px)}
+html .auth-card #authBackButton{text-transform:lowercase}
+html .auth-card .confirm-button:first-letter,html .auth-card .local-mode-button:first-letter{text-transform:uppercase}
+html .auth-card .confirm-button:disabled{opacity:.6}
+html .auth-card .local-mode-button{margin-top:18px;border:1.5px dashed #8a6b45;background:transparent;color:var(--nexo-ink-soft)}
+html .auth-card .local-mode-button:hover{background:#00000008}
+html .auth-card .text-button{margin:10px 0 0;font:400 16px var(--nexo-hand);letter-spacing:0;color:#7d1620;text-decoration:underline;text-decoration-color:#7d162055;text-underline-offset:3px}
+html .auth-card .auth-message{min-height:20px;margin:14px 0 0;font:400 16px var(--nexo-hand);color:#3f6b2a}
+html .auth-card .auth-message.error{color:#a3192b}
+html .auth-card .auth-privacy{margin-top:18px;font:400 14px/1.4 var(--nexo-hand);color:#8a6f4f}
+html .auth-card :focus-visible{outline:2px dashed #7d1620;outline-offset:3px}
+@media(max-width:640px){html .auth-gate{padding:28px 14px}html .auth-card{padding:28px 20px 22px;transform:none}}
+@media(prefers-reduced-motion:reduce){.intro-screen *,html .auth-card{animation:none!important}}
