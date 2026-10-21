@@ -358,7 +358,7 @@
 
   // Vistas
   function frame(body, status = 'ARKHAM, MASSACHUSETTS · 1925') {
-    host.innerHTML = `<div class="cth-fog" aria-hidden="true"></div><header class="cth-top"><button class="cth-brand" data-exit aria-label="Volver a la mesa"><span class="cth-sign">${window.NEXO_ICONS?.cthulhu || ''}</span><span><b>NEXO</b><small>LA LLAMADA DE CTHULHU</small></span></button><span class="cth-status" data-save-status>${esc(status)}</span><button class="nd-open" data-dice aria-label="Abrir los dados"><span aria-hidden="true">⚄</span><b>DADOS</b></button></header><main class="cth-main">${body}</main><div class="cth-flash" data-flash hidden role="status"></div>`;
+    host.innerHTML = `<div class="cth-fog" aria-hidden="true"></div><header class="cth-top"><button class="cth-brand" data-exit aria-label="Volver a la mesa"><span class="cth-sign">${window.NEXO_ICONS?.cthulhu || ''}</span><span><b>NEXO</b><small>LA LLAMADA DE CTHULHU</small></span></button><span class="cth-status" data-save-status>${esc(status)}</span></header><main class="cth-main">${body}</main><button class="nd-fab" data-dice aria-label="Abrir los dados"><span aria-hidden="true">⚄</span><b>Dados</b></button><div class="cth-flash" data-flash hidden role="status"></div>`;
     host.querySelectorAll('[data-exit]').forEach(button => button.addEventListener('click', close));
     host.querySelector('[data-dice]').addEventListener('click', () => window.NEXO_DICE?.tray('cthulhu', { sources: diceSources }));
   }

@@ -486,71 +486,252 @@
   }
   function show(delayed) {
     win.hidden = false;
+    document.documentElement.classList.add('nd-is-open');
     win.classList.toggle('is-waiting', Boolean(delayed) && !reduced());
   }
   function close() {
     if (!win) return;
     win.hidden = true;
+    document.documentElement.classList.remove('nd-is-open');
     clearStage();
   }
 
-  // Los dados cruzan la pantalla desde abajo a la izquierda, rebotan y se quedan mostrando su cara.
+  // Dados 3D: cada dado es un poliedro real (d4, d6, d8, d10, d12 o d20) dibujado en un lienzo.
+  // Cruzan la pantalla rodando, rebotan y se paran con la cara del resultado hacia quien mira.
+  const V = {
+    sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+    add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
+    mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k],
+    dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+    cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+    len: a => Math.hypot(a[0], a[1], a[2]),
+    norm: a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; }
+  };
+  const mat = {
+    apply: (m, v) => [m[0] * v[0] + m[1] * v[1] + m[2] * v[2], m[3] * v[0] + m[4] * v[1] + m[5] * v[2], m[6] * v[0] + m[7] * v[1] + m[8] * v[2]],
+    mul: (a, b) => [0, 1, 2].flatMap(r => [0, 1, 2].map(c => a[r * 3] * b[c] + a[r * 3 + 1] * b[3 + c] + a[r * 3 + 2] * b[6 + c])),
+    axis(axis, angle) {
+      const [x, y, z] = V.norm(axis), c = Math.cos(angle), s = Math.sin(angle), t = 1 - c;
+      return [t * x * x + c, t * x * y - s * z, t * x * z + s * y, t * x * y + s * z, t * y * y + c, t * y * z - s * x, t * x * z - s * y, t * y * z + s * x, t * z * z + c];
+    }
+  };
+
+  // Geometría de cada dado, con radio circunscrito 1. Las caras se ordenan alrededor de su normal.
+  function solid(vertices, faceSets) {
+    const verts = vertices.map(V.norm);
+    const faces = faceSets.map(ids => {
+      const pts = ids.map(i => verts[i]);
+      const c = V.mul(pts.reduce(V.add, [0, 0, 0]), 1 / pts.length);
+      let n = V.norm(V.cross(V.sub(pts[1], pts[0]), V.sub(pts[2], pts[0])));
+      if (V.dot(n, c) < 0) n = V.mul(n, -1);
+      const ref = V.norm(V.sub(pts[0], c)), side = V.cross(n, ref);
+      const order = pts.map((p, k) => [Math.atan2(V.dot(V.sub(p, c), side), V.dot(V.sub(p, c), ref)), p]).sort((a, b) => a[0] - b[0]).map(([, p]) => p);
+      const far = order.map(p => V.len(V.sub(p, c)));
+      const even = Math.max(...far) - Math.min(...far) < 1e-6;
+      // La parte de arriba del número: el vértice más alejado (cometa del d10) o el centro de un lado (cubo).
+      let up = even && order.length === 4 ? V.mul(V.add(order[0], order[1]), 0.5) : order[far.indexOf(Math.max(...far))];
+      up = V.norm(V.sub(up, c));
+      const inr = Math.min(...order.map((p, k) => {
+        const q = order[(k + 1) % order.length], e = V.norm(V.sub(q, p)), w = V.sub(c, p);
+        return V.len(V.sub(w, V.mul(e, V.dot(w, e))));
+      }));
+      return { pts: order, c, n, up, right: V.cross(up, n), inr };
+    });
+    return faces;
+  }
+  const PHI = (1 + Math.sqrt(5)) / 2;
+  const GEOMETRY = {};
+  function geometry(shape) {
+    if (GEOMETRY[shape]) return GEOMETRY[shape];
+    let g;
+    if (shape === 'd4') g = solid([[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]], [[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]]);
+    else if (shape === 'd6' || shape === 'plot') {
+      const v = [];
+      for (const x of [-1, 1]) for (const y of [-1, 1]) for (const z of [-1, 1]) v.push([x, y, z]);
+      const sets = [];
+      for (let axis = 0; axis < 3; axis++) for (const s of [-1, 1]) sets.push(v.map((p, i) => [p, i]).filter(([p]) => p[axis] === s).map(([, i]) => i));
+      g = solid(v, sets);
+    } else if (shape === 'd8') {
+      const v = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+      const sets = [];
+      for (const x of [0, 1]) for (const y of [2, 3]) for (const z of [4, 5]) sets.push([x, y, z]);
+      g = solid(v, sets);
+    } else if (shape === 'd10') {
+      // Trapezoedro pentagonal: dos vértices polares y dos anillos de cinco desfasados.
+      const ring = (z, off) => Array.from({ length: 5 }, (_, k) => [Math.cos((2 * Math.PI * k) / 5 + off), Math.sin((2 * Math.PI * k) / 5 + off), z]);
+      const h = 1.15;
+      const planar = e => { const t = [0, 0, h], u0 = ring(e, 0)[0], u1 = ring(e, 0)[1], l0 = ring(-e, Math.PI / 5)[0]; return V.dot(V.sub(l0, t), V.cross(V.sub(u0, t), V.sub(u1, t))); };
+      let lo = 0.001, hi = 1;
+      for (let k = 0; k < 60; k++) { const mid = (lo + hi) / 2; (planar(lo) * planar(mid) <= 0) ? (hi = mid) : (lo = mid); }
+      const e = (lo + hi) / 2;
+      const v = [[0, 0, h], [0, 0, -h], ...ring(e, 0), ...ring(-e, Math.PI / 5)];
+      const U = k => 2 + (k % 5), L = k => 7 + (k % 5);
+      const sets = [];
+      for (let k = 0; k < 5; k++) { sets.push([0, U(k), L(k), U(k + 1)]); sets.push([1, L(k), U(k + 1), L(k + 1)]); }
+      g = solid(v, sets);
+    } else {
+      const ico = [];
+      for (const a of [-1, 1]) for (const b of [-PHI, PHI]) ico.push([0, a, b], [a, b, 0], [b, 0, a]);
+      const icoFaces = [];
+      for (let i = 0; i < 12; i++) for (let j = i + 1; j < 12; j++) for (let k = j + 1; k < 12; k++) {
+        const close = (p, q) => Math.abs(V.len(V.sub(ico[p], ico[q])) - 2) < 1e-6;
+        if (close(i, j) && close(j, k) && close(i, k)) icoFaces.push([i, j, k]);
+      }
+      if (shape === 'd12') {
+        const dual = icoFaces.map(f => V.mul(f.map(i => ico[i]).reduce(V.add, [0, 0, 0]), 1 / 3));
+        g = solid(dual, ico.map((_, i) => icoFaces.map((f, fi) => [f, fi]).filter(([f]) => f.includes(i)).map(([, fi]) => fi)));
+      } else g = solid(ico, icoFaces);
+    }
+    GEOMETRY[shape] = g;
+    return g;
+  }
+
+  // Lo que pone en cada cara; el resultado va en una cara al azar.
+  function faceLabels(d, count) {
+    let all;
+    if (d.shape === 'plot') all = ['+2', '+4', '', '', '✦', '✦'];
+    else if (d.sides === 10 && d.label === 'decenas') all = Array.from({ length: 10 }, (_, i) => (i ? `${i}0` : '00'));
+    else if (d.sides === 10 && d.label === 'unidades') all = Array.from({ length: 10 }, (_, i) => String(i));
+    else all = Array.from({ length: count }, (_, i) => String(i + 1));
+    const rest = [...all];
+    rest.splice(Math.max(0, rest.indexOf(d.face)), 1);
+    for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
+    const at = Math.floor(Math.random() * count);
+    rest.splice(at, 0, d.face);
+    return { labels: rest.slice(0, count), at };
+  }
+
+  function rgb(color, fallback = [128, 128, 128]) {
+    const m = String(color || '').trim().match(/^#([0-9a-f]{3,8})$/i);
+    if (!m) return fallback;
+    let h = m[1];
+    if (h.length <= 4) h = [...h].map(c => c + c).join('');
+    return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16));
+  }
+  const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+  const paint = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+
+  let canvas, ctx, frame = 0, dice3d = [];
+  const LIGHT = V.norm([-0.45, 0.6, 1]);
   function clearStage() {
     clearTimeout(fadeTimer);
-    stage.getAnimations?.({ subtree: true }).forEach(a => a.cancel());
+    cancelAnimationFrame(frame);
+    dice3d = [];
     stage.replaceChildren();
     stage.classList.remove('is-fading');
+    canvas = null;
+  }
+  function drawDie(o, now) {
+    const t = Math.min(1, Math.max(0, (now - o.start) / o.duration));
+    const ease = 1 - Math.pow(1 - t, 3);
+    const gx = o.sx + (o.tx - o.sx) * ease, gy = o.sy + (o.ty - o.sy) * ease;
+    // Altura sobre la mesa: un vuelo y dos botes cada vez más bajos.
+    const hop = t < 0.5 ? Math.sin((t / 0.5) * Math.PI) * o.lift : t < 0.78 ? Math.sin(((t - 0.5) / 0.28) * Math.PI) * o.lift * 0.28 : t < 0.93 ? Math.sin(((t - 0.78) / 0.15) * Math.PI) * o.lift * 0.08 : 0;
+    const spin = o.turns * Math.pow(1 - t, 2.2);
+    const m = mat.mul(mat.axis(o.axis, spin), o.final);
+    const r = o.r * (1 + hop / 900);
+    const x = gx, y = gy - hop;
+    ctx.save();
+    ctx.globalAlpha = o.d.tag === 'drop' && t >= 1 ? 0.45 : 1;
+    // Sombra en la mesa.
+    ctx.fillStyle = `rgba(0,0,0,${0.24 - Math.min(0.16, hop / 900)})`;
+    ctx.beginPath();
+    ctx.ellipse(gx + r * 0.15, gy + r * 0.7, r * (0.95 + hop / 500), r * (0.32 + hop / 1500), 0, 0, Math.PI * 2);
+    ctx.fill();
+    const landed = t >= 1;
+    const tagColor = landed ? { hit: o.colors.good, crit: o.colors.crit, one: o.colors.bad }[o.d.tag] : null;
+    const project = p => { const w = mat.apply(m, p); return [x + w[0] * r, y - w[1] * r, w]; };
+    o.geo.forEach((f, fi) => {
+      const n = mat.apply(m, f.n);
+      if (n[2] <= 0.001) return;
+      const light = 0.38 + 0.62 * Math.max(0, V.dot(n, LIGHT));
+      const pts = f.pts.map(project);
+      ctx.beginPath();
+      pts.forEach(([px, py], k) => (k ? ctx.lineTo(px, py) : ctx.moveTo(px, py)));
+      ctx.closePath();
+      ctx.fillStyle = paint(mix(o.colors.dark, o.colors.face, light));
+      ctx.fill();
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = Math.max(1, r * 0.035);
+      ctx.strokeStyle = tagColor || paint(mix(o.colors.edge, o.colors.dark, 0.25 * (1 - light)));
+      ctx.stroke();
+      const label = o.labels[fi];
+      if (!label || n[2] < 0.25) return;
+      // El número va pegado al plano de la cara.
+      const c = project(f.c), ur = mat.apply(m, f.right), uu = mat.apply(m, f.up);
+      ctx.save();
+      ctx.setTransform(ur[0] * r / 100 * dpr, -ur[1] * r / 100 * dpr, -uu[0] * r / 100 * dpr, uu[1] * r / 100 * dpr, c[0] * dpr, c[1] * dpr);
+      ctx.globalAlpha *= Math.min(1, (n[2] - 0.25) * 2.2);
+      const size = f.inr * 100 * (label.length > 1 ? 0.95 : 1.25) * (o.geo.length >= 12 ? 1.1 : 1);
+      ctx.font = `700 ${size}px ${o.colors.font}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = landed && fi === o.at && tagColor ? tagColor : o.colors.ink;
+      ctx.fillText(label, 0, f.inr * 100 * 0.08);
+      if ((label === '6' || label === '9') && o.geo.length > 6) ctx.fillRect(-size * 0.22, size * 0.42, size * 0.44, size * 0.07);
+      ctx.restore();
+    });
+    ctx.restore();
+    return t >= 1;
+  }
+  let dpr = 1;
+  function loop(now) {
+    if (!canvas) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let done = true;
+    dice3d.forEach(o => { if (now < o.start) { done = false; return; } if (!drawDie(o, now)) done = false; });
+    if (!done) frame = requestAnimationFrame(loop);
   }
   function throwDice(result) {
     clearStage();
     stage.dataset.ndTheme = state.theme;
-    if (reduced() || !stage.animate) { win?.classList.remove('is-waiting'); return; }
+    if (reduced() || !window.requestAnimationFrame) { win?.classList.remove('is-waiting'); return; }
     const vw = window.innerWidth, vh = window.innerHeight;
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas = document.createElement('canvas');
+    canvas.width = Math.round(vw * dpr);
+    canvas.height = Math.round(vh * dpr);
+    stage.append(canvas);
+    ctx = canvas.getContext('2d');
+    const style = getComputedStyle(stage);
+    const colors = {
+      face: rgb(style.getPropertyValue('--nd-face')), dark: rgb(style.getPropertyValue('--nd-face-2')), edge: rgb(style.getPropertyValue('--nd-edge')),
+      ink: style.getPropertyValue('--nd-ink').trim() || '#fff', good: style.getPropertyValue('--nd-good').trim(), bad: style.getPropertyValue('--nd-bad').trim(), crit: style.getPropertyValue('--nd-crit').trim(),
+      font: style.getPropertyValue('--nd-num').trim() || 'sans-serif'
+    };
     const n = result.dice.length;
-    const size = n <= 3 ? 76 : n <= 6 ? 64 : n <= 12 ? 52 : 42;
+    const size = n <= 3 ? 86 : n <= 6 ? 72 : n <= 12 ? 58 : 46;
     const cols = Math.min(n, Math.max(1, Math.round(Math.sqrt(n * 1.8))));
     const rows = Math.ceil(n / cols);
     const narrow = vw < 720;
-    const cx = narrow ? vw / 2 : Math.min(vw * 0.42, vw - 420 - (cols * size * 1.3) / 2);
+    const cx = narrow ? vw / 2 : Math.max(size * cols * 0.7, Math.min(vw * 0.42, vw - 420 - (cols * size * 1.3) / 2));
     const cy = narrow ? vh * 0.3 : vh * 0.42;
+    const now = performance.now();
     let longest = 0;
-    result.dice.forEach((d, i) => {
-      const el = document.createElement('div');
-      el.className = `nd-die nd-${d.shape}`;
-      el.style.setProperty('--s', size + 'px');
-      el.innerHTML = '<i></i><b></b>';
-      const label = el.querySelector('b');
-      stage.append(el);
+    dice3d = result.dice.map((d, i) => {
+      const geo = geometry(d.shape === 'plot' ? 'plot' : d.shape);
+      const { labels, at } = faceLabels(d, geo.length);
+      const f = geo[at];
+      // Orientación final: la cara del resultado mira a la pantalla con el número derecho y un leve giro.
+      const base = [...V.cross(f.up, f.n), ...f.up, ...f.n];
+      const tilt = mat.mul(mat.axis([1, 0, 0], -0.42), mat.axis([0, 1, 0], (Math.random() - 0.5) * 0.6));
+      const final = mat.mul(mat.axis([0, 0, 1], (Math.random() - 0.5) * 0.5), mat.mul(tilt, base));
       const col = i % cols, row = Math.floor(i / cols);
-      const tx = cx + (col - (cols - 1) / 2) * size * 1.3 + (Math.random() - 0.5) * size * 0.4 - size / 2;
-      const ty = cy + (row - (rows - 1) / 2) * size * 1.3 + (Math.random() - 0.5) * size * 0.4 - size / 2;
-      const sx = -size * 1.5 - Math.random() * 120, sy = vh * (0.65 + Math.random() * 0.3);
-      const spin = (Math.random() < 0.5 ? -1 : 1) * 360 * (1 + Math.floor(Math.random() * 2));
-      const rest = (Math.random() - 0.5) * 24;
-      const midx = sx + (tx - sx) * 0.55, midy = Math.min(sy, ty) - vh * (0.12 + Math.random() * 0.1);
-      const duration = 950 + Math.random() * 350, delay = i * Math.min(60, 420 / n);
+      const tx = cx + (col - (cols - 1) / 2) * size * 1.35 + (Math.random() - 0.5) * size * 0.35;
+      const ty = cy + (row - (rows - 1) / 2) * size * 1.35 + (Math.random() - 0.5) * size * 0.35;
+      const sx = -size * 1.2 - Math.random() * 140, sy = vh * (0.55 + Math.random() * 0.35);
+      const dx = tx - sx, dy = ty - sy;
+      const duration = 1150 + Math.random() * 400, delay = i * Math.min(70, 480 / n);
       longest = Math.max(longest, duration + delay);
-      el.animate([
-        { transform: `translate(${sx}px,${sy}px) rotate(0deg) scale(.8)`, offset: 0 },
-        { transform: `translate(${midx}px,${midy}px) rotate(${spin * 0.55}deg) scale(1.08)`, offset: 0.42 },
-        { transform: `translate(${tx - 10}px,${ty}px) rotate(${spin * 0.92}deg) scale(1)`, offset: 0.72 },
-        { transform: `translate(${tx + 4}px,${ty - size * 0.22}px) rotate(${spin + rest - 8}deg) scale(1.02)`, offset: 0.86 },
-        { transform: `translate(${tx}px,${ty}px) rotate(${spin + rest}deg) scale(1)`, offset: 1 }
-      ], { duration, delay, easing: 'cubic-bezier(.25,.7,.35,1)', fill: 'both' });
-      const sides = d.shape === 'plot' ? 6 : d.sides;
-      let ticks = 0;
-      const flicker = setInterval(() => {
-        ticks += 1;
-        label.textContent = d.shape === 'plot' ? ['', '+2', '✦', '+4'][ticks % 4] : d.sides === 10 && d.label === 'decenas' ? `${die(10) - 1}0` : String(d.sides === 10 && d.label === 'unidades' ? die(10) - 1 : die(sides));
-      }, 70);
-      setTimeout(() => {
-        clearInterval(flicker);
-        label.textContent = d.face;
-        el.classList.add('is-landed');
-        if (d.tag) el.classList.add('is-' + d.tag);
-      }, delay + duration * 0.8);
+      return {
+        d, geo, labels, at, final, colors, sx, sy, tx, ty, r: size * 0.56, lift: vh * (0.14 + Math.random() * 0.08),
+        axis: V.norm([dy / 200 + (Math.random() - 0.5) * 0.6, dx / 200 + (Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 0.8]),
+        turns: Math.PI * 2 * (2 + Math.random() * 2) * (Math.random() < 0.5 ? -1 : 1), start: now + delay, duration
+      };
     });
-    result.landsIn = Math.min(longest, 1500);
+    frame = requestAnimationFrame(loop);
+    result.landsIn = Math.min(longest, 1700);
     setTimeout(() => win?.classList.remove('is-waiting'), result.landsIn);
     fadeTimer = setTimeout(() => {
       stage.classList.add('is-fading');
@@ -561,7 +742,7 @@
   // Estilos del lanzador: se cargan una vez para todos los apartados.
   const css = document.createElement('link');
   css.rel = 'stylesheet';
-  css.href = './src/nexo/dice.css?v=1';
+  css.href = './src/nexo/dice.css?v=2';
   document.head.append(css);
 
   window.NEXO_DICE = { tray, roll, close, die, rules: RULES };

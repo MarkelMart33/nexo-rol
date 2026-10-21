@@ -10,10 +10,9 @@
 /* Escenario de la tirada */
 .nd-stage{position:fixed;inset:0;z-index:2000;pointer-events:none;overflow:hidden;transition:opacity .6s ease}
 .nd-stage.is-fading{opacity:0}
-.nd-die{position:absolute;left:0;top:0;width:var(--s);height:var(--s);display:grid;place-items:center;filter:drop-shadow(0 10px 14px #0008) drop-shadow(0 0 10px var(--nd-glow));will-change:transform}
-.nd-die>i,.nd-mini>i{position:absolute;inset:0;background:var(--nd-edge)}
-.nd-die>i:after,.nd-mini>i:after{content:'';position:absolute;inset:6%;background:radial-gradient(circle at 32% 26%,var(--nd-face),var(--nd-face-2) 82%);clip-path:inherit;border-radius:inherit}
-.nd-die>b{position:relative;color:var(--nd-ink);font:700 calc(var(--s) * .4)/1 var(--nd-num);text-shadow:0 1px 0 #0004;font-variant-numeric:tabular-nums}
+.nd-stage canvas{position:absolute;inset:0;width:100%;height:100%}
+.nd-mini>i{position:absolute;inset:0;background:var(--nd-edge)}
+.nd-mini>i:after{content:'';position:absolute;inset:6%;background:radial-gradient(circle at 32% 26%,var(--nd-face),var(--nd-face-2) 82%);clip-path:inherit;border-radius:inherit}
 .nd-d6>i{border-radius:18%}
 .nd-plot>i{border-radius:50%}
 .nd-d4>i{clip-path:polygon(50% 3%,98% 94%,2% 94%)}
@@ -24,16 +23,6 @@
 .nd-d12>i{clip-path:polygon(50% 0,98% 36%,80% 96%,20% 96%,2% 36%)}
 .nd-d20>i{clip-path:polygon(50% 0,94% 25%,94% 75%,50% 100%,6% 75%,6% 25%)}
 .nd-d20>b{font-size:calc(var(--s) * .34)}
-.nd-die.is-landed{animation:nd-land .5s ease-out}
-.nd-die.is-hit,.nd-die.is-kept{filter:drop-shadow(0 10px 14px #0008) drop-shadow(0 0 14px var(--nd-glow))}
-.nd-die.is-crit{filter:drop-shadow(0 10px 14px #0008) drop-shadow(0 0 18px var(--nd-crit))}
-.nd-die.is-crit>i{background:var(--nd-crit)}
-.nd-die.is-one>i{background:var(--nd-bad)}
-.nd-die.is-one>b{color:var(--nd-bad)}
-[data-nd-theme="dnd"] .nd-die.is-one>b,[data-nd-theme="vtm-da"] .nd-die.is-one>b,[data-nd-theme="cthulhu"] .nd-die.is-one>b{color:#9b1c1c}
-.nd-die.is-hit>i{background:var(--nd-good)}
-.nd-die.is-drop{opacity:.42}
-@keyframes nd-land{0%{scale:1}35%{scale:1.14}100%{scale:1}}
 
 /* Ventana flotante */
 .nd-window{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));z-index:2001;width:min(380px,calc(100vw - 32px));max-height:min(78vh,640px);overflow:auto;display:grid;gap:12px;padding:14px 16px 16px;border:1px solid var(--nd-line);border-radius:var(--nd-radius);background:var(--nd-bg);color:var(--nd-text);font:16px/1.4 var(--nd-body);box-shadow:0 18px 60px #000a,0 0 0 1px #0002,inset 0 1px 0 #ffffff10;backdrop-filter:blur(8px);animation:nd-in .28s cubic-bezier(.2,.8,.2,1)}
@@ -102,10 +91,18 @@
 .nd-history li b{font-family:var(--nd-num)}
 .nd-history li small{grid-column:1/-1;color:var(--nd-muted);font-size:12px}
 
-/* Botón para abrir los dados desde la cabecera de cada apartado */
-.nd-open{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 12px;border:1px solid currentColor;border-radius:999px;background:transparent;cursor:pointer;font:inherit;font-size:14px;color:inherit;opacity:.9;white-space:nowrap}
-.nd-open:hover,.nd-open:focus-visible{opacity:1}
-.nd-open span{font-size:18px;line-height:1}
+/* Botón flotante para abrir los dados en cada apartado, abajo a la derecha */
+.nd-fab{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));z-index:40;display:inline-flex;align-items:center;gap:8px;min-height:52px;padding:0 20px 0 16px;border:1px solid var(--fab-edge,#ffffff33);border-radius:999px;background:var(--fab-bg,#222);color:var(--fab-ink,#fff);font:600 16px/1 var(--fab-font,inherit);letter-spacing:.06em;cursor:pointer;box-shadow:0 10px 30px -6px #000c,inset 0 1px 0 #ffffff22;transition:transform .2s ease,opacity .2s ease}
+.nd-fab span{font-size:24px;line-height:1}
+.nd-fab:hover{transform:translateY(-2px)}
+.nd-fab:focus-visible{outline:2px solid var(--fab-ink,#fff);outline-offset:3px}
+html.nd-is-open .nd-fab{opacity:0;pointer-events:none}
+.vtm .nd-fab{--fab-bg:linear-gradient(#b3122e,#7a0b1d);--fab-ink:#fff4f1;--fab-edge:#e0213f;--fab-font:var(--vtm-serif)}
+.vtm-da .nd-fab{--fab-bg:linear-gradient(#9b2a1c,#6b1d14);--fab-ink:#fbf1dc;--fab-edge:#c9a96a}
+.dnd .nd-fab{--fab-bg:linear-gradient(#6e3a1d,#3e1f0e);--fab-ink:#f3dcae;--fab-edge:#c79a4a;--fab-font:var(--dnd-head)}
+.tor .nd-fab{--fab-bg:linear-gradient(#1d3552,#0d1828);--fab-ink:#dff7ff;--fab-edge:#d4b06a;--fab-font:var(--tor-head)}
+.cth .nd-fab{--fab-bg:linear-gradient(#16302b,#0b1513);--fab-ink:#7fd1a8;--fab-edge:#4f9a7a;--fab-font:var(--cth-type)}
+.pf .nd-fab{--fab-bg:linear-gradient(#3a2150,#1e1029);--fab-ink:#e0b65a;--fab-edge:#a9853f;--fab-font:var(--pf-display)}
 .nd-roll-btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:0 6px;border:1px solid transparent;border-radius:6px;background:transparent;cursor:pointer;font:inherit;color:inherit}
 .nd-roll-btn:hover,.nd-roll-btn:focus-visible{border-color:currentColor}
 .nd-roll-btn:after{content:'⚄';font-size:.9em;opacity:.6}
@@ -113,20 +110,13 @@
 @media (max-width:719px){
   .nd-window{left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));width:auto;max-height:62vh;padding:12px 14px 14px}
   .nd-total strong{font-size:38px}
-  .nd-open b{display:none}
+  .nd-fab{min-height:48px;padding:0 16px 0 14px}
 }
 @media (prefers-reduced-motion:reduce){
-  .nd-window,.nd-die.is-landed{animation:none}
+  .nd-window{animation:none}
+  .nd-fab{transition:none}
   .nd-window,.nd-stage{transition:none}
 }
 
-/* Sitio del botón en la cabecera de cada apartado */
-.vtm-top>.vtm-status,.dnd-top>.dnd-status,.tor-top>.tor-status,.cth-top>.cth-status,.pf-top>.pf-status{margin-left:auto}
-.vtm-top>.nd-open{color:var(--vtm-red-hi);font-family:var(--vtm-serif);letter-spacing:.1em}
-.vtm-da .vtm-top>.nd-open{color:var(--vtm-red)}
-.dnd-top>.nd-open{color:#e3b874;font-family:var(--dnd-head);letter-spacing:.08em}
-.tor-top>.nd-open{color:var(--tor-brass);font-family:var(--tor-head);letter-spacing:.1em}
-.cth-top>.nd-open{color:var(--cth-glow);font-family:var(--cth-type);letter-spacing:.08em}
 .cth-skills .cth-skill-roll{justify-self:center}
 .cth-char-final .nd-roll-btn{margin-left:auto}
-.pf-top>.nd-open{color:var(--pf-gold);font-family:var(--pf-display);letter-spacing:.1em}

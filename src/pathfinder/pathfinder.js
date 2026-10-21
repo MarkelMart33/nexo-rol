@@ -327,7 +327,7 @@
 
   // Vistas
   function frame(body, status = 'ABSALOM · MAR INTERIOR') {
-    host.innerHTML = `<div class="pf-stars" aria-hidden="true"></div><header class="pf-top"><button class="pf-brand" data-exit aria-label="Volver a la mesa"><span class="pf-sign">${window.NEXO_ICONS?.pathfinder || ''}</span><span><b>NEXO</b><small>PATHFINDER · 2ª EDICIÓN</small></span></button><span class="pf-status" data-save-status>${esc(status)}</span><button class="nd-open" data-dice aria-label="Abrir los dados"><span aria-hidden="true">⚄</span><b>DADOS</b></button></header><main class="pf-main">${body}</main><div class="pf-flash" data-flash hidden role="status"></div>`;
+    host.innerHTML = `<div class="pf-stars" aria-hidden="true"></div><header class="pf-top"><button class="pf-brand" data-exit aria-label="Volver a la mesa"><span class="pf-sign">${window.NEXO_ICONS?.pathfinder || ''}</span><span><b>NEXO</b><small>PATHFINDER · 2ª EDICIÓN</small></span></button><span class="pf-status" data-save-status>${esc(status)}</span></header><main class="pf-main">${body}</main><button class="nd-fab" data-dice aria-label="Abrir los dados"><span aria-hidden="true">⚄</span><b>Dados</b></button><div class="pf-flash" data-flash hidden role="status"></div>`;
     host.querySelectorAll('[data-exit]').forEach(button => button.addEventListener('click', close));
     host.querySelector('[data-dice]').addEventListener('click', () => window.NEXO_DICE?.tray('pathfinder', { sources: diceSources }));
   }
