@@ -71,13 +71,14 @@
     }));
     return {
       title: 'Manual de Traveller',
-      intro: 'Guía de consulta de Traveller: cómo se resuelven las tareas, la creación por carreras, el combate, el salto, los puertos y el comercio, más el índice del PDF con sus páginas.',
+      intro: 'Guía de consulta de Traveller: cómo se resuelven las tareas, la creación por carreras, el combate, el salto, los puertos y el comercio, las habilidades, el equipo, las naves por dentro, los mundos y la psiónica, más el índice del PDF con sus páginas.',
       note: 'Los textos son resúmenes propios; «ventaja», «desventaja» y «licenciamiento» son traducciones propias.',
       chapters: [
         { id: 'trv-cap-reglas', title: 'Reglas básicas', intro: 'Tareas, dificultad, efecto y características.', entries: BASICS },
         { id: 'trv-cap-personajes', title: 'Viajeros', intro: 'Cómo se crea un viajero viviendo su carrera.', entries: CHARACTERS },
         { id: 'trv-cap-combate', title: 'Combate', intro: 'Asaltos, acciones y heridas.', entries: COMBAT },
         { id: 'trv-cap-naves', title: 'Naves, salto y comercio', intro: 'Viajar entre estrellas y ganarse la vida haciéndolo.', entries: SHIPS },
+        ...(window.NEXO_MANUALS.travellerReglas || []),
         { id: 'trv-cap-pdf', title: 'Índice del PDF', intro: 'Los temas del manual compartido con sus páginas.', entries: pages }
       ]
     };
