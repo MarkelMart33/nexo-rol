@@ -89,6 +89,20 @@
   let dia = null;
   let exitHandler = null;
   let saveTimer = 0;
+  const manualBooks = {};
+
+  // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y src/vampiro/vampiro-manual.js).
+  // Noches modernas y Edad Oscura tienen cada una sus campañas y su manual.
+  const ap = window.NEXO_APARTADOS?.create({
+    prefix: 'vtm', system: () => (side === 'da' ? 'vampiro-da' : 'vampiro-v20'), frame: body => frame(body),
+    leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
+    characters: () => store.characters.filter(ch => ch.era === side).map(ch => ({ id: ch.id, name: ch.name || (side === 'da' ? 'Cainita sin nombre' : 'Vástago sin nombre'), summary: `${clanOf(ch).name} · ${generation(ch)}ª generación` })),
+    openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
+    currentId: () => current?.id,
+    manual: () => manualBooks[side] || (manualBooks[side] = window.NEXO_MANUALS?.vampiro?.({ side, slug, ERAS, ROADS, DISCIPLINES, ATTRS, GENERATIONS, TRAIT_MAX, LORE }) || null),
+    words: { characters: 'vástagos', character: 'vástago' }
+  });
+  const manualLink = (id, label) => ap?.link(id, label) || '';
 
   function load() {
     try {
@@ -408,7 +422,7 @@
     const intro = side === 'da'
       ? `<p class="vtm-kicker">NEXO / VAMPIRO: EDAD OSCURA · 20º ANIVERSARIO</p><h1>Crónicas de los <em>Cainitas</em></h1><p class="vtm-intro">Anno Domini MCCXLII. Crea a tus Cainitas con las reglas de Edad Oscura V20: sus clanes, sus sendas, sus habilidades y trasfondos, puntos gratuitos y experiencia.</p><div class="vtm-actions"><button class="vtm-button" data-new="da">✚ ESCRIBIR UN NUEVO CAINITA</button><button class="vtm-button ghost" data-exit>← VOLVER A LA MESA</button></div>`
       : `<p class="vtm-kicker">NEXO / VAMPIRO: LA MASCARADA · 20º ANIVERSARIO</p><h1>Tus <em>vástagos</em></h1><p class="vtm-intro">Crea personajes de las noches modernas con las reglas de V20: prioridades de atributos y habilidades, disciplinas, trasfondos, virtudes, puntos gratuitos y experiencia.</p><div class="vtm-actions"><button class="vtm-button" data-new="v20">✚ ABRAZAR UN NUEVO VÁSTAGO</button><button class="vtm-button ghost" data-exit>← VOLVER A LA MESA</button></div>`;
-    frame(`${intro}<div class="vtm-list">${cards}</div>`);
+    frame(`${ap?.tabs('personajes') || ''}${intro}<div class="vtm-list">${cards}</div>`);
     host.querySelectorAll('[data-new]').forEach(button => button.addEventListener('click', () => openEditor(newCharacter(button.dataset.new))));
     host.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
       const ch = store.characters.find(item => item.id === button.dataset.open);
@@ -523,7 +537,7 @@
     const sheet = host?.querySelector('[data-sheet]');
     if (!ch || !sheet) return;
     const clan = clanOf(ch);
-    host.querySelector('[data-weakness]').innerHTML = `<b>Debilidad del clan ${esc(clan.name)}:</b> ${esc(clan.weak)}`;
+    host.querySelector('[data-weakness]').innerHTML = `<b>Debilidad del clan ${esc(clan.name)}:</b> ${esc(clan.weak)} ${manualLink(`vtm-clan-${ch.clan}`, `Clan ${clan.name} en el manual`)}`;
     const gen = generation(ch);
     const [blood, perTurn] = GENERATIONS[gen] || GENERATIONS[13];
     const rows = summary(ch);
@@ -763,6 +777,7 @@
     host.hidden = true;
     host.setAttribute('aria-label', 'NEXO Vampiro: La Mascarada');
     document.body.append(host);
+    ap?.mount(host);
     host.addEventListener('keydown', event => {
       const modal = host.querySelector('[data-modal]');
       if (event.key === 'Escape' && modal && !modal.hidden) modal.hidden = true;
@@ -776,8 +791,9 @@
     side = requested ? requested.era : options.era === 'da' ? 'da' : 'v20';
     host.classList.toggle('vtm-da', side === 'da');
     host.setAttribute('aria-label', side === 'da' ? 'NEXO Vampiro: Edad Oscura' : 'NEXO Vampiro: La Mascarada');
+    ap?.reset();
     renderList();
-    if (requested) openEditor(requested);
+    if (requested) { openEditor(requested); ap?.at(requested.id); }
     host.hidden = false;
     pullFromCloud();
     document.documentElement.classList.add('nexo-vampire-open');
@@ -785,6 +801,7 @@
   function close() {
     flushSave();
     window.NEXO_DICE?.close();
+    window.NEXO_NAV?.reset?.();
     current = null;
     host.hidden = true;
     document.documentElement.classList.remove('nexo-vampire-open');

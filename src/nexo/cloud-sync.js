@@ -1,12 +1,13 @@
 /*
- * NEXO cloud saves for the character-based games (Vampiro, D&D, Tormentas, Cthulhu, Pathfinder).
+ * NEXO cloud saves for the character-based games (Vampiro, D&D, Tormentas, Cthulhu, Pathfinder)
+ * and for the campaigns of every system (game "campanas", list field "campaigns").
  * Each account keeps one private row per game in public.game_saves.
  * The browser copy stays as the working copy; "<key>-cloud" records whether
  * it has been uploaded ("clean") or still has changes the cloud lacks.
  */
 (() => {
   const client = window.nexoSupabaseClient || null;
-  const LOCAL_KEYS = ['nexo-vampire-v1', 'nexo-dnd-v1', 'nexo-tormentas-v1', 'nexo-cthulhu-v1', 'nexo-pathfinder-v1'];
+  const LOCAL_KEYS = ['nexo-vampire-v1', 'nexo-dnd-v1', 'nexo-tormentas-v1', 'nexo-cthulhu-v1', 'nexo-pathfinder-v1', 'nexo-campanas-v1'];
   const chains = {};
   let user = null;
 
@@ -36,26 +37,27 @@
     return chains[game].catch(error => { console.error('NEXO sync error', error); return false; });
   }
 
-  // Brings the local store in line with the cloud. Unuploaded local characters are
+  // Brings the local store in line with the cloud. Unuploaded local records are
   // merged in (newest updatedAt wins); otherwise the cloud copy replaces the local one.
-  async function syncCharacters(game, key, local) {
+  // `field` names the list inside the store: "characters" for sheets, "campaigns" for campaigns.
+  async function syncCharacters(game, key, local, field = 'characters') {
     if (!client || !user) return null;
     await chains[game]?.catch(() => {});
     const { data: row, error } = await client.from('game_saves').select('data').eq('game', game).maybeSingle();
     if (error) throw error;
-    const remote = Array.isArray(row?.data?.characters) ? row.data.characters : [];
+    const remote = Array.isArray(row?.data?.[field]) ? row.data[field] : [];
     if (row && isClean(key)) {
-      const store = { characters: remote };
+      const store = { [field]: remote };
       localStorage.setItem(key, JSON.stringify(store));
       return store;
     }
     const byId = new Map(remote.map(ch => [ch.id, ch]));
-    local.characters.forEach(ch => {
+    local[field].forEach(ch => {
       const other = byId.get(ch.id);
       if (!other || String(ch.updatedAt || '') >= String(other.updatedAt || '')) byId.set(ch.id, ch);
     });
-    const localIds = new Set(local.characters.map(ch => ch.id));
-    const store = { characters: [...local.characters.map(ch => byId.get(ch.id)), ...remote.filter(ch => !localIds.has(ch.id))] };
+    const localIds = new Set(local[field].map(ch => ch.id));
+    const store = { [field]: [...local[field].map(ch => byId.get(ch.id)), ...remote.filter(ch => !localIds.has(ch.id))] };
     localStorage.setItem(key, JSON.stringify(store));
     await save(game, key, store);
     return store;

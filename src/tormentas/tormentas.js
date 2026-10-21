@@ -86,6 +86,19 @@
   let current = null;
   let exitHandler = null;
   let saveTimer = 0;
+  let manualBook = null;
+
+  // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y el manual de este sistema).
+  const ap = window.NEXO_APARTADOS?.create({
+    prefix: 'tor', system: () => GAME, frame: body => frame(body),
+    leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
+    characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Héroe sin nombre', summary: describe(ch) })),
+    openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
+    currentId: () => current?.id,
+    manual: () => manualBook || (manualBook = window.NEXO_MANUALS?.tormentas?.({ REALMS, AT, SKILLS, ANCESTRIES, CULTURES, PATHS, SURGES, ORDERS }) || null),
+    words: { characters: 'héroes', character: 'héroe' }
+  });
+  const manualLink = (id, label) => ap?.link(id, label) || '';
 
   function load() {
     try {
@@ -265,7 +278,7 @@
       const done = isComplete(ch);
       return `<button class="tor-card" data-open="${esc(ch.id)}"><span class="tor-card-gem">${esc((ch.name || '?').trim().charAt(0).toUpperCase() || '?')}</span><span class="tor-card-copy"><b>${esc(ch.name || 'Héroe sin nombre')}</b><small>${esc(describe(ch))}</small></span><span class="tor-badge ${done ? 'is-done' : ''}">${done ? 'LISTO' : 'EN CREACIÓN'}</span></button>`;
     }).join('') : '<div class="tor-empty"><span aria-hidden="true">✦</span><b>Las Llanuras están en calma</b><small>Pulsa «Despertar a un héroe» para crear tu primer personaje.</small></div>';
-    frame(`<p class="tor-kicker">NEXO / JUEGO DE ROL DEL COSMERE · MANUAL DE STORMLIGHT</p><h1>Tus <em>héroes</em> de Roshar</h1><p class="tor-intro">Crea personajes de nivel 1: ascendencia, dos culturas, un camino heroico, 12 puntos de atributo y 4 rangos de habilidad. NEXO calcula defensas, salud, concentración, investidura, movimiento y sentidos, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="tor-actions"><button class="tor-button" data-new>✦ DESPERTAR A UN HÉROE</button><button class="tor-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="tor-list">${cards}</div>`);
+    frame(`${ap?.tabs('personajes') || ''}<p class="tor-kicker">NEXO / JUEGO DE ROL DEL COSMERE · MANUAL DE STORMLIGHT</p><h1>Tus <em>héroes</em> de Roshar</h1><p class="tor-intro">Crea personajes de nivel 1: ascendencia, dos culturas, un camino heroico, 12 puntos de atributo y 4 rangos de habilidad. NEXO calcula defensas, salud, concentración, investidura, movimiento y sentidos, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="tor-actions"><button class="tor-button" data-new>✦ DESPERTAR A UN HÉROE</button><button class="tor-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="tor-list">${cards}</div>`);
     host.querySelector('[data-new]').addEventListener('click', () => openEditor(newCharacter()));
     host.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
       const ch = store.characters.find(item => item.id === button.dataset.open);
@@ -331,7 +344,7 @@
     return `<section class="tor-panel">${heading(2, 'Origen', 'ascendencia · culturas · camino')}<div class="tor-cols">
       <div class="tor-col"><h3>Ascendencia</h3>
         <label class="tor-field"><span>Ascendencia</span><select data-choice="ancestry">${options(sorted(ANCESTRIES), ch.ancestry, 'Elige una ascendencia…')}</select></label>
-        ${anc ? `<p class="tor-narr">${esc(anc.traits)}</p>` : '<p class="tor-note">Humano o cantor. Los cantores cambian de forma con las altas tormentas.</p>'}
+        ${anc ? `<p class="tor-narr">${esc(anc.traits)} ${manualLink(`tor-anc-${ch.ancestry}`, 'Ascendencia en el manual')}</p>` : '<p class="tor-note">Humano o cantor. Los cantores cambian de forma con las altas tormentas.</p>'}
         <h3>Culturas <span class="tor-left ${left === 0 ? 'is-done' : ''}">${left === 0 ? 'Completo' : `Elige ${left} más`}</span></h3>
         <div class="tor-chips">${chips}</div>
         ${ch.cultures.length ? `<p class="tor-note">${ch.cultures.map(k => `<b>${esc(CULTURES[k][0])}:</b> ${esc(CULTURES[k][1])}`).join('<br>')}</p>` : '<p class="tor-note">Cada cultura te da una pericia: conoces sus costumbres, su idioma y su historia.</p>'}
@@ -339,7 +352,7 @@
       <div class="tor-col"><h3>Camino heroico</h3>
         <label class="tor-field"><span>Camino</span><select data-choice="path">${options(sorted(PATHS), ch.path, 'Elige un camino…')}</select></label>
         ${path ? `<label class="tor-field"><span>Especialidad (opcional)</span><select data-choice="spec">${options(path.specs.map(s => [s, s]), ch.spec, 'Sin especialidad todavía')}</select></label>
-          <p class="tor-narr">${esc(path.story)}</p>${info([['Habilidad del camino', `${SKILLS[path.skill][0]} (+1 rango)`], ['Talento clave', path.talent], ['Efecto', path.talentText]])}` : '<p class="tor-note">El camino te da un talento clave, un rango en su habilidad y el árbol de talentos que irás desbloqueando.</p>'}
+          <p class="tor-narr">${esc(path.story)} ${manualLink(`tor-cam-${ch.path}`, 'Camino en el manual')}</p>${info([['Habilidad del camino', `${SKILLS[path.skill][0]} (+1 rango)`], ['Talento clave', path.talent], ['Efecto', path.talentText]])}` : '<p class="tor-note">El camino te da un talento clave, un rango en su habilidad y el árbol de talentos que irás desbloqueando.</p>'}
         <div class="tor-level"><label class="tor-field"><span>Nivel</span><input type="number" min="1" max="${MAX_LEVEL}" data-num="level" value="${ch.level}"></label><span class="tor-tier">Escalón ${tier(ch)}</span></div>
         ${ch.level > 1 ? `<div class="tor-fields tor-fields-3 tor-advance"><label class="tor-field"><span>Atributos ganados</span><input type="number" min="0" max="20" data-num="attrBonus" value="${ch.attrBonus}"></label><label class="tor-field"><span>Rangos ganados</span><input type="number" min="0" max="80" data-num="rankBonus" value="${ch.rankBonus}"></label><label class="tor-field"><span>Salud ganada</span><input type="number" min="0" max="300" data-num="healthBonus" value="${ch.healthBonus}"></label></div><p class="tor-note">Por encima del nivel 1, apunta lo que te da la tabla de progresión del manual y NEXO lo suma a tus repartos.</p>` : ''}
       </div>
@@ -402,7 +415,7 @@
       ${ch.radiant ? `<div class="tor-cols tor-cols-2"><div class="tor-col">
           <label class="tor-field"><span>Orden</span><select data-choice="order">${options(sorted(ORDERS), ch.order, 'Elige una orden…')}</select></label>
           <label class="tor-field"><span>Nombre del spren</span><input data-prop="spren" value="${esc(ch.spren)}" maxlength="40" placeholder="${esc(order ? 'Tu ' + order.spren : 'Tu spren')}"></label>
-          ${order ? info([['Spren', order.spren], ['Ideales', order.theme]]) : '<p class="tor-note">Cada orden tiene su spren, su forma de entender los Ideales y dos potencias.</p>'}
+          ${order ? info([['Spren', order.spren], ['Ideales', order.theme]]) + manualLink(`tor-ord-${ch.order}`, 'Orden en el manual') : '<p class="tor-note">Cada orden tiene su spren, su forma de entender los Ideales y dos potencias.</p>'}
         </div><div class="tor-col"><h3>Ideales pronunciados</h3><div class="tor-ideals">${ideals}</div>
           <p class="tor-note">${ch.ideal ? `Has pronunciado ${ch.ideal === 1 ? 'el Primer Ideal' : `${ch.ideal} Ideales`}: tienes investidura y puedes absorber luz tormentosa.` : 'Aún no has pronunciado el Primer Ideal: «Vida antes que muerte. Fuerza antes que debilidad. Viaje antes que destino.»'}</p>
           ${order ? `<h3>Potencias</h3><div class="tor-surges">${surges}</div>` : ''}
@@ -455,6 +468,7 @@
     host.hidden = true;
     host.setAttribute('aria-label', 'NEXO El Archivo de las Tormentas');
     document.body.append(host);
+    ap?.mount(host);
     host.addEventListener('keydown', event => {
       if (event.key === 'Escape') host.querySelectorAll('.tor-modal').forEach(modal => { modal.hidden = true; });
     });
@@ -463,9 +477,10 @@
     ensureHost();
     exitHandler = options.onExit || null;
     store = load();
+    ap?.reset();
     renderList();
     const requested = options.characterId && store.characters.find(ch => ch.id === options.characterId);
-    if (requested) openEditor(requested);
+    if (requested) { openEditor(requested); ap?.at(requested.id); }
     host.hidden = false;
     pullFromCloud();
     document.documentElement.classList.add('nexo-tormentas-open');
@@ -473,6 +488,7 @@
   function close() {
     flushSave();
     window.NEXO_DICE?.close();
+    window.NEXO_NAV?.reset?.();
     current = null;
     host.hidden = true;
     document.documentElement.classList.remove('nexo-tormentas-open');

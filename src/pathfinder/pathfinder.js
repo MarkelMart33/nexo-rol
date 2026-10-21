@@ -101,6 +101,19 @@
   let current = null;
   let exitHandler = null;
   let saveTimer = 0;
+  let manualBook = null;
+
+  // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y src/pathfinder/pathfinder-manual.js).
+  const ap = window.NEXO_APARTADOS?.create({
+    prefix: 'pf', system: () => GAME, frame: body => frame(body),
+    leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
+    characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Aventurero sin nombre', summary: describe(ch) })),
+    openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
+    currentId: () => current?.id,
+    manual: () => manualBook || (manualBook = window.NEXO_MANUALS?.pathfinder?.({ ATTR, RANKS, SKILLS, ANCESTRIES, BACKGROUNDS, CLASSES }) || null),
+    words: { campaigns: 'Tus campañas', characters: 'aventureros', character: 'aventurero' }
+  });
+  const manualLink = (id, label) => ap?.link(id, label) || '';
 
   function load() {
     try {
@@ -359,7 +372,7 @@
       const done = isComplete(ch);
       return `<button class="pf-card" data-open="${esc(ch.id)}"><span class="pf-card-mark" aria-hidden="true">${window.NEXO_ICONS?.pathfinder || ''}</span><span class="pf-card-copy"><b>${esc(ch.name || 'Aventurero sin nombre')}</b><small>${esc(describe(ch))}</small></span><span class="pf-badge ${done ? 'is-done' : ''}">${done ? 'Listo' : 'En curso'}</span></button>`;
     }).join('') : `<div class="pf-empty"><span aria-hidden="true">${window.NEXO_ICONS?.pathfinder || ''}</span><b>Aún no hay aventureros</b><small>Pulsa «Nuevo aventurero» para crear tu primer personaje.</small></div>`;
-    frame(`<p class="pf-kicker">NEXO / PATHFINDER · 2ª EDICIÓN REMASTER</p><h1>Tus <em>aventureros</em></h1><p class="pf-intro">Crea personajes de nivel 1 para Golarion: ascendencia y herencia, bagaje, clase, mejoras de atributo y habilidades entrenadas. NEXO calcula puntos de golpe, Clase de Armadura, Percepción, salvaciones, CD de clase y de conjuros, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="pf-actions"><button class="pf-button" data-new>NUEVO AVENTURERO</button><button class="pf-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="pf-list">${cards}</div><p class="pf-quote">«Explora, informa, coopera.»</p>`);
+    frame(`${ap?.tabs('personajes') || ''}<p class="pf-kicker">NEXO / PATHFINDER · 2ª EDICIÓN REMASTER</p><h1>Tus <em>aventureros</em></h1><p class="pf-intro">Crea personajes de nivel 1 para Golarion: ascendencia y herencia, bagaje, clase, mejoras de atributo y habilidades entrenadas. NEXO calcula puntos de golpe, Clase de Armadura, Percepción, salvaciones, CD de clase y de conjuros, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="pf-actions"><button class="pf-button" data-new>NUEVO AVENTURERO</button><button class="pf-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="pf-list">${cards}</div><p class="pf-quote">«Explora, informa, coopera.»</p>`);
     host.querySelector('[data-new]').addEventListener('click', () => openEditor(newCharacter()));
     host.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
       const ch = store.characters.find(item => item.id === button.dataset.open);
@@ -416,7 +429,7 @@
     let body = '<p class="pf-note">La ascendencia fija tus puntos de golpe iniciales, tu tamaño, tu velocidad, tus sentidos, tus idiomas y parte de tus mejoras de atributo.</p>';
     if (a) {
       const heritages = [...a.heritages, ...VERSATILE].map(h => [h, h]);
-      body = `<p class="pf-narr">${esc(a.text)}</p>
+      body = `<p class="pf-narr">${esc(a.text)} ${manualLink(`pf-anc-${ch.ancestry}`, `Leer sobre ${a.name.toLowerCase()}s`)}</p>
         <dl class="pf-info"><div><dt>Puntos de golpe</dt><dd>${a.hp}</dd></div><div><dt>Tamaño y velocidad</dt><dd>${a.size} · ${a.speed} pies</dd></div><div><dt>Sentidos</dt><dd>${a.vision}</dd></div>
           <div><dt>Mejoras</dt><dd>${ch.altBoosts ? 'Dos mejoras libres' : [boostList(a.boosts), a.free ? `${a.free > 1 ? `${a.free} libres` : 'una libre'}` : ''].filter(Boolean).join(' y ')}</dd></div>
           <div><dt>Defecto</dt><dd>${ch.altBoosts || !a.flaw ? 'Ninguno' : ATTR[a.flaw].name}</dd></div><div><dt>Idiomas</dt><dd>${a.langs.join(', ')}${a.extraLang ? ' y uno más' : ''}</dd></div></dl>
@@ -436,7 +449,7 @@
       const skillPick = Array.isArray(b.skill)
         ? `<label class="pf-field pf-field-wide"><span>Habilidad del bagaje</span><select data-choice="bgSkill">${options(b.skill.map(k => [k, SKILLS[k][0]]), ch.bgSkill, 'Elige una habilidad…')}</select></label>`
         : '';
-      body = `<p class="pf-narr">${esc(b.text)}</p>
+      body = `<p class="pf-narr">${esc(b.text)} ${manualLink(`pf-bag-${ch.background}`, 'Leer en el manual')}</p>
         <dl class="pf-info"><div><dt>Mejoras</dt><dd>${custom ? 'Dos a elegir' : `${boostList(b.attrs).replace(', ', ' o ')} y una libre`}</dd></div>
           <div><dt>Habilidad</dt><dd>${Array.isArray(b.skill) ? (custom ? 'A elegir' : b.skill.map(k => SKILLS[k][0]).join(', ').replace(/, ([^,]*)$/, ' o $1')) : SKILLS[b.skill][0]}</dd></div>
           ${custom ? '' : `<div><dt>Dote de habilidad</dt><dd>${esc(b.feat)}</dd></div>`}</dl>
@@ -453,7 +466,7 @@
     let body = '<p class="pf-note">La clase da tu atributo clave, los puntos de golpe por nivel, tus competencias iniciales y tus habilidades.</p>';
     if (c) {
       const rank = r => RANKS[r].toLowerCase();
-      body = `<p class="pf-narr">${esc(c.text)}</p>
+      body = `<p class="pf-narr">${esc(c.text)} ${manualLink(`pf-cls-${ch.cls}`, 'Leer en el manual')}</p>
         <dl class="pf-info"><div><dt>Atributo clave</dt><dd>${c.key.map(k => ATTR[k].name).join(' o ')}</dd></div><div><dt>Puntos de golpe</dt><dd>${c.hp} + CON por nivel</dd></div>
           <div><dt>Percepción</dt><dd>${rank(c.perc)}</dd></div><div><dt>Salvaciones</dt><dd>Fortaleza ${rank(c.fort)}, Reflejos ${rank(c.ref)}, Voluntad ${rank(c.vol)}</dd></div>
           <div><dt>Habilidades</dt><dd>${[...c.skills.map(k => SKILLS[k][0]), `${c.free} más + INT`].join(', ')}</dd></div>
@@ -531,7 +544,7 @@
       <div class="pf-stats">${stats.map(([k, v]) => { const roll = c && ROLLABLE[k]; return `<div><small>${k}</small>${roll ? `<button class="nd-roll-btn" data-pf-roll="${roll}" aria-label="Tirar ${k}"><b>${esc(v)}</b></button>` : `<b>${esc(v)}</b>`}</div>`; }).join('')}</div>
       <label class="pf-field pf-field-wide"><span>Armadura</span><select data-choice="armor">${options(armors, ch.armor)}</select></label>
       ${c && !ac.trained ? '<p class="pf-note pf-warn">Tu clase no está entrenada en esa armadura: no sumas competencia a la CA.</p>' : ''}
-      <p class="pf-note">Competencia: entrenado +2, experto +4, maestro +6 y legendario +8, más el nivel; sin entrenar, +0. Puntos de golpe: los de la ascendencia más los de la clase y CON por nivel. CA: 10 + DES (hasta el máximo de la armadura) + competencia + armadura; un escudo alzado suma su bonificador. CD de clase: 10 + atributo clave + competencia. Impedimenta: impedido a partir de 5 + FUE y máximo 10 + FUE.</p></section>`;
+      <p class="pf-note">Competencia: entrenado +2, experto +4, maestro +6 y legendario +8, más el nivel; sin entrenar, +0. Puntos de golpe: los de la ascendencia más los de la clase y CON por nivel. CA: 10 + DES (hasta el máximo de la armadura) + competencia + armadura; un escudo alzado suma su bonificador. CD de clase: 10 + atributo clave + competencia. Impedimenta: impedido a partir de 5 + FUE y máximo 10 + FUE.</p><p class="pf-note">${manualLink('pf-competencia', 'Competencia')} ${manualLink('pf-clase-armadura', 'Clase de Armadura')} ${manualLink('pf-salvaciones', 'Salvaciones')} ${manualLink('pf-grados-exito', 'Grados de éxito')}</p></section>`;
   }
 
   function languagesPanel(ch) {
@@ -591,6 +604,7 @@
     host.hidden = true;
     host.setAttribute('aria-label', 'NEXO Pathfinder');
     document.body.append(host);
+    ap?.mount(host);
     host.addEventListener('keydown', event => {
       if (event.key === 'Escape') host.querySelectorAll('.pf-modal').forEach(modal => { modal.hidden = true; });
     });
@@ -599,9 +613,10 @@
     ensureHost();
     exitHandler = options.onExit || null;
     store = load();
+    ap?.reset();
     renderList();
     const requested = options.characterId && store.characters.find(ch => ch.id === options.characterId);
-    if (requested) openEditor(requested);
+    if (requested) { openEditor(requested); ap?.at(requested.id); }
     host.hidden = false;
     pullFromCloud();
     document.documentElement.classList.add('nexo-pathfinder-open');
@@ -609,6 +624,7 @@
   function close() {
     flushSave();
     window.NEXO_DICE?.close();
+    window.NEXO_NAV?.reset?.();
     current = null;
     host.hidden = true;
     document.documentElement.classList.remove('nexo-pathfinder-open');
