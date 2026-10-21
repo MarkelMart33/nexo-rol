@@ -332,6 +332,8 @@
 
   window.NEXO_CHARACTERS_UI = {
     open() { draft = null; editorView.hidden = true; listView.hidden = false; renderList(); },
-    render() { if (!listView.hidden) renderList(); }
+    render() { if (!listView.hidden) renderList(); },
+    // Abre una ficha concreta (desde la pestaña Personajes del selector de partidas).
+    edit(id) { openEditor(id); }
   };
 })();

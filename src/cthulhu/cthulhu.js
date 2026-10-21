@@ -93,6 +93,19 @@
   let current = null;
   let exitHandler = null;
   let saveTimer = 0;
+  let manualBook = null;
+
+  // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y el manual de este sistema).
+  const ap = window.NEXO_APARTADOS?.create({
+    prefix: 'cth', system: () => GAME, frame: body => frame(body),
+    leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
+    characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Investigador sin nombre', summary: describe(ch) })),
+    openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
+    currentId: () => current?.id,
+    manual: () => manualBook || (manualBook = window.NEXO_MANUALS?.cthulhu?.({ CHARS, CH, SKILLS, OCCUPATIONS, AGES }) || null),
+    words: { characters: 'investigadores', character: 'investigador' }
+  });
+  const manualLink = (id, label) => ap?.link(id, label) || '';
 
   function load() {
     try {
@@ -383,7 +396,7 @@
       const done = isComplete(ch);
       return `<button class="cth-card" data-open="${esc(ch.id)}"><span class="cth-card-tab">EXP. ${esc(ch.id.slice(0, 4).toUpperCase())}</span><span class="cth-card-copy"><b>${esc(ch.name || 'Investigador sin nombre')}</b><small>${esc(describe(ch))}</small></span><span class="cth-stamp ${done ? 'is-done' : ''}">${done ? 'COMPLETO' : 'EN CURSO'}</span></button>`;
     }).join('') : `<div class="cth-empty"><span aria-hidden="true">${window.NEXO_ICONS?.cthulhu || ''}</span><b>El archivo está vacío</b><small>Pulsa «Abrir un expediente» para crear tu primer investigador.</small></div>`;
-    frame(`<p class="cth-kicker">NEXO / LA LLAMADA DE CTHULHU · 7ª EDICIÓN</p><h1>Tus <em>investigadores</em></h1><p class="cth-intro">Crea investigadores de los años veinte: características, edad, Suerte, ocupación, puntos de habilidad y trasfondo. NEXO calcula puntos de vida, Cordura, puntos de magia, movimiento, bonificación al daño y corpulencia, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="cth-actions"><button class="cth-button" data-new>ABRIR UN EXPEDIENTE</button><button class="cth-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="cth-list">${cards}</div><p class="cth-quote">«Ph'nglui mglw'nafh Cthulhu R'lyeh wgah'nagl fhtagn.»</p>`);
+    frame(`${ap?.tabs('personajes') || ''}<p class="cth-kicker">NEXO / LA LLAMADA DE CTHULHU · 7ª EDICIÓN</p><h1>Tus <em>investigadores</em></h1><p class="cth-intro">Crea investigadores de los años veinte: características, edad, Suerte, ocupación, puntos de habilidad y trasfondo. NEXO calcula puntos de vida, Cordura, puntos de magia, movimiento, bonificación al daño y corpulencia, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="cth-actions"><button class="cth-button" data-new>ABRIR UN EXPEDIENTE</button><button class="cth-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="cth-list">${cards}</div><p class="cth-quote">«Ph'nglui mglw'nafh Cthulhu R'lyeh wgah'nagl fhtagn.»</p>`);
     host.querySelector('[data-new]').addEventListener('click', () => openEditor(newCharacter()));
     host.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
       const ch = store.characters.find(item => item.id === button.dataset.open);
@@ -479,7 +492,7 @@
       const fixed = o.skills.map(k => `<span class="cth-chip is-on is-fixed">${esc(SKILLS[k][0])}</span>`).join('');
       const socialChips = o.social ? SOCIAL.filter(k => !o.skills.includes(k)).map(k => `<button class="cth-chip ${ch.occSocial.includes(k) ? 'is-on' : ''}" data-social="${k}" aria-pressed="${ch.occSocial.includes(k)}">${esc(SKILLS[k][0])}</button>`).join('') : '';
       const anyChips = o.any ? ANY_PICK.filter(k => !o.skills.includes(k) && !ch.occSocial.includes(k)).map(k => `<button class="cth-chip ${ch.occAny.includes(k) ? 'is-on' : ''}" data-any="${k}" aria-pressed="${ch.occAny.includes(k)}">${esc(SKILLS[k][0])}</button>`).join('') : '';
-      body = `<p class="cth-narr">${esc(o.text)}</p>
+      body = `<p class="cth-narr">${esc(o.text)} ${manualLink(`cth-ocu-${ch.occupation}`, 'Ocupación en el manual')}</p>
         <dl class="cth-info"><div><dt>Puntos de ocupación</dt><dd>${formula} = <b>${occPoints(ch)}</b></dd></div><div><dt>Crédito</dt><dd>${o.credit[0]}–${o.credit[1]}</dd></div></dl>
         ${fixed ? `<h3>Habilidades de la ocupación</h3><div class="cth-chips">${fixed}<span class="cth-chip is-on is-fixed">Crédito</span></div>` : ''}
         ${o.social ? `<h3>${o.social > 1 ? `${o.social} habilidades interpersonales` : 'Una habilidad interpersonal'} ${leftBadge(o.social - ch.occSocial.length)}</h3><div class="cth-chips">${socialChips}</div>` : ''}
@@ -522,7 +535,7 @@
     ];
     return `<section class="cth-panel cth-sheet">${heading(5, 'Hoja calculada', esc(describe(ch)))}
       <div class="cth-stats">${stats.map(([k, v]) => `<div><small>${k}</small><b>${esc(v)}</b></div>`).join('')}</div>
-      <p class="cth-note">Puntos de vida: (CON + TAM) / 10. Cordura inicial: POD; la máxima es 99 menos Mitos de Cthulhu. Puntos de magia: POD / 5. Movimiento: 7 si FUE y DES son menores que TAM, 9 si ambas son mayores y 8 en otro caso, menos lo que reste la edad. Bonificación al daño y corpulencia salen de FUE + TAM.</p></section>`;
+      <p class="cth-note">Puntos de vida: (CON + TAM) / 10. Cordura inicial: POD; la máxima es 99 menos Mitos de Cthulhu. Puntos de magia: POD / 5. Movimiento: 7 si FUE y DES son menores que TAM, 9 si ambas son mayores y 8 en otro caso, menos lo que reste la edad. Bonificación al daño y corpulencia salen de FUE + TAM.</p><p class="cth-note">${manualLink('cth-cordura', 'Cordura')} ${manualLink('cth-vida', 'Puntos de vida')} ${manualLink('cth-suerte', 'Suerte')} ${manualLink('cth-grados', 'Niveles de éxito')}</p></section>`;
   }
 
   function combatPanel(ch) {
@@ -606,6 +619,7 @@
     host.hidden = true;
     host.setAttribute('aria-label', 'NEXO La llamada de Cthulhu');
     document.body.append(host);
+    ap?.mount(host);
     host.addEventListener('keydown', event => {
       if (event.key === 'Escape') host.querySelectorAll('.cth-modal').forEach(modal => { modal.hidden = true; });
     });
@@ -614,9 +628,10 @@
     ensureHost();
     exitHandler = options.onExit || null;
     store = load();
+    ap?.reset();
     renderList();
     const requested = options.characterId && store.characters.find(ch => ch.id === options.characterId);
-    if (requested) openEditor(requested);
+    if (requested) { openEditor(requested); ap?.at(requested.id); }
     host.hidden = false;
     pullFromCloud();
     document.documentElement.classList.add('nexo-cthulhu-open');
@@ -624,6 +639,7 @@
   function close() {
     flushSave();
     window.NEXO_DICE?.close();
+    window.NEXO_NAV?.reset?.();
     current = null;
     host.hidden = true;
     document.documentElement.classList.remove('nexo-cthulhu-open');

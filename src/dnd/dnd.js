@@ -99,6 +99,19 @@
   let current = null;
   let exitHandler = null;
   let saveTimer = 0;
+  let manualBook = null;
+
+  // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y el manual de este sistema).
+  const ap = window.NEXO_APARTADOS?.create({
+    prefix: 'dnd', system: () => 'dnd', frame: body => frame(body),
+    leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
+    characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Aventurero sin nombre', summary: describe(ch) })),
+    openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
+    currentId: () => current?.id,
+    manual: () => manualBook || (manualBook = window.NEXO_MANUALS?.dnd?.({ AB, SKILLS, CLASSES, FEATS, BACKGROUNDS, SPECIES, P }) || null),
+    words: { characters: 'aventureros', character: 'aventurero' }
+  });
+  const manualLink = (id, label) => ap?.link(id, label) || '';
 
   function load() {
     try {
@@ -497,7 +510,7 @@
       const done = isComplete(ch);
       return `<button class="dnd-card" data-open="${esc(ch.id)}"><span class="dnd-card-seal">${esc((ch.name || '?').trim().charAt(0).toUpperCase() || '?')}</span><span class="dnd-card-copy"><b>${esc(ch.name || 'Aventurero sin nombre')}</b><small>${esc(describe(ch))}</small></span><span class="dnd-badge ${done ? 'is-done' : ''}">${done ? 'LISTO' : 'EN CREACIÓN'}</span></button>`;
     }).join('') : '<div class="dnd-empty"><span>⚔</span><b>La taberna está vacía</b><small>Pulsa «Forjar un nuevo aventurero» para crear tu primer personaje.</small></div>';
-    frame(`<p class="dnd-kicker">NEXO / DUNGEONS &amp; DRAGONS · REGLAS DE 2024</p><h1>Tus <em>aventureros</em></h1><p class="dnd-intro">Crea personajes con el Manual del Jugador de 2024: clase, especie y trasfondo, puntuaciones de característica con su mejora de trasfondo, habilidades e idiomas. NEXO calcula modificadores, puntos de golpe, salvaciones y habilidades, y guarda las fichas en este dispositivo.</p><div class="dnd-actions"><button class="dnd-button" data-new>✚ FORJAR UN NUEVO AVENTURERO</button><button class="dnd-button ghost" data-exit>← VOLVER A SISTEMAS</button></div><div class="dnd-list">${cards}</div>`);
+    frame(`${ap?.tabs('personajes') || ''}<p class="dnd-kicker">NEXO / DUNGEONS &amp; DRAGONS · REGLAS DE 2024</p><h1>Tus <em>aventureros</em></h1><p class="dnd-intro">Crea personajes con el Manual del Jugador de 2024: clase, especie y trasfondo, puntuaciones de característica con su mejora de trasfondo, habilidades e idiomas. NEXO calcula modificadores, puntos de golpe, salvaciones y habilidades, y guarda las fichas en este dispositivo.</p><div class="dnd-actions"><button class="dnd-button" data-new>✚ FORJAR UN NUEVO AVENTURERO</button><button class="dnd-button ghost" data-exit>← VOLVER A SISTEMAS</button></div><div class="dnd-list">${cards}</div>`);
     host.querySelector('[data-new]').addEventListener('click', () => openEditor(newCharacter()));
     host.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
       const ch = store.characters.find(item => item.id === button.dataset.open);
@@ -566,7 +579,7 @@
       <div class="dnd-col"><div class="dnd-col-head"><h3>Clase</h3></div>
         <label class="dnd-field"><span>Clase</span><select data-choice="cls">${options(sorted(CLASSES), ch.cls, 'Elige una clase…')}</select></label>
         <div class="dnd-level"><span class="dnd-level-num"><small>Nivel</small><b>${ch.level}</b></span><button class="dnd-button" data-levelup ${ch.level >= MAX_LEVEL ? 'disabled' : ''}>▲ SUBIR DE NIVEL</button><button class="dnd-button ghost" data-leveldown ${ch.level <= 1 ? 'disabled' : ''} aria-label="Bajar un nivel">▼</button></div>
-        ${cls ? `<p class="dnd-narr">${esc(P.story[ch.cls] || '')}</p>` : ''}
+        ${cls ? `<p class="dnd-narr">${esc(P.story[ch.cls] || '')} ${manualLink(`dnd-cls-${ch.cls}`, 'Clase en el manual')}</p>` : ''}
         ${cls ? info([['Subclase', subclassOf(ch)?.name || (ch.level >= SUBCLASS_LEVEL ? 'Por elegir' : 'A nivel 3')], ['Dado de golpe', 'd' + cls.die], ['Característica principal', cls.primary], ['Salvaciones', cls.saves.map(k => AB[k].name).join(' y ')], ['Armadura', cls.armor], ['Armas', cls.weapons], ['Rasgos de nivel 1', cls.features]]) : '<p class="dnd-note">La clase fija tu dado de golpe, tus tiradas de salvación y las habilidades entre las que eliges.</p>'}
       </div>
       <div class="dnd-col"><div class="dnd-col-head"><h3>Especie</h3></div>
@@ -574,11 +587,11 @@
         ${sp?.variants ? `<label class="dnd-field"><span>${esc(sp.variantLabel)}</span><select data-choice="variant">${options(sp.variants, ch.variant, 'Elige…')}</select></label>` : ''}
         ${sp && sp.sizes.length > 1 ? `<label class="dnd-field"><span>Tamaño</span><select data-choice="size">${options(sp.sizes.map(s => [s, s]), ch.size, 'Elige…')}</select></label>` : ''}
         ${ch.species === 'humano' ? `<label class="dnd-field"><span>Dote de origen (Versátil)</span><select data-choice="humanFeat">${options(featChoices, ch.humanFeat, 'Elige una dote…')}</select></label>` : ''}
-        ${sp ? info([['Tamaño', ch.size || sp.sizes.join(' o ')], ['Velocidad', sp.speed + ' pies'], ['Visión en la oscuridad', sp.dv ? sp.dv + ' pies' : 'No'], ['Rasgos', sp.traits], ch.humanFeat && ['Dote', FEATS[ch.humanFeat][1]]]) : '<p class="dnd-note">En 2024 la especie no mejora características: da rasgos, tamaño, velocidad y visión.</p>'}
+        ${sp ? info([['Tamaño', ch.size || sp.sizes.join(' o ')], ['Velocidad', sp.speed + ' pies'], ['Visión en la oscuridad', sp.dv ? sp.dv + ' pies' : 'No'], ['Rasgos', sp.traits], ch.humanFeat && ['Dote', FEATS[ch.humanFeat][1]]]) + manualLink(`dnd-esp-${ch.species}`, 'Especie en el manual') : '<p class="dnd-note">En 2024 la especie no mejora características: da rasgos, tamaño, velocidad y visión.</p>'}
       </div>
       <div class="dnd-col"><div class="dnd-col-head"><h3>Trasfondo</h3></div>
         <label class="dnd-field"><span>Trasfondo</span><select data-choice="bg">${options(sorted(BACKGROUNDS), ch.bg, 'Elige un trasfondo…')}</select></label>
-        ${bg ? info([['Características', bg.abil.map(k => AB[k].name).join(', ')], ['Dote de origen', FEATS[bg.feat][0]], ['Efecto', FEATS[bg.feat][1]], ['Habilidades', bg.skills.map(k => SKILLS[k][0]).join(' y ')], ['Herramienta', bg.tool]]) : '<p class="dnd-note">El trasfondo mejora tres características, da una dote de origen, dos habilidades y una herramienta.</p>'}
+        ${bg ? info([['Características', bg.abil.map(k => AB[k].name).join(', ')], ['Dote de origen', FEATS[bg.feat][0]], ['Efecto', FEATS[bg.feat][1]], ['Habilidades', bg.skills.map(k => SKILLS[k][0]).join(' y ')], ['Herramienta', bg.tool]]) + manualLink(`dnd-tra-${ch.bg}`, 'Trasfondo en el manual') : '<p class="dnd-note">El trasfondo mejora tres características, da una dote de origen, dos habilidades y una herramienta.</p>'}
       </div>
     </div></section>`;
   }
@@ -827,6 +840,7 @@
     host.hidden = true;
     host.setAttribute('aria-label', 'NEXO Dungeons & Dragons');
     document.body.append(host);
+    ap?.mount(host);
     host.addEventListener('keydown', event => {
       if (event.key === 'Escape') host.querySelectorAll('.dnd-modal').forEach(modal => { modal.hidden = true; });
     });
@@ -835,9 +849,10 @@
     ensureHost();
     exitHandler = options.onExit || null;
     store = load();
+    ap?.reset();
     renderList();
     const requested = options.characterId && store.characters.find(ch => ch.id === options.characterId);
-    if (requested) openEditor(requested);
+    if (requested) { openEditor(requested); ap?.at(requested.id); }
     host.hidden = false;
     pullFromCloud();
     document.documentElement.classList.add('nexo-dnd-open');
@@ -845,6 +860,7 @@
   function close() {
     flushSave();
     window.NEXO_DICE?.close();
+    window.NEXO_NAV?.reset?.();
     current = null;
     host.hidden = true;
     document.documentElement.classList.remove('nexo-dnd-open');

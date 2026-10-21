@@ -18,9 +18,28 @@
     const labels = { dnd: 'NEXO D&D', vampire: 'NEXO VAMPIRO', tormentas: 'NEXO TORMENTAS', cthulhu: 'NEXO CTHULHU', pathfinder: 'NEXO PATHFINDER' };
 
     // El botón «atrás» del navegador vuelve a la mesa en lugar de salir de NEXO.
-    const away = () => { if (history.state?.nexo !== 'away') history.pushState({ nexo: 'away' }, ''); };
-    window.NEXO_NAV = { away };
-    window.addEventListener('popstate', () => {
+    // Dentro de un sistema, las vistas (pestañas, campañas, manual, fichas) apilan cómo volver a la anterior
+    // sobre una sola entrada «sub» del historial; al vaciarse la pila, «atrás» vuelve a la mesa.
+    let top = history.state?.nexo || null;
+    let skipPop = false;
+    let stack = [];
+    const away = () => { if (history.state?.nexo !== 'away') { history.pushState({ nexo: 'away' }, ''); top = 'away'; } };
+    const sub = back => { stack.push(back); if (top !== 'sub') { history.pushState({ nexo: 'sub' }, ''); top = 'sub'; } };
+    const drop = () => { stack.pop(); if (!stack.length && top === 'sub') { skipPop = true; history.back(); } };
+    const reset = () => { stack = []; };
+    window.NEXO_NAV = { away, sub, drop, reset };
+    window.addEventListener('popstate', event => {
+      const left = top;
+      top = event.state?.nexo || null;
+      if (skipPop) { skipPop = false; return; }
+      if (left === 'sub') {
+        const back = stack.pop();
+        if (back) {
+          if (stack.length) { history.pushState({ nexo: 'sub' }, ''); top = 'sub'; }
+          back();
+        }
+        return;
+      }
       const root = document.documentElement.classList;
       if (root.contains('nexo-vampire-open')) window.NEXO_VAMPIRE?.close();
       else if (root.contains('nexo-dnd-open')) window.NEXO_DND?.close();
@@ -33,7 +52,9 @@
 
     function openHub() {
       window.NEXO_DICE?.close();
-      if (history.state?.nexo === 'away') history.back();
+      stack = [];
+      if (history.state?.nexo === 'sub') { skipPop = true; history.go(-2); }
+      else if (history.state?.nexo === 'away') history.back();
       render('home');
       hub.hidden = false;
       document.documentElement.classList.remove('nexo-system-selected');

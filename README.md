@@ -13,13 +13,14 @@ Terminal multiverso para NEXO, con el módulo Traveller como sistema disponible.
 ## Estructura del proyecto
 
 - `index.html`, `sw.js` y `manifest.webmanifest` quedan en la raíz: son la página de entrada, el servicio offline y el manifiesto de instalación, y necesitan estar ahí para que la app funcione e instale bien.
-- `src/nexo/`: terminal multisistema (selector de sistemas de rol), perfil, sincronización en la nube y el lanzador de dados común a todos los sistemas (`dice.js` y `dice.css`).
-- `src/traveller/`: apartado Traveller (aplicación principal, índice del manual, visor PDF, hangar, personajes y estilos generales).
+- `src/nexo/`: terminal multisistema (selector de sistemas de rol), perfil, sincronización en la nube el lanzador de dados común a todos los sistemas (`dice.js` y `dice.css`) y los apartados de cada sistema (`apartados.js` y `apartados.css`: pestañas, campañas y lector del manual).
+- `src/traveller/`: apartado Traveller (aplicación principal, índice del manual, visor PDF, hangar, personajes, manual de consulta, pestañas del selector de partidas y estilos generales).
 - `src/vampiro/`: apartado Vampiro: La Mascarada.
 - `src/dnd/`: apartado Dungeons & Dragons 5.5 y sus datos de progresión.
 - `src/tormentas/`: apartado El Archivo de las Tormentas y su vinculacaña de la mesa.
 - `src/cthulhu/`: apartado La llamada de Cthulhu y su expediente de la mesa.
 - `src/pathfinder/`: apartado Pathfinder 2ª edición y su brújula de la mesa.
+- Cada sistema tiene su manual de consulta en su carpeta: `vampiro-manual.js`, `dnd-manual.js`, `tormentas-manual.js`, `cthulhu-manual.js`, `pathfinder-manual.js` y `traveller-manual.js`.
 - `assets/iconos/` y `assets/fondos/`: iconos de la app e imágenes de fondo.
 - `supabase/`: esquema de base de datos y configuración de la conexión en la nube.
 - Si añades o mueves un archivo, actualiza también la lista `FILES` de `sw.js` y sube el número de `CACHE` para que los dispositivos instalados reciban el cambio.
@@ -31,6 +32,16 @@ Al abrir NEXO aparece el selector de sistemas de rol. Traveller abre el selector
 La aplicación de Mapa busca mundos y sistemas en Traveller Map, conserva el mundo elegido en cada partida y centra el mapa en su hexágono con un acercamiento local; muestra los datos de mundo disponibles y permite abrir el mapa incrustado o completo. El buscador y los datos requieren conexión a Internet; Traveller Map ofrece estos datos mediante su API pública.
 
 La aplicación Traveller conserva un índice temático conciso del manual con referencias de página. Incluye un enlace al PDF compartido en Google Drive y cada resultado abre ese visor en la página correspondiente. El archivo permanece alojado en Drive; quienes lo consulten necesitarán permisos sobre el enlace compartido.
+
+## Apartados de cada sistema: Personajes, Campañas y Manual
+
+Dentro de cada sistema hay tres pestañas con el estilo de ese sistema:
+
+- **Personajes**: las fichas y el creador de siempre.
+- **Campañas**: campañas propias del sistema (Vampiro y Edad Oscura van por separado) con nombre, narrador, premisa, los personajes que juegan en ella (marcados de entre las fichas del sistema, que se abren desde ahí), un diario de sesiones con fecha, título y resumen, y notas. Se guardan en este dispositivo (`localStorage`, clave `nexo-campanas-v1`) y, con cuenta, en la nube. En Traveller, Campañas son las partidas de siempre, y Personajes reúne los viajeros de todas las partidas.
+- **Manual**: guía de consulta del reglamento por capítulos, con índice lateral (fila de capítulos en el móvil), buscador que ignora tildes y mayúsculas, ruta de navegación, entradas anterior y siguiente, y enlaces entre entradas y a las relacionadas. Cada entrada explica la idea en la historia (Narrativa) y cómo se juega (Mecánica). Las clases, clanes, ascendencias, ocupaciones y demás se construyen con los datos de cada creador, así que no se repiten; las reglas básicas se escriben en cada archivo de manual. Las fichas enlazan a su entrada (clase, clan, ascendencia, ocupación, camino, orden…). Los textos son resúmenes propios.
+
+En los textos del manual, `[[id]]` o `[[id|texto]]` enlaza con otra entrada o capítulo, `**negrita**` resalta y las líneas que empiezan por «- » forman listas. Si un enlace no lleva a ninguna entrada, la consola del navegador lo avisa. El botón «atrás» del navegador recorre las vistas (entrada, capítulo, pestaña, ficha) antes de volver a la mesa.
 
 ## Vampiro: La Mascarada
 
@@ -75,7 +86,7 @@ El botón «Perfil» del selector de sistemas abre `src/nexo/profile.js`. Con cu
 
 Cada jugador puede crear una cuenta con correo y contraseña, o pulsar «Continuar solo en este dispositivo» para guardar únicamente en el navegador. Con cuenta, las partidas de Traveller y las fichas de Vampiro, D&D, El Archivo de las Tormentas, La llamada de Cthulhu y Pathfinder son privadas y se sincronizan entre dispositivos; el navegador conserva siempre una copia local. Al iniciar sesión por primera vez con una cuenta vacía se suben los datos que ya hubiera en ese dispositivo. Al cerrar sesión se borra la copia local de esa cuenta. La sincronización no es edición colaborativa en directo y compartir partidas entre cuentas no está incluido.
 
-Para montarlo en un proyecto Supabase gratuito: crea el proyecto, ejecuta `supabase/schema.sql` en el SQL Editor (crea `public.campaigns` para Traveller y `public.game_saves` para Vampiro, D&D, El Archivo de las Tormentas, La llamada de Cthulhu y Pathfinder, con sus políticas RLS), pon la URL del proyecto y la clave publicable en `supabase/cloud-config.js` y, en Authentication → URL Configuration, añade la dirección donde se publica la web como Site URL y Redirect URL. Los proyectos gratuitos se pausan tras una semana sin uso; se reactivan desde el panel sin perder datos.
+Para montarlo en un proyecto Supabase gratuito: crea el proyecto, ejecuta `supabase/schema.sql` en el SQL Editor (crea `public.campaigns` para Traveller y `public.game_saves` para Vampiro, D&D, El Archivo de las Tormentas, La llamada de Cthulhu y Pathfinder, y las campañas de todos los sistemas (`campanas`), con sus políticas RLS; si ya lo tenías, vuelve a ejecutarlo para que acepte las campañas), pon la URL del proyecto y la clave publicable en `supabase/cloud-config.js` y, en Authentication → URL Configuration, añade la dirección donde se publica la web como Site URL y Redirect URL. Los proyectos gratuitos se pausan tras una semana sin uso; se reactivan desde el panel sin perder datos.
 
 El proyecto Supabase debe tener la tabla `public.campaigns` y las políticas del archivo `supabase/schema.sql`. `supabase/cloud-config.js` contiene la URL del proyecto y una clave pública diseñada para usarse en el navegador; la protección depende de las políticas RLS. Nunca pongas una contraseña de base de datos ni una clave secreta en archivos web. El SMTP predeterminado de Supabase es limitado; solo envía correos a los miembros del equipo del proyecto. Para que otros jugadores puedan registrarse, desactiva «Confirm email» en Authentication → Sign In / Providers → Email, o configura un SMTP gratuito propio (también necesario para que otros jugadores recuperen la contraseña).
 
