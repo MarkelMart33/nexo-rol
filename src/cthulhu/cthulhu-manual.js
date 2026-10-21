@@ -80,6 +80,7 @@
       note: 'Los textos son resúmenes propios.',
       chapters: [
         { id: 'cth-cap-reglas', title: 'Reglas básicas', intro: 'Tiradas, niveles de éxito, Cordura, Suerte y heridas.', entries: BASICS },
+        ...(window.NEXO_MANUALS.cthulhuReglas || []),
         { id: 'cth-cap-caracteristicas', title: 'Características', intro: 'Las ocho características y lo que se deriva de ellas.', entries: chars },
         { id: 'cth-cap-ocupaciones', title: 'Ocupaciones', intro: 'A qué se dedica el investigador: su Crédito, sus puntos y sus habilidades.', entries: occupations },
         { id: 'cth-cap-habilidades', title: 'Habilidades', intro: 'Todas las habilidades con su valor base.', entries: skills }
