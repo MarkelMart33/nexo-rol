@@ -84,7 +84,7 @@
       narr: b.text,
       mech: list([
         `**Mejoras**: una a ${b.attrs.map(A).join(' o ')} y otra libre.`,
-        b.skill ? `**Habilidad entrenada**: [[pf-hab-${b.skill}|${d.SKILLS[b.skill]?.[0] || b.skill}]].` : '',
+        b.skill ? `**Habilidad entrenada**: ${[].concat(b.skill).map(k => `[[pf-hab-${k}|${d.SKILLS[k]?.[0] || k}]]`).join(' o ')}${Array.isArray(b.skill) ? ', a elegir' : ''}.` : '',
         b.lore ? `**Saber** entrenado: ${b.lore}.` : '',
         b.feat ? `**Dote de habilidad**: ${b.feat}.` : ''
       ])
@@ -113,6 +113,7 @@
       note: 'Los textos son resúmenes propios; los nombres de herencias, dotes y subclases son traducciones propias.',
       chapters: [
         { id: 'pf-basicas', title: 'Reglas básicas', intro: 'Cómo se resuelven las acciones y qué significan los números de la ficha.', entries: BASICS },
+        ...(window.NEXO_MANUALS.pathfinderReglas || []),
         { id: 'pf-ascendencias', title: 'Ascendencias', intro: 'Tu pueblo de origen: puntos de golpe, tamaño, velocidad, sentidos, idiomas y parte de tus mejoras.', entries: ancestries },
         { id: 'pf-bagajes', title: 'Bagajes', intro: 'Lo que hacías antes de ser aventurero: dos mejoras, una habilidad, un Saber y una dote de habilidad.', entries: backgrounds },
         { id: 'pf-clases', title: 'Clases', intro: 'Tu oficio de aventurero: atributo clave, puntos de golpe, competencias y rasgos.', entries: classes },
