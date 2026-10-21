@@ -47,7 +47,7 @@
       mech: 'Sin armadura, CA = 10 + DES. Con armadura, la que indique (las intermedias suman como máximo +2 de DES y las pesadas no suman DES). Un escudo suma +2. Algunas clases calculan la CA sin armadura de otra forma (el bárbaro suma CON y el monje SAB).' },
     { id: 'dnd-acciones', title: 'Acciones en combate', aka: ['Acción', 'Acción adicional', 'Reacción', 'Turno'], summary: 'En tu turno: moverte, una acción y, si algo te lo da, una acción adicional; además una reacción por asalto.',
       narr: 'El combate se divide en asaltos de seis segundos. Cada criatura actúa en su turno siguiendo el orden de iniciativa.',
-      mech: list(['**Movimiento**: hasta tu velocidad, que puedes repartir antes y después de actuar.', '**Acción**: Atacar, Lanzar un conjuro, Correr, Destrabarse, Esquivar, Ayudar, Esconderse, Buscar, Influir, Estudiar, Usar un objeto…', '**Acción adicional**: solo si un rasgo o conjuro te la da (por ejemplo la Furia del bárbaro).', '**Reacción**: una por asalto, en respuesta a un desencadenante, como el ataque de oportunidad cuando un enemigo sale de tu alcance.', 'Interactuar con un objeto (desenvainar, abrir una puerta) es gratis una vez por turno.']) },
+      mech: list(['**Movimiento**: hasta tu velocidad, que puedes repartir antes y después de actuar.', '**Acción**: Atacar, Lanzar un conjuro, Correr, Destrabarse, Esquivar, Ayudar, Esconderse, Buscar, Influir, Estudiar, Usar un objeto…', '**Acción adicional**: solo si un rasgo o conjuro te la da (por ejemplo la Furia del bárbaro).', '**Reacción**: una por asalto, en respuesta a un desencadenante, como el [[dnd-oportunidad|ataque de oportunidad]] cuando un enemigo sale de tu alcance.', 'Interactuar con un objeto (desenvainar, abrir una puerta) es gratis una vez por turno.']) },
     { id: 'dnd-descansos', title: 'Descansos', aka: ['Descanso corto', 'Descanso largo', 'Dados de golpe'], summary: 'Pausas para recuperar puntos de golpe y recursos.',
       narr: 'Vendarse las heridas junto al camino o dormir una noche entera al calor de una hoguera.',
       mech: list(['**Descanso corto** (1 hora): puedes gastar dados de golpe; por cada uno tiras el dado y sumas CON para recuperar PG. Algunos rasgos se recargan.', '**Descanso largo** (8 horas, como mucho 2 de guardia): recuperas todos los PG y todos los dados de golpe gastados, y la mayoría de recursos y espacios de conjuro.', 'Solo puedes hacer un descanso largo cada 24 horas.']) },
@@ -93,10 +93,11 @@
     });
     return {
       title: 'Manual de D&D 5.5',
-      intro: 'Guía de consulta del Manual del Jugador de 2024: reglas básicas, especies, trasfondos, dotes de origen, habilidades y las doce clases con sus rasgos y subclases. Cada entrada cuenta qué significa en la historia y cómo funciona en la mesa.',
+      intro: 'Guía de consulta del Manual del Jugador de 2024: reglas básicas, combate, magia, estados, equipo, especies, trasfondos, dotes de origen, habilidades y las doce clases con sus rasgos y subclases. Cada entrada cuenta qué significa en la historia y cómo funciona en la mesa.',
       note: 'Los textos son resúmenes propios.',
       chapters: [
         { id: 'dnd-cap-reglas', title: 'Reglas básicas', intro: 'Cómo se tiran los dados y qué significan los números de la ficha.', entries: BASICS },
+        ...(window.NEXO_MANUALS.dndReglas || []),
         { id: 'dnd-cap-especies', title: 'Especies', intro: 'Tu pueblo: tamaño, velocidad, sentidos y rasgos especiales.', entries: species },
         { id: 'dnd-cap-trasfondos', title: 'Trasfondos', intro: 'Tu vida antes de la aventura: mejoras de característica, dote de origen, habilidades y herramienta.', entries: backgrounds },
         { id: 'dnd-cap-dotes', title: 'Dotes de origen', intro: 'Las dotes que dan los trasfondos (y la que elige el humano).', entries: feats },
