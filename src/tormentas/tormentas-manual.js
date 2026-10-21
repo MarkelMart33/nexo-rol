@@ -61,6 +61,7 @@
       note: 'Los textos son resúmenes propios; «dado de trama» es una traducción propia.',
       chapters: [
         { id: 'tor-cap-reglas', title: 'Reglas básicas', intro: 'Pruebas, dado de trama, defensas, recursos y turnos.', entries: BASICS },
+        ...(window.NEXO_MANUALS.tormentasReglas || []),
         { id: 'tor-cap-ascendencias', title: 'Ascendencias', intro: 'Humanos y cantores.', entries: ancestries },
         { id: 'tor-cap-culturas', title: 'Culturas', intro: 'Los pueblos de Roshar. Cada personaje elige dos.', entries: cultures },
         { id: 'tor-cap-caminos', title: 'Caminos heroicos', intro: 'Tu vocación: el talento clave, la habilidad y las especialidades.', entries: paths },
