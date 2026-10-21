@@ -98,6 +98,7 @@
     }));
     const chapters = [
       { id: 'vtm-cap-reglas', title: 'Reglas básicas', intro: 'Dados, sangre, generación, virtudes, Humanidad y la Bestia.', entries: basics(d) },
+      ...(window.NEXO_MANUALS.vampiroReglas?.(d.side) || []),
       { id: 'vtm-cap-clanes', title: 'Clanes', intro: 'Los linajes de Caín, con sus disciplinas y su debilidad.', entries: clans },
       { id: 'vtm-cap-disciplinas', title: 'Disciplinas', intro: 'Los poderes de la sangre.', entries: disciplines },
       { id: 'vtm-cap-rasgos', title: 'Rasgos', intro: 'Atributos, habilidades y trasfondos de esta ambientación.', entries: traits }
