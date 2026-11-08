@@ -40,7 +40,7 @@
     try { localStorage.setItem(KEY, JSON.stringify(store)); } catch { status?.('NO SE PUDO GUARDAR'); return; }
     status?.('GUARDADO EN ESTE DISPOSITIVO');
     window.NEXO_CLOUD?.save(GAME, KEY, store).then(ok => {
-      if (ok !== null) status?.(ok ? 'GUARDADO EN LA NUBE' : 'SIN CONEXIÓN · GUARDADO EN ESTE DISPOSITIVO');
+      if (ok !== null) status?.(ok ? 'GUARDADO EN LA NUBE' : window.NEXO_CLOUD.failText(GAME));
     });
   }
   function scheduleSave(campaign, status) {

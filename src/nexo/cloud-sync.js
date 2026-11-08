@@ -9,6 +9,10 @@
   const client = window.nexoSupabaseClient || null;
   const LOCAL_KEYS = ['nexo-vampire-v1', 'nexo-dnd-v1', 'nexo-tormentas-v1', 'nexo-cthulhu-v1', 'nexo-pathfinder-v1', 'nexo-campanas-v1'];
   const chains = {};
+  const OFFLINE = 'SIN CONEXIÓN · GUARDADO EN ESTE DISPOSITIVO';
+  // 23514: la base de datos aún no acepta este sistema (falta volver a ejecutar supabase/schema.sql).
+  const SCHEMA = 'LA NUBE AÚN NO ACEPTA ESTE SISTEMA · GUARDADO EN ESTE DISPOSITIVO';
+  const failText = {};
   let user = null;
 
   const mark = (key, state) => { try { localStorage.setItem(`${key}-cloud`, state); } catch {} };
@@ -32,9 +36,15 @@
       const { error } = await client.from('game_saves').upsert(row, { onConflict: 'owner_id,game' });
       if (error) throw error;
       mark(key, 'clean');
+      failText[game] = OFFLINE;
       return true;
     });
-    return chains[game].catch(error => { console.error('NEXO sync error', error); return false; });
+    return chains[game].catch(error => {
+      failText[game] = error?.code === '23514' ? SCHEMA : OFFLINE;
+      if (error?.code === '23514') console.error(`NEXO: la tabla game_saves no admite "${game}". Ejecuta supabase/schema.sql en el SQL Editor de Supabase.`, error);
+      else console.error('NEXO sync error', error);
+      return false;
+    });
   }
 
   // Brings the local store in line with the cloud. Unuploaded local records are
@@ -63,5 +73,5 @@
     return store;
   }
 
-  window.NEXO_CLOUD = { get signedIn() { return Boolean(client && user); }, get user() { return user; }, save, syncCharacters };
+  window.NEXO_CLOUD = { get signedIn() { return Boolean(client && user); }, get user() { return user; }, failText: game => failText[game] || OFFLINE, save, syncCharacters };
 })();

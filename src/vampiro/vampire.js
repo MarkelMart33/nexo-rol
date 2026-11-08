@@ -131,7 +131,7 @@
   function persist() {
     try { localStorage.setItem(KEY, JSON.stringify(store)); } catch { return false; }
     window.NEXO_CLOUD?.save('vampiro', KEY, store).then(ok => {
-      if (ok !== null) setStatus(ok ? 'GUARDADO EN LA NUBE' : 'SIN CONEXIÓN · GUARDADO EN ESTE DISPOSITIVO');
+      if (ok !== null) setStatus(ok ? 'GUARDADO EN LA NUBE' : window.NEXO_CLOUD.failText('vampiro'));
     });
     return true;
   }
