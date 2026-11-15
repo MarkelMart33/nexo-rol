@@ -110,6 +110,50 @@
     put: ch => { store.characters = [ch, ...store.characters.filter(item => item.id !== ch.id)]; persist(); renderList(); }
   });
 
+  // En juego: salud, concentración, investidura, estados y descansos (src/nexo/juego.js).
+  const juego = window.NEXO_JUEGO?.create({
+    prefix: 'tor', title: '<span>✦</span> En juego <small>salud, concentración e investidura</small>',
+    current: () => current, model: ch => playModel(ch), save: () => scheduleSave(), term, ready: ch => isComplete(ch),
+    act: (id, a, done, before) => { if (id === 'luz') { a.set('investidura', a.max('investidura')); done('Absorbes luz tormentosa: investidura al máximo.', before); } }
+  });
+  const PLAY_CONDITIONS = [
+    ['aturdido', 'Aturdido', 'Pierdes acciones o la reacción mientras dure, y eres más fácil de golpear.'],
+    ['derribado', 'Derribado', 'Levantarte cuesta movimiento. Tus ataques cuerpo a cuerpo son más difíciles.'],
+    ['inmovilizado', 'Inmovilizado', 'Tu movimiento es 0 hasta que te liberes.'],
+    ['sorprendido', 'Sorprendido', 'No actúas en el primer asalto ni usas reacciones hasta que acabe.'],
+    ['inconsciente', 'Inconsciente', 'No actúas y caes derribado.']
+  ];
+  function playModel(ch) {
+    const inv = investiture(ch);
+    const die = RECOVERY[band(attr(ch, 'vol'))];
+    return {
+      counters: [
+        { id: 'salud', label: 'Salud', max: health(ch), big: true, verbs: ['Daño', 'Curar'], term: 'tor-recursos', rest: { largo: 'all' }, zero: 'A 0 de salud quedas inconsciente y sufres una lesión.' },
+        { id: 'concentracion', label: 'Concentración', max: focus(ch), term: 'tor-recursos', rest: { largo: 'all' }, group: 'Reservas' },
+        inv ? { id: 'investidura', label: 'Investidura', max: inv, term: 'tor-luz-tormentosa', group: 'Reservas', actions: [{ id: 'luz', label: 'Absorber luz' }] } : null,
+        { id: 'lesiones', label: 'Lesiones', kind: 'value', start: 0, cap: 20, pips: false, term: 'tor-heridas', group: 'Reservas' }
+      ],
+      conditions: [
+        { id: 'agotado', label: 'Agotado', max: 9, term: 'tor-estado-agotado', rest: { largo: -1 }, effect: n => `−${n} a todas tus pruebas. Baja un punto con cada descanso largo.` },
+        ...PLAY_CONDITIONS.map(([k, label, effect]) => ({ id: k, label, effect, term: `tor-estado-${k}` }))
+      ],
+      rests: [
+        { id: 'breve', label: 'Descanso breve', hint: `una hora · tiras tu dado de recuperación (${die})`, run: a => shortRest(a, die) },
+        { id: 'largo', label: 'Descanso largo', hint: 'una noche · toda la salud y la concentración' }
+      ]
+    };
+  }
+  // Descanso breve: el dado de recuperación cura primero la salud y lo que sobre va a la concentración.
+  function shortRest(a, die) {
+    const sides = Number(die.slice(1)) || 6;
+    const rolled = window.NEXO_DICE?.roll('tormentas', { mode: 'damage', expr: `1${die}`, label: 'Dado de recuperación' });
+    let left = Number.isFinite(Number(rolled?.total)) ? Number(rolled.total) : 1 + Math.floor(Math.random() * sides);
+    const toHealth = Math.min(left, a.max('salud') - a.get('salud'));
+    a.add('salud', toHealth);
+    left -= toHealth;
+    a.add('concentracion', Math.min(left, a.max('concentracion') - a.get('concentracion')));
+  }
+
   function load() {
     try {
       const parsed = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -337,7 +381,9 @@
   function diceSources() { return current ? [{ label: 'Habilidad de la ficha', items: diceItems(current), show: signed }] : []; }
   function rollSkill(key) {
     const item = diceItems(current).find(([k]) => k === key);
-    if (item) window.NEXO_DICE?.roll('tormentas', { mod: item[2], label: item[1] });
+    if (!item) return;
+    const tired = juego?.cond(current, 'agotado') || 0;
+    window.NEXO_DICE?.roll('tormentas', { mod: item[2] - tired, label: item[1], note: tired ? `Agotado ${tired}: −${tired}.` : '' });
   }
 
   function renderList() {
@@ -374,6 +420,7 @@
     current = ch;
     const saved = store.characters.some(item => item.id === ch.id);
     frame(`<div class="tor-editor-head"><button class="tor-button ghost" data-back>← TUS HÉROES</button>${kit?.tools() || ''}<button class="tor-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
+      <div data-play></div>
       <section class="tor-panel">${heading(1, 'Identidad', 'concepto del personaje')}<div class="tor-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del personaje' })}${field('Jugador', 'player')}${field('Campaña', 'campaign')}
       </div><div class="tor-fields tor-fields-3">
@@ -523,6 +570,7 @@
     }));
     sheet.querySelectorAll('[data-prop]').forEach(input => input.addEventListener('input', () => { current[input.dataset.prop] = input.value; scheduleSave(); }));
     if (store.characters.some(item => item.id === ch.id)) host.querySelector('[data-delete]').hidden = false;
+    juego?.render(host.querySelector('[data-play]'));
   }
 
   function ensureHost() {
