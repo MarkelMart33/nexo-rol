@@ -105,5 +105,21 @@
   }
   document.addEventListener('nexo:account-ready', () => { pullAll(); });
 
-  window.NEXO_CLOUD = { get signedIn() { return Boolean(client && user); }, get user() { return user; }, failText: game => failText[game] || OFFLINE, save, syncCharacters, pullAll };
+  // Antes de cerrar sesión: qué sistemas tienen cambios que la nube aún no tiene (se perderían al borrar la copia local).
+  const NAMES = { 'nexo-vampire-v1': 'Vampiro', 'nexo-dnd-v1': 'D&D', 'nexo-tormentas-v1': 'El Archivo de las Tormentas', 'nexo-cthulhu-v1': 'La llamada de Cthulhu', 'nexo-pathfinder-v1': 'Pathfinder', 'nexo-campanas-v1': 'Campañas' };
+  function pendingChanges() {
+    const out = [];
+    try {
+      if (JSON.parse(localStorage.getItem('nexo-traveller-v1-dirty') || '[]').length) out.push('Traveller');
+    } catch {}
+    LOCAL_KEYS.forEach(key => { try { if (localStorage.getItem(`${key}-cloud`) === 'dirty') out.push(NAMES[key]); } catch {} });
+    return out;
+  }
+  function confirmSignOut() {
+    const pending = pendingChanges();
+    if (!pending.length) return confirm('¿Cerrar sesión de NEXO en este dispositivo?');
+    return confirm(`Hay cambios que aún no se han subido a la nube (${pending.join(', ')}). Si cierras sesión ahora, se perderán. Puedes esperar a tener conexión y volver a intentarlo.\n\n¿Cerrar sesión igualmente?`);
+  }
+
+  window.NEXO_CLOUD = { get signedIn() { return Boolean(client && user); }, get user() { return user; }, failText: game => failText[game] || OFFLINE, save, syncCharacters, pullAll, pendingChanges, confirmSignOut };
 })();

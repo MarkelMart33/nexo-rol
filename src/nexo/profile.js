@@ -135,7 +135,7 @@
   }
 
   async function signOut() {
-    if (!confirm('¿Cerrar sesión de NEXO en este dispositivo?')) return;
+    if (!(window.NEXO_CLOUD?.confirmSignOut?.() ?? confirm('¿Cerrar sesión de NEXO en este dispositivo?'))) return;
     hide();
     hideSystems();
     await client()?.auth.signOut();
