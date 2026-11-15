@@ -97,7 +97,7 @@
 
   // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y el manual de este sistema).
   const ap = window.NEXO_APARTADOS?.create({
-    prefix: 'cth', system: () => GAME, frame: body => frame(body),
+    prefix: 'cth', system: () => GAME, home: true, frame: body => frame(body),
     leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
     characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Investigador sin nombre', summary: describe(ch) })),
     openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
@@ -611,7 +611,7 @@
     fonts.href = 'https://fonts.googleapis.com/css2?family=Special+Elite&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&display=swap';
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/cthulhu/cthulhu.css?v=1';
+    stylesheet.href = './src/cthulhu/cthulhu.css?v=2';
     document.head.append(fonts, stylesheet);
     host = document.createElement('section');
     host.id = 'nexoCthulhu';

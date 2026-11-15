@@ -191,3 +191,25 @@ html.nexo-cthulhu-open,html.nexo-cthulhu-open body{overflow:hidden}
 }
 @media(max-width:420px){.cth-chars{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.cth *,.cth-fog{animation:none!important;transition:none!important}}
+
+/* ───── Inicio de campaña y texturas: carpetas de expediente, papel con fibra y sello de caucho ───── */
+.cth{--cth-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.04 .9' numOctaves='3' seed='9'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .22 0 0 0 0 .1 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='.3'/%3E%3C/svg%3E")}
+@keyframes cth-stamp{from{opacity:0;transform:rotate(-8deg) scale(1.7)}60%{opacity:1;transform:rotate(-8deg) scale(.94)}}
+.cth-panel{background-image:var(--cth-grain),radial-gradient(ellipse at 15% 0,#f3ead3,transparent 60%),radial-gradient(ellipse at 100% 100%,#c9b183aa,transparent 55%),linear-gradient(#ebe0c4,#e0d1ad);background-blend-mode:multiply,normal,normal,normal}
+.cth-card{background-image:var(--cth-grain),linear-gradient(170deg,#d8c08a,#c4a96f);background-blend-mode:multiply,normal;transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .25s}
+.cth-card:active{transform:scale(.985)}
+.cth-list>.cth-card{animation:ap-pop .45s cubic-bezier(.2,.8,.2,1) backwards}
+.cth-list>.cth-card:nth-child(2){animation-delay:.05s}.cth-list>.cth-card:nth-child(3){animation-delay:.1s}.cth-list>.cth-card:nth-child(4){animation-delay:.15s}.cth-list>.cth-card:nth-child(n+5){animation-delay:.2s}
+.ap-cth .ap-hero-mark{border:3px double var(--cth-rust-soft);color:var(--cth-rust-soft);background:none;box-shadow:none;transform:rotate(-8deg);font-family:var(--cth-type);animation:cth-stamp .5s cubic-bezier(.3,.9,.3,1) backwards}
+.ap-cth .ap-hero h1{text-shadow:0 0 30px #7fd1a833}
+.ap-cth .ap-tiles{gap:20px 12px;padding-top:10px}
+.ap-cth .ap-tile{border:0;border-radius:0 4px 4px 4px;color:var(--cth-ink);background:var(--cth-grain),linear-gradient(170deg,#dcc592,#c4a96f);background-blend-mode:multiply,normal;box-shadow:0 12px 22px -12px #000,inset 0 0 30px #8a6b3433}
+.ap-cth .ap-tile::before{content:'';position:absolute;left:0;bottom:100%;width:46%;height:10px;border-radius:5px 9px 0 0;background:linear-gradient(#dcc592,#d3bb86)}
+.ap-cth .ap-tile:hover{transform:translateY(-5px) rotate(-.6deg);box-shadow:0 20px 28px -14px #000,0 0 26px -6px #7fd1a855,inset 0 0 30px #8a6b3433}
+.ap-cth .ap-tile-icon{color:var(--cth-rust)}
+.ap-cth .ap-tile b{font-family:var(--cth-type);font-weight:400;letter-spacing:.08em;color:var(--cth-ink)}
+.ap-cth .ap-tile small{color:var(--cth-ink-soft);font-style:italic;font-size:14px}
+.ap-cth .ap-appbar{border-color:var(--cth-line);border-radius:3px;background:linear-gradient(170deg,#12231f,#0b1513)}
+.ap-cth .ap-appbar-home{border-radius:3px;border-color:var(--cth-glow-dim);color:var(--cth-glow)}
+.ap-cth .ap-appbar-copy b{font-family:var(--cth-type);font-weight:400}
+@media(prefers-reduced-motion:reduce){.cth-list>.cth-card,.ap-cth .ap-hero-mark{animation:none!important}.cth-card{transition:none}.cth-card:hover,.cth-card:active{transform:none}.ap-cth .ap-tile:hover{transform:none}}
