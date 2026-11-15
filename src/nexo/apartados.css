@@ -200,3 +200,26 @@
   .ap-tab,.ap-tile,.ap-tile-icon,.ap-camp-card,.ap-appbar-home{transition:none!important}
   .ap-tile:hover,.ap-tile:active,.ap-tile:hover .ap-tile-icon,.ap-tab:active,.ap-camp-card:active,.ap-appbar-home:active{transform:none}
 }
+
+/* ───── Apertura de cada sistema y de las vistas de Traveller ───── */
+@keyframes ap-open{from{opacity:0}}
+.dnd:not([hidden]),.vtm:not([hidden]),.tor:not([hidden]),.cth:not([hidden]),.pf:not([hidden]),.nexo-profile:not([hidden]){animation:ap-open .38s ease-out}
+#gameSelector:not([hidden]) .selector-heading,#gameSelector:not([hidden]) .campaign-list,#gameSelector:not([hidden]) .new-campaign,#appWorkspace:not([hidden]){animation:ap-rise .42s cubic-bezier(.2,.8,.2,1) backwards}
+#gameSelector:not([hidden]) .campaign-list{animation-delay:.06s}
+#gameSelector:not([hidden]) .new-campaign{animation-delay:.12s}
+#appHome:not([hidden]) .app-tile{animation:ap-pop .5s cubic-bezier(.2,.8,.2,1) backwards}
+#appHome:not([hidden]) .app-tile:nth-child(2){animation-delay:.04s}#appHome:not([hidden]) .app-tile:nth-child(3){animation-delay:.08s}#appHome:not([hidden]) .app-tile:nth-child(4){animation-delay:.12s}#appHome:not([hidden]) .app-tile:nth-child(5){animation-delay:.16s}
+#appHome:not([hidden]) .app-tile:nth-child(6){animation-delay:.2s}#appHome:not([hidden]) .app-tile:nth-child(7){animation-delay:.24s}#appHome:not([hidden]) .app-tile:nth-child(8){animation-delay:.28s}#appHome:not([hidden]) .app-tile:nth-child(9){animation-delay:.32s}#appHome:not([hidden]) .app-tile:nth-child(n+10){animation-delay:.36s}
+#appHome:not([hidden]) .app-tile:active{transform:scale(.96)}
+.trv-list>.trv-card,.campaign-list>*{animation:ap-pop .45s cubic-bezier(.2,.8,.2,1) backwards}
+.trv-list>.trv-card:nth-child(2),.campaign-list>:nth-child(2){animation-delay:.05s}.trv-list>.trv-card:nth-child(3),.campaign-list>:nth-child(3){animation-delay:.1s}.trv-list>.trv-card:nth-child(n+4),.campaign-list>:nth-child(n+4){animation-delay:.15s}
+/* Traveller: trama de circuito tenue en paneles y tarjetas */
+.trv-card,.trv-panel{background-image:repeating-linear-gradient(0deg,#75e7df08 0 1px,transparent 1px 28px),repeating-linear-gradient(90deg,#75e7df06 0 1px,transparent 1px 28px),linear-gradient(150deg,#0e161a,#0b1114)}
+.trv-card{transition:transform .2s cubic-bezier(.2,.8,.2,1),border-color .2s,box-shadow .25s}
+.trv-card:hover{transform:translateY(-2px);box-shadow:0 14px 26px -16px #75e7df88}
+.trv-card:active{transform:scale(.985)}
+@media(prefers-reduced-motion:reduce){
+  .dnd,.vtm,.tor,.cth,.pf,.nexo-profile,#gameSelector *,#appWorkspace,#appHome .app-tile,.trv-list>.trv-card,.campaign-list>*{animation:none!important}
+  .trv-card{transition:none}
+  .trv-card:hover,.trv-card:active,#appHome:not([hidden]) .app-tile:active{transform:none}
+}

@@ -4,6 +4,7 @@
     radial-gradient(ellipse 60% 50% at 28% 12%,#f6c77d38,transparent 70%),
     radial-gradient(ellipse 120% 90% at 50% 45%,transparent 50%,#0d0704e6 100%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='520'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5 0.011' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.13 0 0 0 0 0.07 0 0 0 0 0.03 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.6 0.06' numOctaves='2' seed='21'/%3E%3CfeColorMatrix values='0 0 0 0 0.05 0 0 0 0 0.02 0 0 0 0 0.01 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='.55'/%3E%3C/svg%3E"),
     repeating-linear-gradient(90deg,#2e1b0f 0 2px,transparent 2px 210px),
     linear-gradient(90deg,#5b3920,#4a2d1a 22%,#5d3b22 47%,#472b19 71%,#573620);
   --nexo-paper:linear-gradient(#f3e7cb,#e8d8b4);
