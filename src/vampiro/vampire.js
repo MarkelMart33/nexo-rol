@@ -94,7 +94,7 @@
   // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y src/vampiro/vampiro-manual.js).
   // Noches modernas y Edad Oscura tienen cada una sus campañas y su manual.
   const ap = window.NEXO_APARTADOS?.create({
-    prefix: 'vtm', system: () => (side === 'da' ? 'vampiro-da' : 'vampiro-v20'), frame: body => frame(body),
+    prefix: 'vtm', system: () => (side === 'da' ? 'vampiro-da' : 'vampiro-v20'), home: true, frame: body => frame(body),
     leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
     characters: () => store.characters.filter(ch => ch.era === side).map(ch => ({ id: ch.id, name: ch.name || (side === 'da' ? 'Cainita sin nombre' : 'Vástago sin nombre'), summary: `${clanOf(ch).name} · ${generation(ch)}ª generación` })),
     openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
@@ -769,7 +769,7 @@
     document.head.append(fonts);
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/vampiro/vampire.css?v=5';
+    stylesheet.href = './src/vampiro/vampire.css?v=6';
     document.head.append(stylesheet);
     host = document.createElement('section');
     host.id = 'nexoVampire';
