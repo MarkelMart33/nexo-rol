@@ -22,7 +22,10 @@
    *   features items: [{ name, text, tag }]              rasgos con su explicación
    *   tracks   items: [{ label, value, max, boxes }]     contadores para llevar a mano en papel
    *   text     text: '…'                                 notas tal cual
+   *   columns  items: [{ label, dots, items }]           varias listas una al lado de otra, cada una con su título
    */
+  const listRow = it => `<li class="${it.mark ? 'is-marked' : ''}"><span>${it.mark ? '<i aria-hidden="true">●</i>' : ''}${esc(it.name)}</span><b>${esc(it.value)}</b></li>`;
+  const dotRow = it => `<li><span>${esc(it.name)}</span><b class="nf-dots" aria-label="${esc(it.value)} de ${esc(it.max)}">${Array.from({ length: Math.min(12, Math.max(it.max || 5, it.value || 0)) }, (_, i) => `<i class="${i < it.value ? 'is-on' : ''}"></i>`).join('')}</b></li>`;
   function blockHtml(block) {
     if (!block) return '';
     const items = (block.items || []).filter(Boolean);
@@ -30,9 +33,11 @@
     if (block.kind === 'stats') {
       body = `<div class="nf-stats">${items.map(it => `<div><small>${esc(it.label)}</small><b>${esc(filled(it.value) ? it.value : '—')}</b>${filled(it.sub) ? `<i>${esc(it.sub)}</i>` : ''}</div>`).join('')}</div>`;
     } else if (block.kind === 'list') {
-      body = `<ul class="nf-list" style="--nf-cols:${block.cols || 3}">${items.map(it => `<li class="${it.mark ? 'is-marked' : ''}"><span>${it.mark ? '<i aria-hidden="true">●</i>' : ''}${esc(it.name)}</span><b>${esc(it.value)}</b></li>`).join('')}</ul>`;
+      body = `<ul class="nf-list" style="--nf-cols:${block.cols || 3}">${items.map(listRow).join('')}</ul>`;
     } else if (block.kind === 'dots') {
-      body = `<ul class="nf-list nf-dotlist" style="--nf-cols:${block.cols || 3}">${items.map(it => `<li><span>${esc(it.name)}</span><b class="nf-dots" aria-label="${esc(it.value)} de ${esc(it.max)}">${Array.from({ length: Math.max(it.max || 5, it.value || 0) }, (_, i) => `<i class="${i < it.value ? 'is-on' : ''}"></i>`).join('')}</b></li>`).join('')}</ul>`;
+      body = `<ul class="nf-list nf-dotlist" style="--nf-cols:${block.cols || 3}">${items.map(dotRow).join('')}</ul>`;
+    } else if (block.kind === 'columns') {
+      body = `<div class="nf-cols" style="--nf-cols:${block.cols || items.length || 3}">${items.map(col => `<div>${filled(col.label) ? `<h3>${esc(col.label)}</h3>` : ''}<ul class="nf-list" style="--nf-cols:1">${(col.items || []).filter(Boolean).map(col.dots ? dotRow : listRow).join('')}</ul></div>`).join('')}</div>`;
     } else if (block.kind === 'pairs') {
       body = `<dl class="nf-pairs">${items.filter(([, v]) => filled(v)).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`;
     } else if (block.kind === 'features') {

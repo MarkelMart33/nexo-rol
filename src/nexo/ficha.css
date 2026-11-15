@@ -29,12 +29,12 @@
 .nf-meta dt,.nf-pairs dt{color:var(--nf-soft);font:600 11px/1.6 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}
 .nf-meta dd{margin:0;font-weight:700;text-align:right;overflow-wrap:anywhere}
 .nf-block{display:block;margin-top:18px;break-inside:avoid}
-.nf-block.is-features,.nf-block.is-text,.nf-block.is-list{break-inside:auto}
+.nf-block.is-features,.nf-block.is-text,.nf-block.is-list,.nf-block.is-columns{break-inside:auto}
 .nf-block h2{display:flex;align-items:center;gap:10px;margin:0 0 9px;color:var(--nf-accent);font:700 12px/1.2 system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase}
 .nf-block h2:after{content:'';flex:1;height:1px;background:var(--nf-line)}
 .nf-note{margin:7px 0 0;color:var(--nf-soft);font-size:13px;font-style:italic}
 
-.nf-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.nf-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
 .nf-stats div{display:grid;justify-items:center;gap:1px;padding:8px 6px 7px;border:1px solid var(--nf-line);border-radius:4px;background:#fff;text-align:center}
 .nf-stats small{color:var(--nf-soft);font:600 10px/1.25 system-ui,sans-serif;letter-spacing:.07em;text-transform:uppercase}
 .nf-stats b{font:700 22px/1.15 Georgia,serif;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
@@ -49,6 +49,9 @@
 .nf-dots{display:inline-flex;gap:3px}
 .nf-dots i{width:10px;height:10px;border:1.5px solid var(--nf-ink);border-radius:50%}
 .nf-dots i.is-on{background:var(--nf-ink)}
+
+.nf-cols{display:grid;grid-template-columns:repeat(var(--nf-cols,3),minmax(0,1fr));gap:12px 22px}
+.nf-cols h3{margin:0 0 4px;color:var(--nf-soft);font:700 11px/1.3 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase}
 
 .nf-pairs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 22px;margin:0}
 .nf-pairs div{display:flex;gap:10px;align-items:baseline;border-bottom:1px dotted var(--nf-line);padding:2px 0}
@@ -77,8 +80,10 @@
   .nf-sheet{padding:22px 16px 18px}
   .nf-sheet h1{font-size:26px}
   .nf-list{grid-template-columns:repeat(min(var(--nf-cols,3),2),minmax(0,1fr))}
-  .nf-pairs{grid-template-columns:1fr}
+  .nf-pairs,.nf-cols{grid-template-columns:1fr}
   .nf-bar-title{order:-1;flex-basis:100%}
+  .nf-tools{margin-left:0;gap:6px}
+  .nf-tools>button{min-height:0!important;padding:8px 10px!important;font-size:12px!important;letter-spacing:.04em!important}
 }
 @media (max-width:420px){.nf-list{grid-template-columns:1fr}}
 

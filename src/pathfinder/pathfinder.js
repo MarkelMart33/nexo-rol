@@ -115,6 +115,14 @@
   });
   const manualLink = (id, label) => ap?.link(id, label) || '';
 
+  // Exportar, importar e imprimir la ficha (src/nexo/ficha.js).
+  const kit = window.NEXO_FICHA?.create({
+    prefix: 'pf', system: GAME, label: 'Pathfinder',
+    current: () => current, sheet: ch => sheetData(ch), template: newCharacter, before: () => flushSave(), flash: text => flash(text),
+    accept: ch => accept(ch), exists: id => store.characters.some(ch => ch.id === id),
+    put: ch => { store.characters = [ch, ...store.characters.filter(item => item.id !== ch.id)]; persist(); renderList(); }
+  });
+
   function load() {
     try {
       const parsed = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -246,6 +254,64 @@
     }
   }
 
+  // Ficha que llega de un archivo: se completa y se deja solo lo que el creador entiende.
+  function accept(raw) {
+    const ch = normalize(raw);
+    const strings = list => list.filter(k => typeof k === 'string');
+    ['ancBoosts', 'bgBoosts', 'freeBoosts', 'freeSkills'].forEach(k => { ch[k] = strings(ch[k]); });
+    ch.lores = strings(ch.lores).map(s => s.slice(0, 40)).slice(0, 30);
+    sanitize(ch);
+    return ch;
+  }
+
+  // La ficha como datos para la hoja de solo lectura: lo que se imprime o se guarda como PDF.
+  function sheetData(ch) {
+    const a = anc(ch);
+    const b = bg(ch);
+    const c = cls(ch);
+    const save = (attr, rank) => (c ? signed(mod(ch, attr) + prof(rank)) : '—');
+    const ac = armorClass(ch);
+    const key = keyAttr(ch);
+    const fue = mod(ch, 'fue');
+    const lores = [b ? (ch.bgLore || b.lore) : '', ...ch.lores].filter(Boolean);
+    const langs = [...(a?.langs || []), ...ch.languages.split(',').map(s => s.trim()).filter(Boolean)];
+    const bgFeat = b ? (ch.background === 'propio' ? ch.bgFeat : b.feat) : '';
+    return {
+      system: 'Pathfinder · 2ª edición Remaster', accent: '#5b3a8c',
+      name: ch.name || 'Aventurero sin nombre', subtitle: describe(ch),
+      meta: [['Nivel', LEVEL], ['Jugador', ch.player], ['Campaña', ch.campaign]],
+      blocks: [
+        { title: 'Aventurero', kind: 'pairs', items: [
+          ['Ascendencia', a?.name], ['Herencia', ch.heritage], ['Bagaje', b?.name], ['Dote del bagaje', bgFeat], ['Clase', c?.name], ['Subclase y elecciones', ch.subclass],
+          ['Atributo clave', key ? ATTR[key].name : ''], ['Dios o filosofía', ch.deity], ['Edad', ch.age], ['Edictos y anatemas', ch.edicts],
+          ['Tamaño', a?.size], ['Sentidos', a?.vision], ['Idiomas', langs.join(', ')], ['Armadura', (ARMORS[ch.armor] || ARMORS.sin).name]
+        ] },
+        { title: 'Atributos', kind: 'stats', items: ATTRS.map(([k, name, short]) => ({ label: name, value: signed(mod(ch, k)), sub: short })) },
+        { title: 'Defensa', kind: 'stats', note: c && !ac.trained ? 'La clase no está entrenada en esa armadura: no suma competencia a la CA.' : '', items: [
+          { label: 'Puntos de golpe', value: a && c ? hp(ch) : '—' }, { label: 'Clase de Armadura', value: c ? ac.total : '—' }, { label: 'Percepción', value: save('sab', c?.perc) },
+          { label: 'Fortaleza', value: save('con', c?.fort) }, { label: 'Reflejos', value: save('des', c?.ref) }, { label: 'Voluntad', value: save('sab', c?.vol) },
+          { label: 'Velocidad', value: a ? a.speed : '—', sub: a ? 'pies' : '' }
+        ] },
+        { title: 'Ataques y CD', kind: 'stats', items: [
+          { label: 'Cuerpo a cuerpo', value: c ? signed(fue + prof(c.weapon)) : '—' }, { label: 'A distancia', value: c ? signed(mod(ch, 'des') + prof(c.weapon)) : '—' },
+          { label: 'CD de clase', value: c ? 10 + mod(ch, key) + prof(1) : '—' },
+          c?.spells ? { label: 'Ataque de conjuro', value: signed(mod(ch, key) + prof(1)) } : null, c?.spells ? { label: 'CD de conjuros', value: 10 + mod(ch, key) + prof(1), sub: c.spells } : null,
+          { label: 'Impedimenta', value: `${5 + fue} / ${10 + fue}`, sub: 'impedido / máx.' }
+        ] },
+        { title: 'En partida', kind: 'tracks', items: [
+          { label: 'Puntos de golpe', value: '', max: a && c ? hp(ch) : '' }, { label: 'Puntos de héroe', value: '', max: 3, boxes: 3, marked: 1 }, { label: 'Moribundo', value: '', max: 4, boxes: 4 }, { label: 'Herido', value: '', max: '' }
+        ] },
+        { title: 'Habilidades', kind: 'list', cols: 2, note: 'El punto marca las habilidades entrenadas (+2 más el nivel).', items: [
+          ...SKILL_KEYS.map(k => ({ name: `${SKILLS[k][0]} (${ATTR[SKILLS[k][1]].short})`, value: signed(skillMod(ch, k)), mark: Boolean(skillSource(ch, k)) })),
+          ...lores.map(name => ({ name: `Saber: ${name} (INT)`, value: signed(loreMod(ch)), mark: true }))
+        ] },
+        { title: 'Dotes y rasgos', kind: 'text', text: ch.feats },
+        { title: 'Equipo', kind: 'text', text: ch.gear },
+        { title: 'Notas', kind: 'text', text: ch.notes }
+      ]
+    };
+  }
+
   function summary(ch) {
     const b = bg(ch);
     const c = cls(ch);
@@ -372,7 +438,7 @@
       const done = isComplete(ch);
       return `<button class="pf-card" data-open="${esc(ch.id)}"><span class="pf-card-mark" aria-hidden="true">${window.NEXO_ICONS?.pathfinder || ''}</span><span class="pf-card-copy"><b>${esc(ch.name || 'Aventurero sin nombre')}</b><small>${esc(describe(ch))}</small></span><span class="pf-badge ${done ? 'is-done' : ''}">${done ? 'Listo' : 'En curso'}</span></button>`;
     }).join('') : `<div class="pf-empty"><span aria-hidden="true">${window.NEXO_ICONS?.pathfinder || ''}</span><b>Aún no hay aventureros</b><small>Pulsa «Nuevo aventurero» para crear tu primer personaje.</small></div>`;
-    frame(`${ap?.tabs('personajes') || ''}<p class="pf-kicker">NEXO / PATHFINDER · 2ª EDICIÓN REMASTER</p><h1>Tus <em>aventureros</em></h1><p class="pf-intro">Crea personajes de nivel 1 para Golarion: ascendencia y herencia, bagaje, clase, mejoras de atributo y habilidades entrenadas. NEXO calcula puntos de golpe, Clase de Armadura, Percepción, salvaciones, CD de clase y de conjuros, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="pf-actions"><button class="pf-button" data-new>NUEVO AVENTURERO</button><button class="pf-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="pf-list">${cards}</div><p class="pf-quote">«Explora, informa, coopera.»</p>`);
+    frame(`${ap?.tabs('personajes') || ''}<p class="pf-kicker">NEXO / PATHFINDER · 2ª EDICIÓN REMASTER</p><h1>Tus <em>aventureros</em></h1><p class="pf-intro">Crea personajes de nivel 1 para Golarion: ascendencia y herencia, bagaje, clase, mejoras de atributo y habilidades entrenadas. NEXO calcula puntos de golpe, Clase de Armadura, Percepción, salvaciones, CD de clase y de conjuros, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="pf-actions"><button class="pf-button" data-new>NUEVO AVENTURERO</button>${kit?.importButton() || ''}<button class="pf-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="pf-list">${cards}</div><p class="pf-quote">«Explora, informa, coopera.»</p>`);
     host.querySelector('[data-new]').addEventListener('click', () => openEditor(newCharacter()));
     host.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
       const ch = store.characters.find(item => item.id === button.dataset.open);
@@ -395,7 +461,7 @@
   function openEditor(ch) {
     current = ch;
     const saved = store.characters.some(item => item.id === ch.id);
-    frame(`<div class="pf-editor-head"><button class="pf-button ghost" data-back>← TUS AVENTUREROS</button><button class="pf-button danger" data-delete ${saved ? '' : 'hidden'}>BORRAR FICHA</button></div>
+    frame(`<div class="pf-editor-head"><button class="pf-button ghost" data-back>← TUS AVENTUREROS</button>${kit?.tools() || ''}<button class="pf-button danger" data-delete ${saved ? '' : 'hidden'}>BORRAR FICHA</button></div>
       <section class="pf-panel">${heading(1, 'Aventurero', 'datos básicos')}<div class="pf-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del personaje' })}${field('Jugador', 'player')}${field('Campaña', 'campaign')}
         ${field('Dios o filosofía', 'deity', { placeholder: 'Iomedae, Desna, ninguno…' })}${field('Edad', 'age')}${field('Edictos y anatemas', 'edicts', { placeholder: 'Lo que defiendes y lo que nunca harías' })}
@@ -605,6 +671,7 @@
     host.setAttribute('aria-label', 'NEXO Pathfinder');
     document.body.append(host);
     ap?.mount(host);
+    kit?.mount(host);
     host.addEventListener('keydown', event => {
       if (event.key === 'Escape') host.querySelectorAll('.pf-modal').forEach(modal => { modal.hidden = true; });
     });

@@ -100,6 +100,14 @@
   });
   const manualLink = (id, label) => ap?.link(id, label) || '';
 
+  // Exportar, importar e imprimir la ficha (src/nexo/ficha.js).
+  const kit = window.NEXO_FICHA?.create({
+    prefix: 'tor', system: GAME, label: 'El Archivo de las Tormentas',
+    current: () => current, sheet: ch => sheetData(ch), template: newCharacter, before: () => flushSave(), flash: text => flash(text),
+    accept: ch => accept(ch), exists: id => store.characters.some(ch => ch.id === id),
+    put: ch => { store.characters = [ch, ...store.characters.filter(item => item.id !== ch.id)]; persist(); renderList(); }
+  });
+
   function load() {
     try {
       const parsed = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -179,6 +187,66 @@
     });
     if (!ORDERS[ch.order]) ch.order = '';
     ch.ideal = Math.max(0, Math.min(MAX_IDEAL, Math.trunc(ch.ideal) || 0));
+  }
+
+  // Ficha que llega de un archivo: se completa y se deja solo lo que el creador entiende.
+  function accept(raw) {
+    const ch = normalize(raw);
+    const int = (v, max) => Math.max(0, Math.min(max, Math.trunc(Number(v)) || 0));
+    const obj = v => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
+    ch.attrBonus = int(ch.attrBonus, 20);
+    ch.rankBonus = int(ch.rankBonus, 80);
+    ch.healthBonus = int(ch.healthBonus, 300);
+    ch.level = int(ch.level, MAX_LEVEL) || 1;
+    ch.attrs = Object.fromEntries(ATTRS.map(([k]) => [k, int(obj(ch.attrs)[k], 10)]));
+    ch.ranks = Object.fromEntries(Object.keys(SKILLS).map(k => [k, int(obj(ch.ranks)[k], 5)]).filter(([, n]) => n));
+    ch.cultures = ch.cultures.filter(k => typeof k === 'string');
+    ch.radiant = Boolean(ch.radiant);
+    sanitize(ch);
+    return ch;
+  }
+
+  // La ficha como datos para la hoja de solo lectura: lo que se imprime o se guarda como PDF.
+  function sheetData(ch) {
+    const a = ANCESTRIES[ch.ancestry];
+    const path = PATHS[ch.path];
+    const order = ch.radiant ? ORDERS[ch.order] : null;
+    const fue = band(attr(ch, 'fue'));
+    const inv = investiture(ch);
+    const expertises = [...ch.cultures.map(k => `Cultura ${CULTURES[k][0].toLowerCase()}`), ...extraExpertises(ch)];
+    return {
+      system: 'El Archivo de las Tormentas · Juego de rol del Cosmere', accent: '#1d4f7c',
+      name: ch.name || 'Héroe sin nombre', subtitle: describe(ch),
+      meta: [['Nivel', `${ch.level} · escalón ${tier(ch)}`], ['Jugador', ch.player], ['Campaña', ch.campaign]],
+      blocks: [
+        { title: 'Identidad', kind: 'pairs', items: [['Ascendencia', a?.name], ['Culturas', ch.cultures.map(k => CULTURES[k][0]).join(', ')], ['Camino heroico', path?.name], ['Especialidad', ch.spec], ['Propósito', ch.purpose], ['Obstáculo', ch.obstacle], ['Metas', ch.goals]] },
+        { title: 'Atributos', kind: 'stats', items: ATTRS.map(([k, name, short]) => ({ label: name, value: attr(ch, k), sub: short })) },
+        { title: 'Defensas y valores', kind: 'stats', items: [
+          { label: 'Defensa física', value: defense(ch, 'fisico') }, { label: 'Defensa cognitiva', value: defense(ch, 'cognitivo') }, { label: 'Defensa espiritual', value: defense(ch, 'espiritual') },
+          { label: 'Salud', value: health(ch) }, { label: 'Concentración', value: focus(ch) }, { label: 'Investidura', value: inv || '—' },
+          { label: 'Movimiento', value: MOVE[band(attr(ch, 'vel'))], sub: 'pies' }, { label: 'Recuperación', value: RECOVERY[band(attr(ch, 'vol'))], sub: 'dado' },
+          { label: 'Carga', value: LIFT[fue][1], sub: 'libras' }, { label: 'Levantar', value: LIFT[fue][0], sub: 'libras' }
+        ], note: `Sentidos: ${SENSES[band(attr(ch, 'cns'))].toLowerCase()}.` },
+        { title: 'Habilidades', kind: 'columns', note: 'El punto marca las habilidades con rango. El modificador es el atributo más el rango.', items: REALMS.map(([realm, name]) => ({
+          label: name,
+          items: Object.entries(SKILLS).filter(([, [, at]]) => AT[at].realm === realm).map(([k, [n, at]]) => ({ name: `${n} (${AT[at].short})${rank(ch, k) ? ` · rango ${rank(ch, k)}` : ''}`, value: signed(skillMod(ch, k)), mark: rank(ch, k) > 0 }))
+        })) },
+        { title: 'En partida', kind: 'tracks', items: [
+          { label: 'Salud', value: '', max: health(ch) }, { label: 'Concentración', value: '', max: focus(ch), boxes: focus(ch) }, inv ? { label: 'Investidura', value: '', max: inv, boxes: inv } : null
+        ] },
+        expertises.length ? { title: 'Pericias', kind: 'text', text: expertises.join(', ') } : null,
+        { title: 'Origen y camino', kind: 'features', items: [
+          a ? { name: a.name, tag: 'Ascendencia', text: a.traits } : null,
+          path ? { name: path.talent, tag: `Talento clave · ${path.name}`, text: path.talentText } : null
+        ] },
+        order ? { title: 'Camino radiante', kind: 'features', items: [
+          { name: order.name, tag: `Spren: ${ch.spren || order.spren}`, text: `${order.theme} Ideales pronunciados: ${ch.ideal} de ${MAX_IDEAL}.` },
+          ...order.surges.map(k => ({ name: SURGES[k][0], tag: 'Potencia', text: SURGES[k][1] }))
+        ] } : null,
+        { title: 'Talentos', kind: 'text', text: ch.talents },
+        { title: 'Equipo y notas', kind: 'text', text: ch.notes }
+      ]
+    };
   }
 
   function summary(ch) {
@@ -278,7 +346,7 @@
       const done = isComplete(ch);
       return `<button class="tor-card" data-open="${esc(ch.id)}"><span class="tor-card-gem">${esc((ch.name || '?').trim().charAt(0).toUpperCase() || '?')}</span><span class="tor-card-copy"><b>${esc(ch.name || 'Héroe sin nombre')}</b><small>${esc(describe(ch))}</small></span><span class="tor-badge ${done ? 'is-done' : ''}">${done ? 'LISTO' : 'EN CREACIÓN'}</span></button>`;
     }).join('') : '<div class="tor-empty"><span aria-hidden="true">✦</span><b>Las Llanuras están en calma</b><small>Pulsa «Despertar a un héroe» para crear tu primer personaje.</small></div>';
-    frame(`${ap?.tabs('personajes') || ''}<p class="tor-kicker">NEXO / JUEGO DE ROL DEL COSMERE · MANUAL DE STORMLIGHT</p><h1>Tus <em>héroes</em> de Roshar</h1><p class="tor-intro">Crea personajes de nivel 1: ascendencia, dos culturas, un camino heroico, 12 puntos de atributo y 4 rangos de habilidad. NEXO calcula defensas, salud, concentración, investidura, movimiento y sentidos, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="tor-actions"><button class="tor-button" data-new>✦ DESPERTAR A UN HÉROE</button><button class="tor-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="tor-list">${cards}</div>`);
+    frame(`${ap?.tabs('personajes') || ''}<p class="tor-kicker">NEXO / JUEGO DE ROL DEL COSMERE · MANUAL DE STORMLIGHT</p><h1>Tus <em>héroes</em> de Roshar</h1><p class="tor-intro">Crea personajes de nivel 1: ascendencia, dos culturas, un camino heroico, 12 puntos de atributo y 4 rangos de habilidad. NEXO calcula defensas, salud, concentración, investidura, movimiento y sentidos, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="tor-actions"><button class="tor-button" data-new>✦ DESPERTAR A UN HÉROE</button>${kit?.importButton() || ''}<button class="tor-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="tor-list">${cards}</div>`);
     host.querySelector('[data-new]').addEventListener('click', () => openEditor(newCharacter()));
     host.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
       const ch = store.characters.find(item => item.id === button.dataset.open);
@@ -303,7 +371,7 @@
   function openEditor(ch) {
     current = ch;
     const saved = store.characters.some(item => item.id === ch.id);
-    frame(`<div class="tor-editor-head"><button class="tor-button ghost" data-back>← TUS HÉROES</button><button class="tor-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
+    frame(`<div class="tor-editor-head"><button class="tor-button ghost" data-back>← TUS HÉROES</button>${kit?.tools() || ''}<button class="tor-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
       <section class="tor-panel">${heading(1, 'Identidad', 'concepto del personaje')}<div class="tor-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del personaje' })}${field('Jugador', 'player')}${field('Campaña', 'campaign')}
       </div><div class="tor-fields tor-fields-3">
@@ -469,6 +537,7 @@
     host.setAttribute('aria-label', 'NEXO El Archivo de las Tormentas');
     document.body.append(host);
     ap?.mount(host);
+    kit?.mount(host);
     host.addEventListener('keydown', event => {
       if (event.key === 'Escape') host.querySelectorAll('.tor-modal').forEach(modal => { modal.hidden = true; });
     });
