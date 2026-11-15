@@ -59,6 +59,10 @@
     persist();
   }
   window.addEventListener('pagehide', flush);
+  // Al cerrar sesión se sueltan las campañas de esa cuenta (si no, se volverían a guardar en este
+  // dispositivo y acabarían en la siguiente cuenta); al entrar se toma lo que ha traído la nube.
+  document.addEventListener('nexo:signed-out', () => { clearTimeout(saveTimer); saveTimer = 0; store = load(); });
+  document.addEventListener('nexo:cloud-pulled', () => { if (!saveTimer) store = load(); });
   async function pull() {
     flush();
     const synced = await window.NEXO_CLOUD?.syncCharacters?.(GAME, KEY, store, 'campaigns').catch(error => { console.error('NEXO sync error', error); return null; });

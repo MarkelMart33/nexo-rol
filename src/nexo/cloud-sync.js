@@ -18,19 +18,28 @@
   const mark = (key, state) => { try { localStorage.setItem(`${key}-cloud`, state); } catch {} };
   const isClean = key => { try { return localStorage.getItem(`${key}-cloud`) === 'clean'; } catch { return false; } };
 
+  // Hasta conocer la sesión guardada, save y syncCharacters esperan: si un sistema se abre
+  // nada más cargar, no debe tratar la cuenta como vacía ni subir solo la copia local.
+  const ready = client
+    ? client.auth.getSession().then(({ data }) => { if (!user) user = data.session?.user || null; }).catch(() => {})
+    : Promise.resolve();
   if (client) {
-    client.auth.getSession().then(({ data }) => { user = data.session?.user || null; });
     client.auth.onAuthStateChange((event, session) => {
       user = session?.user || null;
-      // Al cerrar sesión, este dispositivo deja de guardar las fichas de esa cuenta.
-      if (event === 'SIGNED_OUT') LOCAL_KEYS.forEach(key => { localStorage.removeItem(key); localStorage.removeItem(`${key}-cloud`); });
+      // Al cerrar sesión, este dispositivo deja de guardar las fichas de esa cuenta,
+      // y los módulos que las tienen en memoria las sueltan (evento nexo:signed-out).
+      if (event === 'SIGNED_OUT') {
+        LOCAL_KEYS.forEach(key => { localStorage.removeItem(key); localStorage.removeItem(`${key}-cloud`); });
+        document.dispatchEvent(new Event('nexo:signed-out'));
+      }
     });
   }
 
   // Uploads the game's store. Resolves null without an account, otherwise whether it reached the cloud.
-  function save(game, key, store) {
+  async function save(game, key, store) {
     mark(key, 'dirty');
-    if (!client || !user) return Promise.resolve(null);
+    await ready;
+    if (!client || !user) return null;
     const row = { owner_id: user.id, game, data: store };
     chains[game] = (chains[game] || Promise.resolve()).catch(() => {}).then(async () => {
       const { error } = await client.from('game_saves').upsert(row, { onConflict: 'owner_id,game' });
@@ -51,6 +60,7 @@
   // merged in (newest updatedAt wins); otherwise the cloud copy replaces the local one.
   // `field` names the list inside the store: "characters" for sheets, "campaigns" for campaigns.
   async function syncCharacters(game, key, local, field = 'characters') {
+    await ready;
     if (!client || !user) return null;
     await chains[game]?.catch(() => {});
     const { data: row, error } = await client.from('game_saves').select('data').eq('game', game).maybeSingle();
@@ -73,5 +83,43 @@
     return store;
   }
 
-  window.NEXO_CLOUD = { get signedIn() { return Boolean(client && user); }, get user() { return user; }, failText: game => failText[game] || OFFLINE, save, syncCharacters };
+  // Al entrar en la cuenta trae las fichas y campañas de todos los sistemas, para que el perfil
+  // las muestre en un dispositivo nuevo sin tener que abrir antes cada sistema.
+  const GAMES = [['vampiro', 'nexo-vampire-v1', 'characters'], ['dnd', 'nexo-dnd-v1', 'characters'], ['tormentas', 'nexo-tormentas-v1', 'characters'],
+    ['cthulhu', 'nexo-cthulhu-v1', 'characters'], ['pathfinder', 'nexo-pathfinder-v1', 'characters'], ['campanas', 'nexo-campanas-v1', 'campaigns']];
+  let pulling = null;
+  function pullAll() {
+    if (pulling) return pulling;
+    pulling = Promise.all(GAMES.map(([game, key, field]) => {
+      let local;
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key) || '{}');
+        local = { [field]: Array.isArray(parsed[field]) ? parsed[field].filter(item => item && typeof item === 'object') : [] };
+      } catch { local = { [field]: [] }; }
+      return syncCharacters(game, key, local, field).catch(error => console.error('NEXO sync error', error));
+    })).finally(() => {
+      pulling = null;
+      document.dispatchEvent(new Event('nexo:cloud-pulled'));
+    });
+    return pulling;
+  }
+  document.addEventListener('nexo:account-ready', () => { pullAll(); });
+
+  // Antes de cerrar sesión: qué sistemas tienen cambios que la nube aún no tiene (se perderían al borrar la copia local).
+  const NAMES = { 'nexo-vampire-v1': 'Vampiro', 'nexo-dnd-v1': 'D&D', 'nexo-tormentas-v1': 'El Archivo de las Tormentas', 'nexo-cthulhu-v1': 'La llamada de Cthulhu', 'nexo-pathfinder-v1': 'Pathfinder', 'nexo-campanas-v1': 'Campañas' };
+  function pendingChanges() {
+    const out = [];
+    try {
+      if (JSON.parse(localStorage.getItem('nexo-traveller-v1-dirty') || '[]').length) out.push('Traveller');
+    } catch {}
+    LOCAL_KEYS.forEach(key => { try { if (localStorage.getItem(`${key}-cloud`) === 'dirty') out.push(NAMES[key]); } catch {} });
+    return out;
+  }
+  function confirmSignOut() {
+    const pending = pendingChanges();
+    if (!pending.length) return confirm('¿Cerrar sesión de NEXO en este dispositivo?');
+    return confirm(`Hay cambios que aún no se han subido a la nube (${pending.join(', ')}). Si cierras sesión ahora, se perderán. Puedes esperar a tener conexión y volver a intentarlo.\n\n¿Cerrar sesión igualmente?`);
+  }
+
+  window.NEXO_CLOUD = { get signedIn() { return Boolean(client && user); }, get user() { return user; }, failText: game => failText[game] || OFFLINE, save, syncCharacters, pullAll, pendingChanges, confirmSignOut };
 })();

@@ -104,6 +104,10 @@
     host.querySelector('[data-sign-out]')?.addEventListener('click', signOut);
     host.querySelector('[data-name-form]')?.addEventListener('submit', saveName);
     host.querySelector('[data-password-form]')?.addEventListener('submit', savePassword);
+    bindStack();
+  }
+
+  function bindStack() {
     host.querySelector('[data-traveller]').addEventListener('click', () => { hide(); window.NEXO_TRAVELLER?.showCampaigns(); });
     host.querySelectorAll('[data-campaign]').forEach(button => button.addEventListener('click', () => { hide(); window.NEXO_TRAVELLER?.openCampaign(button.dataset.campaign); }));
     host.querySelectorAll('[data-character]').forEach(button => button.addEventListener('click', () => {
@@ -124,19 +128,36 @@
     event.preventDefault();
     const name = event.target.elements.namedItem('name').value.trim();
     if (!/^[\p{L}\p{N}_.-]{3,24}$/u.test(name)) { message('El nombre de usuario debe tener entre 3 y 24 letras, números, puntos, guiones o guiones bajos, sin espacios.', true); return; }
+    // Cada nombre es de una sola cuenta: se comprueba antes y la base de datos lo vuelve a impedir al guardar.
+    const check = await client().rpc('username_available', { name });
+    if (check.data === false) { message('Ese nombre de usuario ya lo usa otra cuenta. Elige otro.', true); return; }
     const { data, error } = await client().auth.updateUser({ data: { display_name: name } });
-    if (error) { message('No se pudo guardar el nombre. Comprueba la conexión.', true); return; }
+    if (error) {
+      const text = `${error.code || ''} ${error.message || ''}`.toLowerCase();
+      message(text.includes('username_taken') || text.includes('database error') ? 'Ese nombre de usuario ya lo usa otra cuenta. Elige otro.' : 'No se pudo guardar el nombre. Comprueba la conexión.', true);
+      return;
+    }
     host.querySelector('.prf-identity b').textContent = displayName(data.user) || 'Sin nombre de usuario';
     host.querySelector('.prf-seal').textContent = initials(data.user);
     message('Nombre de usuario guardado.');
   }
 
+  function passwordError(error) {
+    const text = `${error?.code || ''} ${error?.message || ''}`.toLowerCase();
+    if (text.includes('different')) return 'La contraseña nueva debe ser distinta de la actual.';
+    if (text.includes('weak') || text.includes('password should')) return 'La contraseña es demasiado débil. Usa al menos 8 caracteres y mezcla letras y números.';
+    if (text.includes('reauthentication')) return 'Por seguridad, cierra sesión, vuelve a entrar y cambia la contraseña enseguida.';
+    if (text.includes('fetch') || text.includes('network')) return 'No hay conexión con el servidor de cuentas. Comprueba tu conexión.';
+    return 'No se pudo cambiar la contraseña. Inténtalo de nuevo.';
+  }
+
   async function savePassword(event) {
     event.preventDefault();
     const { password, confirm } = event.target;
+    if (password.value.length < 8) { message('La contraseña debe tener al menos 8 caracteres.', true); return; }
     if (password.value !== confirm.value) { message('Las contraseñas no coinciden.', true); return; }
     const { error } = await client().auth.updateUser({ password: password.value });
-    if (error) { message(String(error.message || '').toLowerCase().includes('different') ? 'La contraseña nueva debe ser distinta de la actual.' : 'No se pudo cambiar la contraseña. Inténtalo de nuevo.', true); return; }
+    if (error) { message(passwordError(error), true); return; }
     event.target.reset();
     message('Contraseña actualizada.');
   }
@@ -154,7 +175,7 @@
   }
 
   async function signOut() {
-    if (!confirm('¿Cerrar sesión de NEXO en este dispositivo?')) return;
+    if (!(window.NEXO_CLOUD?.confirmSignOut?.() ?? confirm('¿Cerrar sesión de NEXO en este dispositivo?'))) return;
     hide();
     hideSystems();
     await client()?.auth.signOut();
@@ -164,6 +185,13 @@
   document.addEventListener('nexo:account-ready', () => {
     if (returnAfterSignIn) { returnAfterSignIn = false; open({ onExit: exitHandler }); }
     else if (host && !host.hidden) render();
+  });
+  // Cuando llegan de la nube las fichas y campañas, se actualizan las listas sin tocar los formularios.
+  document.addEventListener('nexo:cloud-pulled', () => {
+    const stack = host && !host.hidden && host.querySelector('.prf-stack');
+    if (!stack) return;
+    stack.innerHTML = campaignsPanel() + charactersPanel();
+    bindStack();
   });
 
   function open(options = {}) {

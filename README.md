@@ -8,12 +8,12 @@ Terminal multiverso para NEXO, con el módulo Traveller como sistema disponible.
 - NEXO ya incluye manifiesto de instalación, iconos de 192 y 512 px y caché de recursos. Las cuentas personales usan Supabase para autenticación y sincronización privada; sin cuenta, todo se guarda en el navegador. Para instalarlo en móvil/ordenador y usar la interfaz sin conexión, publica el contenido de esta carpeta en un alojamiento web con HTTPS.
 - En desarrollo, sirve esta carpeta con cualquier servidor HTTP estático. La app de Mapa necesita conexión incluso cuando la interfaz está instalada.
 - La versión pública necesitará un dominio o una dirección web del alojamiento. Después se podrá verificar el sitio en Google Search Console y enviar el sitemap; Google decide cuándo indexarlo y en qué posición mostrarlo.
-- Al pasar del archivo local al dominio, el navegador lo considera otra instalación. En el primer acceso a una cuenta vacía, NEXO copia las partidas locales encontradas en ese navegador a la cuenta. Conserva una copia JSON como respaldo.
+- Al pasar del archivo local al dominio, el navegador lo considera otra instalación. Al entrar en una cuenta, NEXO sube a ella las partidas y fichas que ese navegador tuviera y que la cuenta aún no tenga. Conserva una copia JSON como respaldo.
 
 ## Estructura del proyecto
 
 - `index.html`, `sw.js` y `manifest.webmanifest` quedan en la raíz: son la página de entrada, el servicio offline y el manifiesto de instalación, y necesitan estar ahí para que la app funcione e instale bien.
-- `src/nexo/`: terminal multisistema (selector de sistemas de rol), perfil, sincronización en la nube el lanzador de dados común a todos los sistemas (`dice.js` y `dice.css`) y los apartados de cada sistema (`apartados.js` y `apartados.css`: pestañas, campañas y lector del manual).
+- `src/nexo/`: terminal multisistema (selector de sistemas de rol), perfil, sincronización en la nube, el lanzador de dados común a todos los sistemas (`dice.js` y `dice.css`) y los apartados de cada sistema (`apartados.js` y `apartados.css`: pestañas, campañas y lector del manual).
 - `src/traveller/`: apartado Traveller (aplicación principal, índice del manual, visor PDF, hangar, personajes, manual de consulta, pestañas del selector de partidas y estilos generales).
 - `src/vampiro/`: apartado Vampiro: La Mascarada.
 - `src/dnd/`: apartado Dungeons & Dragons 5.5 y sus datos de progresión.
@@ -86,15 +86,15 @@ Lo comparten las fichas de Vampiro, D&D, El Archivo de las Tormentas, La llamada
 
 ## Vista principal
 
-El selector de sistemas (`src/nexo/terminal-shell.js` y `mesa.css`) es una mesa de madera con un objeto por sistema: una PDA para Traveller, un cuaderno de cuero para D&D, un móvil para Vampiro, un manuscrito para Vampiro: Edad Oscura, una vinculacaña para El Archivo de las Tormentas y un expediente para La llamada de Cthulhu y una brújula de explorador sobre un mapa para Pathfinder. Los objetos llegan a la mesa con una animación, se levantan al pasar por encima (el cuaderno se entreabre, la PDA ilumina la pantalla, el móvil vibra del expediente asoma una fotografía y la aguja de la brújula da la vuelta hasta el norte) y se acercan al elegirlos. Con «reducir movimiento» activado no hay animaciones. Los emblemas de cada sistema están en `src/nexo/icons.js`. La pantalla de carga, la de cuenta y el perfil comparten la misma madera, papel y cuero (`src/nexo/nexo.css`).
+El selector de sistemas (`src/nexo/terminal-shell.js` y `mesa.css`) es una mesa de madera con un objeto por sistema: una PDA para Traveller, un cuaderno de cuero para D&D, un móvil para Vampiro, un manuscrito para Vampiro: Edad Oscura, una vinculacaña para El Archivo de las Tormentas y un expediente para La llamada de Cthulhu y una brújula de explorador sobre un mapa para Pathfinder. Los objetos llegan a la mesa con una animación, se levantan al pasar por encima (el cuaderno se entreabre, la PDA ilumina la pantalla, el móvil vibra, del expediente asoma una fotografía y la aguja de la brújula da la vuelta hasta el norte) y se acercan al elegirlos. Con «reducir movimiento» activado no hay animaciones. Los emblemas de cada sistema están en `src/nexo/icons.js`. La pantalla de carga, la de cuenta y el perfil comparten la misma madera, papel y cuero (`src/nexo/nexo.css`).
 
 ## Perfil
 
-El botón «Perfil» del selector de sistemas abre `src/nexo/profile.js`. Con cuenta muestra el correo y permite cambiar el nombre de usuario (que se elige al registrarse), cambiar la contraseña y cerrar sesión; sin cuenta ofrece iniciar sesión o crear una. También lista las campañas de Traveller y los personajes de Vampiro, D&D, El Archivo de las Tormentas, La llamada de Cthulhu y Pathfinder, y cada uno se abre directamente desde ahí; al salir del personaje se vuelve al perfil.
+El botón «Perfil» del selector de sistemas abre `src/nexo/profile.js`. Con cuenta muestra el correo y permite cambiar el nombre de usuario (que se elige al registrarse y es único: dos cuentas no pueden usar el mismo, sin distinguir mayúsculas), cambiar la contraseña y cerrar sesión; sin cuenta ofrece iniciar sesión o crear una. También lista las campañas de Traveller y los personajes de Vampiro, D&D, El Archivo de las Tormentas, La llamada de Cthulhu y Pathfinder, y cada uno se abre directamente desde ahí; al salir del personaje se vuelve al perfil.
 
 ## Cuentas personales y sincronización
 
-Cada jugador puede crear una cuenta con correo y contraseña, o pulsar «Continuar solo en este dispositivo» para guardar únicamente en el navegador. Con cuenta, las partidas de Traveller y las fichas de Vampiro, D&D, El Archivo de las Tormentas, La llamada de Cthulhu y Pathfinder son privadas y se sincronizan entre dispositivos; el navegador conserva siempre una copia local. Al iniciar sesión por primera vez con una cuenta vacía se suben los datos que ya hubiera en ese dispositivo. Al cerrar sesión se borra la copia local de esa cuenta. La sincronización no es edición colaborativa en directo y compartir partidas entre cuentas no está incluido.
+Cada jugador puede crear una cuenta con correo y contraseña, o pulsar «Continuar solo en este dispositivo» para guardar únicamente en el navegador. Con cuenta, las partidas de Traveller y las fichas de Vampiro, D&D, El Archivo de las Tormentas, La llamada de Cthulhu y Pathfinder son privadas y se sincronizan entre dispositivos; el navegador conserva siempre una copia local. Al iniciar sesión se suben a la cuenta los datos de ese dispositivo que la cuenta aún no tenga, y los cambios hechos sin conexión se conservan y se suben al recuperarla. Al entrar en un dispositivo nuevo, el perfil trae de la nube los personajes y campañas de todos los sistemas. Al cerrar sesión se borra la copia local de esa cuenta; si quedan cambios sin subir a la nube, NEXO avisa antes y dice en qué sistemas. La sincronización no es edición colaborativa en directo y compartir partidas entre cuentas no está incluido.
 
 Para montarlo en un proyecto Supabase gratuito: crea el proyecto, ejecuta `supabase/schema.sql` en el SQL Editor (crea `public.campaigns` para Traveller y `public.game_saves` para Vampiro, D&D, El Archivo de las Tormentas, La llamada de Cthulhu y Pathfinder, y las campañas de todos los sistemas (`campanas`), con sus políticas RLS; si ya lo tenías, vuelve a ejecutarlo para que acepte las campañas), pon la URL del proyecto y la clave publicable en `supabase/cloud-config.js` y, en Authentication → URL Configuration, añade la dirección donde se publica la web como Site URL y Redirect URL. Los proyectos gratuitos se pausan tras una semana sin uso; se reactivan desde el panel sin perder datos.
 
@@ -115,7 +115,9 @@ El resultado introducido se interpreta como tirada total final y se trunca a ent
 
 ## Alcance
 
-Incluye selector de sistemas y partidas locales, calculadora, inventario, hangar, fichas de personajes, notas, historial, deshacer la última operación, edición manual de cartera e inventario, importación/exportación JSON, visor y buscador de Traveller Map y soporte PWA. La autenticación y sincronización están desactivadas en la beta.
+Incluye selector de sistemas y partidas locales, calculadora, inventario, hangar, fichas de personajes, notas, historial, deshacer la última operación, edición manual de cartera e inventario, importación/exportación JSON, visor y buscador de Traveller Map, cuentas con sincronización y soporte PWA.
+
+Las instrucciones para asistentes de IA que trabajen en el código están en `AGENTS.md`.
 
 
 La portada de Traveller usa ahora la identidad visual orbital NEXO (NEXO Traveller RPG, Bienvenido, explorador y accesos con iconos ilustrados). El resto del terminal multisistema mantiene sus apartados D&D y Vampiro.
