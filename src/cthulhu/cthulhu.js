@@ -769,7 +769,7 @@
     fonts.href = 'https://fonts.googleapis.com/css2?family=Special+Elite&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&display=swap';
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/cthulhu/cthulhu.css?v=2';
+    stylesheet.href = './src/cthulhu/cthulhu.css?v=3';
     document.head.append(fonts, stylesheet);
     host = document.createElement('section');
     host.id = 'nexoCthulhu';

@@ -1,6 +1,13 @@
 /* NEXO · Juego: panel «En juego» de las fichas. Toma la tinta de cada sistema de las variables --ap-ink* (clase ap-<sistema>). */
 .nj-panel{--nj-ink:var(--ap-ink,currentColor);--nj-soft:var(--ap-ink-soft,currentColor);--nj-accent:var(--ap-ink-accent,currentColor);--nj-line:var(--ap-ink-line,currentColor);--nj-head:var(--ap-head,inherit);
   --nj-fill:color-mix(in srgb,var(--nj-accent) 8%,transparent);--nj-press:color-mix(in srgb,var(--nj-accent) 18%,transparent);--nj-bad:#c2362b}
+/* Aviso de «queda poco» con la paleta de cada sistema (D&D no usa rojo; Tormentas, latón). */
+.nj-panel.ap-dnd{--nj-bad:#6b4a1e}
+.nj-panel.ap-vtm{--nj-bad:#ff6b7f}
+.vtm-da .nj-panel.ap-vtm{--nj-bad:#8e1414}
+.nj-panel.ap-tor{--nj-bad:#f0b35a}
+.nj-panel.ap-cth{--nj-bad:#8e2a1c}
+.nj-panel.ap-pf{--nj-bad:#b8402a}
 .nj-panel *,.nj-panel *:before,.nj-panel *:after{box-sizing:border-box}
 .nj-fold>summary{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;list-style:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .nj-fold>summary::-webkit-details-marker{display:none}
@@ -30,7 +37,7 @@
 .nj-act b{font-size:14px}
 
 /* Contadores grandes */
-.nj-bigs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,235px),1fr));gap:12px}
+.nj-bigs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,235px),1fr));align-items:start;gap:12px}
 .nj-big,.nj-track{display:grid;align-content:start;gap:9px;min-width:0;padding:14px;border:1px solid var(--nj-line);border-radius:8px;background:var(--nj-fill)}
 .nj-value{display:flex;align-items:baseline;gap:8px;margin:0;color:var(--nj-ink)}
 .nj-value b{font:700 42px/1 var(--nj-head);font-variant-numeric:tabular-nums}
@@ -42,7 +49,7 @@
 .nj-big.is-low .nj-bar i{background:var(--nj-bad)}
 .nj-delta{display:grid;grid-template-columns:minmax(52px,.55fr) 1fr 1fr;gap:6px}
 .nj-delta input{text-align:center}
-.nj-delta .nj-btn{padding-inline:6px}
+.nj-delta .nj-btn{padding-inline:6px;white-space:nowrap}
 .nj-inner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px}
 .nj-acts{display:flex;flex-wrap:wrap;gap:6px}
 .nj-zero{margin:0;color:var(--nj-soft);font-size:14px;line-height:1.45}
@@ -110,6 +117,8 @@
 @media (max-width:520px){
   .nj-value b{font-size:36px}
   .nj-rest{flex-basis:100%}
+  .nj-delta{grid-template-columns:1fr 1fr}
+  .nj-delta input{grid-column:1/-1}
 }
 @media (prefers-reduced-motion:reduce){
   .nj-bar i,.nj-pip,.nj-btn,.nj-act,.nj-stepper button,.nj-fold>summary:after{transition:none}

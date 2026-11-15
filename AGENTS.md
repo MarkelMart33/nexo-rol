@@ -36,6 +36,9 @@ Sistemas y edición de referencia (no mezcles ediciones):
   - `profile.js` / `profile.css`: perfil (cuenta, nombre de usuario, contraseña, accesos a campañas y personajes).
   - `apartados.js` / `apartados.css`: pestañas Personajes / Campañas / Manual comunes, campañas por sistema y lector del manual.
   - `dice.js` / `dice.css`: lanzador de dados 3D de todos los sistemas (`window.NEXO_DICE`).
+  - `ficha.js` / `ficha.css`: lo común de las fichas (`window.NEXO_FICHA`): exportar, importar, hoja para imprimir y la ventanita de regla de `term(id, texto)`.
+  - `copias.js`: archivos de ficha y copia de seguridad completa (`window.NEXO_COPIAS`).
+  - `juego.js` / `juego.css`: panel «En juego» de las fichas (`window.NEXO_JUEGO`): contadores, estados y descansos.
   - `icons.js`: emblemas SVG de cada sistema (`window.NEXO_ICONS`).
 - `src/<sistema>/`: `<sistema>.js` (creador y fichas), `<sistema>.css`, `<sistema>-mesa.css` (su objeto en la mesa), `<sistema>-manual.js` y `<sistema>-manual-reglas.js` (manual de consulta). Traveller es distinto: `app.js` es la aplicación de partidas (comercio, cartera, inventario, notas, mapa, hangar…) y gestiona también el inicio de sesión de toda NEXO.
 - `assets/iconos/`, `assets/fondos/`: iconos de la app e imágenes.
@@ -47,6 +50,7 @@ Sistemas y edición de referencia (no mezcles ediciones):
   - Cada sistema de fichas expone `window.NEXO_<SISTEMA> = { open, close, list }` (`NEXO_VAMPIRE`, `NEXO_DND`, `NEXO_TORMENTAS`, `NEXO_CTHULHU`, `NEXO_PATHFINDER`). `open({ onExit, characterId, era })` abre el apartado; `list()` resume las fichas para el perfil.
   - Traveller expone `window.NEXO_TRAVELLER` (`campaigns`, `openCampaign`, `showCampaigns`, `signIn`).
   - Los manuales se registran en `window.NEXO_MANUALS.<sistema>`.
+  - Cada sistema de fichas describe con datos lo que el código común pinta: `sheetData(ch)` para la hoja de imprimir, `accept(raw)` para revisar una ficha importada y `playModel(ch)` para el panel «En juego» (contadores, medidores, estados y descansos). Un estado que cambia las tiradas se aplica en el `rollFromSheet` del sistema, que pasa a los dados el modificador y una nota (`opts.note`).
 - Eventos:
   - `nexo:account-ready`: lo lanza `app.js` cuando la cuenta ha cargado.
   - `nexo:cloud-pulled`: lo lanza `cloud-sync.js` cuando ha traído de la nube las fichas y campañas de todos los sistemas.
@@ -61,6 +65,7 @@ Sistemas y edición de referencia (no mezcles ediciones):
   - `nexo-traveller-v1`: partidas de Traveller. Su lista `nexo-traveller-v1-dirty` guarda los ids de las partidas con cambios que la nube aún no tiene.
   - `nexo-vampire-v1`, `nexo-dnd-v1`, `nexo-tormentas-v1`, `nexo-cthulhu-v1` y `nexo-pathfinder-v1`: fichas de cada sistema.
   - `nexo-campanas-v1`: campañas de todos los sistemas.
+  - `nexo-juego-plegado`: si el panel «En juego» de cada ficha está plegado. Es una preferencia del dispositivo: no se sincroniza ni toca `updatedAt`.
   - Cada clave de fichas y campañas tiene su marca `<clave>-cloud` (`clean` o `dirty`).
 - Supabase:
   - `public.campaigns` guarda una fila por partida de Traveller.
@@ -69,6 +74,7 @@ Sistemas y edición de referencia (no mezcles ediciones):
   - La seguridad depende de las políticas RLS de `schema.sql`. La clave de `cloud-config.js` es la publicable: nunca pongas una clave secreta ni una contraseña en archivos servidos.
 - La copia local es la de trabajo. Al guardar se sube el almacén entero, y al abrir un sistema se mezcla con la nube. Gana el `updatedAt` más reciente si hay cambios sin subir; si no, manda la nube.
 - Al cerrar sesión se borra la copia local de esa cuenta. No hay edición colaborativa ni partidas compartidas entre cuentas.
+- Lo que cambia durante la partida vive en la propia ficha, en `ch.play` (`v` contadores, `mx` máximos editados, `c` estados, `m` marcas, `t` medidores, `custom` contadores propios). Solo se lee a través de `NEXO_JUEGO`, que lo rehace con tipos sanos la primera vez que toca una ficha (`clean`), venga de donde venga; no lo leas directamente desde un sistema. Los contadores guardan la diferencia con su valor por defecto, así que un personaje que cambia de nivel conserva lo gastado.
 - Si cambias la forma de los datos, añade la normalización en el `normalize`/`load` del módulo para que las fichas antiguas sigan abriendo. No cambies el nombre de una clave sin migrar los datos.
 
 ## Reglas del repositorio

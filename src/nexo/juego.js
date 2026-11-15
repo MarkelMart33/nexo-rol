@@ -115,7 +115,23 @@
         group: 'Tus contadores', custom: item, rest: item.rest ? { [item.rest]: item.max ? 'all' : { set: 0 } } : null
       }));
       const counters = [...(model.counters || []).filter(Boolean), ...custom];
-      return { ...model, rests, counters, tracks: model.tracks || [], conditions: model.conditions || [], byId: new Map(counters.map(c => [c.id, c])) };
+      const conditions = model.conditions || [];
+      const tracks = model.tracks || [];
+      // Lo guardado no puede pasar de lo que el sistema admite (un archivo editado a mano, una versión anterior).
+      conditions.forEach(c => { if (play.c[c.id] > (c.max || 1)) play.c[c.id] = c.max || 1; });
+      tracks.forEach(t => {
+        const marks = play.t[t.id];
+        if (!marks) return;
+        Object.keys(marks).forEach(k => { if (!t.marks.some(m => m.id === k)) delete marks[k]; });
+        let extra = Object.values(marks).reduce((sum, n) => sum + n, 0) - t.levels.length;
+        [...t.marks].reverse().forEach(m => {
+          const cut = Math.min(Math.max(extra, 0), marks[m.id] || 0);
+          if (!cut) return;
+          marks[m.id] -= cut; extra -= cut;
+          if (!marks[m.id]) delete marks[m.id];
+        });
+      });
+      return { ...model, rests, counters, tracks, conditions, byId: new Map(counters.map(c => [c.id, c])) };
     }
     function api(ch, model = defs(ch)) {
       const play = stateOf(ch);
@@ -415,7 +431,7 @@
 
   const css = document.createElement('link');
   css.rel = 'stylesheet';
-  css.href = 'src/nexo/juego.css?v=1';
+  css.href = './src/nexo/juego.css?v=1';
   document.head.append(css);
 
   window.NEXO_JUEGO = { create, clean };
