@@ -65,6 +65,7 @@ Sistemas y edición de referencia (no mezcles ediciones):
 - Supabase:
   - `public.campaigns` guarda una fila por partida de Traveller.
   - `public.game_saves` guarda una fila por cuenta y juego (`vampiro`, `dnd`, `tormentas`, `cthulhu`, `pathfinder`, `campanas`) con todo el almacén en `data`.
+  - `public.usernames` asegura que cada nombre de usuario (`user_metadata.display_name`) sea de una sola cuenta, sin distinguir mayúsculas. La rellenan unos triggers sobre `auth.users`. La app consulta si un nombre está libre con la función `username_available(name)`, nunca leyendo la tabla.
   - La seguridad depende de las políticas RLS de `schema.sql`. La clave de `cloud-config.js` es la publicable: nunca pongas una clave secreta ni una contraseña en archivos servidos.
 - La copia local es la de trabajo. Al guardar se sube el almacén entero, y al abrir un sistema se mezcla con la nube. Gana el `updatedAt` más reciente si hay cambios sin subir; si no, manda la nube.
 - Al cerrar sesión se borra la copia local de esa cuenta. No hay edición colaborativa ni partidas compartidas entre cuentas.

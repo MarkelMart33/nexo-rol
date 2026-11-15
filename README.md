@@ -80,7 +80,7 @@ El selector de sistemas (`src/nexo/terminal-shell.js` y `mesa.css`) es una mesa 
 
 ## Perfil
 
-El botón «Perfil» del selector de sistemas abre `src/nexo/profile.js`. Con cuenta muestra el correo y permite cambiar el nombre de usuario (que se elige al registrarse), cambiar la contraseña y cerrar sesión; sin cuenta ofrece iniciar sesión o crear una. También lista las campañas de Traveller y los personajes de Vampiro, D&D, El Archivo de las Tormentas, La llamada de Cthulhu y Pathfinder, y cada uno se abre directamente desde ahí; al salir del personaje se vuelve al perfil.
+El botón «Perfil» del selector de sistemas abre `src/nexo/profile.js`. Con cuenta muestra el correo y permite cambiar el nombre de usuario (que se elige al registrarse y es único: dos cuentas no pueden usar el mismo, sin distinguir mayúsculas), cambiar la contraseña y cerrar sesión; sin cuenta ofrece iniciar sesión o crear una. También lista las campañas de Traveller y los personajes de Vampiro, D&D, El Archivo de las Tormentas, La llamada de Cthulhu y Pathfinder, y cada uno se abre directamente desde ahí; al salir del personaje se vuelve al perfil.
 
 ## Cuentas personales y sincronización
 

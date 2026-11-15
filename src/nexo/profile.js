@@ -88,8 +88,15 @@
     event.preventDefault();
     const name = event.target.elements.namedItem('name').value.trim();
     if (!/^[\p{L}\p{N}_.-]{3,24}$/u.test(name)) { message('El nombre de usuario debe tener entre 3 y 24 letras, números, puntos, guiones o guiones bajos, sin espacios.', true); return; }
+    // Cada nombre es de una sola cuenta: se comprueba antes y la base de datos lo vuelve a impedir al guardar.
+    const check = await client().rpc('username_available', { name });
+    if (check.data === false) { message('Ese nombre de usuario ya lo usa otra cuenta. Elige otro.', true); return; }
     const { data, error } = await client().auth.updateUser({ data: { display_name: name } });
-    if (error) { message('No se pudo guardar el nombre. Comprueba la conexión.', true); return; }
+    if (error) {
+      const text = `${error.code || ''} ${error.message || ''}`.toLowerCase();
+      message(text.includes('username_taken') || text.includes('database error') ? 'Ese nombre de usuario ya lo usa otra cuenta. Elige otro.' : 'No se pudo guardar el nombre. Comprueba la conexión.', true);
+      return;
+    }
     host.querySelector('.prf-identity b').textContent = displayName(data.user) || 'Sin nombre de usuario';
     host.querySelector('.prf-seal').textContent = initials(data.user);
     message('Nombre de usuario guardado.');

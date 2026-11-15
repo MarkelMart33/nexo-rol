@@ -74,3 +74,68 @@ create policy "Owners can delete their game saves" on public.game_saves for dele
 
 drop trigger if exists game_saves_set_updated_at on public.game_saves;
 create trigger game_saves_set_updated_at before update on public.game_saves for each row execute function public.set_campaign_updated_at();
+
+-- NEXO usernames: each display name (user_metadata.display_name) belongs to a single account,
+-- ignoring case. Triggers on auth.users keep public.usernames in step with the metadata, so a
+-- sign-up or rename that takes a name already in use fails. Run this whole file again after updating it.
+create table if not exists public.usernames (
+  owner_id uuid primary key references auth.users (id) on delete cascade,
+  username text not null check (username ~ '^[[:alnum:]_.-]{3,24}$')
+);
+create unique index if not exists usernames_username_key on public.usernames (lower(username));
+
+-- Nobody reads the table directly; the app asks through username_available().
+alter table public.usernames enable row level security;
+revoke all on table public.usernames from anon, authenticated;
+
+create or replace function public.sync_username()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  wanted text := nullif(trim(new.raw_user_meta_data ->> 'display_name'), '');
+begin
+  if wanted is null then
+    delete from public.usernames where owner_id = new.id;
+  elsif exists (select 1 from public.usernames u where lower(u.username) = lower(wanted) and u.owner_id <> new.id) then
+    raise exception 'username_taken' using errcode = '23505', message = 'username_taken';
+  else
+    insert into public.usernames (owner_id, username) values (new.id, wanted)
+    on conflict (owner_id) do update set username = excluded.username;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists usernames_on_signup on auth.users;
+create trigger usernames_on_signup after insert on auth.users for each row execute function public.sync_username();
+drop trigger if exists usernames_on_update on auth.users;
+create trigger usernames_on_update after update of raw_user_meta_data on auth.users for each row
+  when (old.raw_user_meta_data ->> 'display_name' is distinct from new.raw_user_meta_data ->> 'display_name')
+  execute function public.sync_username();
+
+-- Existing accounts: the first account to have used a name keeps it.
+insert into public.usernames (owner_id, username)
+select distinct on (lower(trim(raw_user_meta_data ->> 'display_name'))) id, trim(raw_user_meta_data ->> 'display_name')
+from auth.users
+where trim(raw_user_meta_data ->> 'display_name') ~ '^[[:alnum:]_.-]{3,24}$'
+order by lower(trim(raw_user_meta_data ->> 'display_name')), created_at
+on conflict do nothing;
+
+-- Lets the sign-up form and the profile check a name before using it.
+create or replace function public.username_available(name text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select not exists (
+    select 1 from public.usernames u
+    where lower(u.username) = lower(trim(name)) and u.owner_id is distinct from (select auth.uid())
+  );
+$$;
+revoke all on function public.username_available(text) from public;
+grant execute on function public.username_available(text) to anon, authenticated;
