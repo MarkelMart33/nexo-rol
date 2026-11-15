@@ -120,3 +120,14 @@ html.nd-is-open .nd-fab{opacity:0;pointer-events:none}
 
 .cth-skills .cth-skill-roll{justify-self:center}
 .cth-char-final .nd-roll-btn{margin-left:auto}
+
+/* Apuntar la tirada en el diario de una campaña */
+.nd-diary{display:flex;align-items:center;gap:8px;min-width:0}
+.nd-diary>span,.nd-diary>select{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--nd-muted);font-size:14px!important}
+.nd-diary>select{min-height:34px;padding:4px 8px;border:1px solid var(--nd-line);border-radius:var(--nd-radius);background:#00000022;color:var(--nd-text)}
+[data-nd-theme="dnd"] .nd-diary>select,[data-nd-theme="vtm-da"] .nd-diary>select{background:#fffaf0}
+.nd-diary>select option{color:#111;background:#fff}
+.nd-diary>button{flex:0 0 auto;min-height:34px;padding:4px 12px;border:1px solid var(--nd-accent);border-radius:var(--nd-radius);background:transparent;color:var(--nd-accent)!important;font:600 13px/1.2 var(--nd-head)!important;letter-spacing:.04em;cursor:pointer}
+.nd-diary>button:hover:not(:disabled){background:color-mix(in srgb,var(--nd-accent) 16%,transparent)}
+.nd-diary>button:disabled{border-color:var(--nd-line);color:var(--nd-muted)!important;cursor:default}
+.nd-diary-hint{margin:0;color:var(--nd-muted);font-size:13px;line-height:1.35}

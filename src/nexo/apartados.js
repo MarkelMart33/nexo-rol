@@ -5,6 +5,9 @@
  *   Se guardan en este dispositivo («nexo-campanas-v1») y, con cuenta, en game_saves (juego «campanas»).
  * - Manual: índice por capítulos, buscador y enlaces entre entradas, cada una con su
  *   explicación narrativa y mecánica. Los textos son resúmenes propios.
+ * - Desde una ficha, los rasgos enlazados (term) y los botones del manual (link) asoman la regla en una
+ *   ventanita sin salir de la ficha.
+ * - Diario: las tiradas se pueden apuntar en la sesión de hoy de una campaña (NEXO_APARTADOS.diary).
  * El botón «atrás» del navegador recorre las vistas (NEXO_NAV.sub) antes de volver a la mesa.
  */
 (() => {
@@ -23,11 +26,11 @@
   let saveTimer = 0;
   function normalizeCampaign(c) {
     return {
-      id: c.id || uid(), system: String(c.system || ''), name: String(c.name || ''), master: String(c.master || ''),
+      id: typeof c.id === 'string' && c.id ? c.id : uid(), system: String(c.system || ''), name: String(c.name || ''), master: String(c.master || ''),
       premise: String(c.premise || ''), notes: String(c.notes || ''),
       characterIds: Array.isArray(c.characterIds) ? c.characterIds.map(String) : [],
       sessions: Array.isArray(c.sessions) ? c.sessions.filter(s => s && typeof s === 'object').map(s => ({ id: s.id || uid(), date: String(s.date || ''), title: String(s.title || ''), text: String(s.text || '') })) : [],
-      createdAt: c.createdAt || new Date().toISOString(), updatedAt: c.updatedAt || new Date().toISOString()
+      createdAt: String(c.createdAt || new Date().toISOString()), updatedAt: String(c.updatedAt || new Date().toISOString())
     };
   }
   function load() {
@@ -63,6 +66,38 @@
     return Boolean(synced);
   }
   const campaignsOf = system => store.campaigns.filter(c => c.system === system);
+  // Tras restaurar una copia de seguridad, las campañas se vuelven a leer de este dispositivo.
+  function reload() {
+    clearTimeout(saveTimer);
+    saveTimer = 0;
+    store = load();
+  }
+
+  // Diario: añade una línea a la sesión de hoy de una campaña; si no la hay, la crea.
+  const SESSION_ROOM = 5800;
+  function addToDiary(campaignId, text) {
+    const c = store.campaigns.find(item => item.id === campaignId);
+    const line = String(text || '').trim().slice(0, 400);
+    if (!c || !line) return null;
+    const todays = c.sessions.filter(s => s.date === today());
+    let session = todays[todays.length - 1];
+    if (!session || session.text.length + line.length > SESSION_ROOM) {
+      session = { id: uid(), date: today(), title: session ? `${session.title} (sigue)`.slice(0, 80) : `Sesión ${c.sessions.length + 1}`, text: '' };
+      c.sessions.push(session);
+    }
+    session.text = `${session.text.replace(/\s+$/, '')}${session.text.trim() ? '\n' : ''}${line}`;
+    c.updatedAt = new Date().toISOString();
+    clearTimeout(saveTimer);
+    saveTimer = 0;
+    persist();
+    return { campaign: c.name || 'Campaña sin nombre', session: session.title || 'Sesión sin título' };
+  }
+  // Apartados creados: el que está a la vista da el contexto del diario (sistema, campañas y ficha abierta).
+  const instances = [];
+  function diary() {
+    const inst = instances.find(item => item.diary && item.visible());
+    return inst ? inst.diary() : null;
+  }
 
   // ───────────── Texto del manual ─────────────
   // Formato mínimo: párrafos separados por línea en blanco, listas con «- », **negrita**
@@ -156,6 +191,25 @@
       if (source !== bookSource) { bookSource = source; book = prepare(source); }
       return book;
     }
+    instances.push({
+      visible: () => Boolean(host && host.isConnected && !host.hidden && host.getClientRects().length),
+      // Traveller usa sus partidas como campañas: no tiene diario de sesiones.
+      diary: cfg.custom?.campanas ? null : () => {
+        const list = campaignsOf(cfg.system());
+        const cid = cfg.currentId?.() || '';
+        const who = cid ? cfg.characters().find(ch => ch.id === cid)?.name || '' : '';
+        const open = state.tab === 'campanas' && state.campaignId ? list.find(c => c.id === state.campaignId) : null;
+        const mine = cid ? list.find(c => c.characterIds.includes(cid)) : null;
+        return {
+          who, campaigns: list.map(c => ({ id: c.id, name: c.name || 'Campaña sin nombre' })), preferred: (open || mine || list[0])?.id || '',
+          add(id, text) {
+            const done = addToDiary(id, text);
+            if (done && state.tab === 'campanas' && state.campaignId === id) apply({ ...state, keepScroll: true });
+            return done;
+          }
+        };
+      }
+    });
 
     function tabs(active) {
       state = active === 'personajes' ? { tab: 'personajes' } : state;
@@ -163,11 +217,13 @@
     }
 
     // Cambia de vista recordando la anterior para el botón «atrás».
-    function go(next) {
+    function go(next, swap = false) {
       const previous = { ...state };
       // La ficha abierta puede ser nueva: se recuerda por su id real para poder volver a ella.
       if (previous.tab === 'personajes' && previous.characterId) previous.characterId = cfg.currentId?.() || previous.characterId;
-      nav().sub(() => apply(previous));
+      // swap: el paso de «atrás» de la ventanita de la regla pasa a ser el de esta vista.
+      if (swap && nav().swap) nav().swap(() => apply(previous));
+      else nav().sub(() => apply(previous));
       apply(next);
     }
     // Entrada animada de una vista (apartados.css la anula con movimiento reducido).
@@ -176,6 +232,37 @@
       node.classList.remove('ap-in');
       void node.offsetWidth;
       node.classList.add('ap-in');
+    }
+
+    // ── Regla resumida sobre la ficha: mecánica y narrativa de una entrada, con el manual a un toque.
+    let peekBox = null;
+    function closePeek(fromBack = false) {
+      if (!peekBox) return;
+      const live = peekBox.isConnected;
+      peekBox.remove();
+      peekBox = null;
+      if (live && !fromBack) nav().drop();
+    }
+    function peek(id) {
+      const bk = getBook();
+      const entry = bk.index.get(id);
+      if (!entry) return;
+      const again = Boolean(peekBox?.isConnected);
+      peekBox?.remove();
+      const box = document.createElement('div');
+      box.className = `ap-peek ap-${p}`;
+      box.innerHTML = `<div class="${p}-panel ap-peek-card" role="dialog" aria-modal="true" aria-label="${esc(entry.title)}">
+        <button type="button" class="ap-peek-x" data-ap-peek-close aria-label="Cerrar">×</button>
+        <p class="ap-peek-kicker">${esc(entry.chapter.title)}</p><h2 class="ap-title">${esc(entry.title)}</h2>
+        ${entry.summary && entry.summary !== entry.narr ? `<p class="ap-lead">${inline(entry.summary, bk)}</p>` : ''}
+        ${entry.mech ? `<section class="ap-block ap-mech"><h3><span aria-hidden="true">⚙</span> Mecánica</h3>${rich(entry.mech, bk)}</section>` : ''}
+        ${entry.narr ? `<section class="ap-block ap-narr"><h3><span aria-hidden="true">❦</span> Narrativa</h3>${rich(entry.narr, bk)}</section>` : ''}
+        <div class="ap-peek-actions"><button type="button" class="${p}-button ghost" data-ap-peek-close>CERRAR</button><button type="button" class="${p}-button" data-ap-peek-open="${esc(entry.id)}">ABRIR EN EL MANUAL</button></div></div>`;
+      box.addEventListener('keydown', event => { if (event.key === 'Escape') { event.stopPropagation(); closePeek(); } });
+      host.append(box);
+      peekBox = box;
+      if (!again) nav().sub(() => closePeek(true));
+      box.querySelector('.ap-peek-x').focus({ preventScroll: true });
     }
     function apply(next) {
       flush();
@@ -416,14 +503,31 @@
 
     // Clics delegados: pestañas, enlaces del manual y apertura de fichas desde la lista.
     function onClick(event) {
-      const t = event.target.closest('[data-ap-tab],[data-ap-entry],[data-ap-chapter],[data-ap-home],[data-manual]');
+      const t = event.target.closest('[data-ap-tab],[data-ap-entry],[data-ap-chapter],[data-ap-home],[data-manual],[data-ap-peek-close],[data-ap-peek-open]');
       if (t && host.contains(t)) {
         event.preventDefault();
+        const inPeek = Boolean(t.closest('.ap-peek'));
+        if (t.hasAttribute('data-ap-peek-close')) { closePeek(); return; }
+        if (t.dataset.apPeekOpen) {
+          const id = t.dataset.apPeekOpen;
+          peekBox?.remove();
+          peekBox = null;
+          go({ tab: 'manual', entry: id, focusPage: true }, true);
+          return;
+        }
+        if (inPeek && t.dataset.apChapter) { peekBox?.remove(); peekBox = null; go({ tab: 'manual', chapter: t.dataset.apChapter, focusPage: true }, true); return; }
+        if ((inPeek && t.dataset.apEntry) || (t.dataset.manual && state.tab === 'personajes')) {
+          // Desde la ficha, la regla se asoma en una ventanita y la ficha sigue debajo.
+          const id = t.dataset.apEntry || t.dataset.manual;
+          if (getBook().index.has(id)) { event.stopPropagation(); peek(id); }
+          return;
+        }
         if (t.dataset.apTab) { if (t.dataset.apTab !== state.tab || state.campaignId || state.entry || state.chapter || state.q || state.characterId) go({ tab: t.dataset.apTab }); return; }
         if (t.dataset.apEntry || t.dataset.manual) { const id = t.dataset.apEntry || t.dataset.manual; if (getBook().index.has(id)) go({ tab: 'manual', entry: id, focusPage: true }); return; }
         if (t.dataset.apChapter) { go({ tab: 'manual', chapter: t.dataset.apChapter, focusPage: true }); return; }
         if (t.hasAttribute('data-ap-home')) { go({ tab: 'manual' }); return; }
       }
+      if (event.target === peekBox) { closePeek(); return; }
       if (state.tab !== 'personajes' || state.characterId) {
         // Volver de la ficha a la lista con el botón de la propia ficha.
         if (state.characterId && event.target.closest('[data-back]')) { nav().drop(); state = { tab: 'personajes' }; }
@@ -454,12 +558,14 @@
       openEntry(id) { if (getBook().index.has(id)) go({ tab: 'manual', entry: id }); },
       has: id => getBook().index.has(id),
       // Botón pequeño para enlazar desde la ficha a su entrada del manual.
-      link(id, label = 'Manual') { return id && getBook().index.has(id) ? `<button type="button" class="ap-sheet-link" data-manual="${esc(id)}" title="Abrir en el manual">📖 ${esc(label)}</button>` : ''; },
+      link(id, label = 'Manual') { return id && getBook().index.has(id) ? `<button type="button" class="ap-sheet-link" data-manual="${esc(id)}" title="Ver la regla">📖 ${esc(label)}</button>` : ''; },
+      // Nombre de un rasgo de la ficha que, al tocarlo, asoma su regla. Sin entrada en el manual, queda como texto.
+      term(id, text) { return id && getBook().index.has(id) ? `<button type="button" class="ap-term" data-manual="${esc(id)}" title="Ver la regla">${esc(text)}</button>` : esc(text); },
       // Vuelve a pintar la vista actual sin tocar el historial.
       render() { apply({ ...state, keepScroll: true }); },
       get tab() { return state.tab; }
     };
   }
 
-  window.NEXO_APARTADOS = { create, prepare, rich, campaigns: system => campaignsOf(system).map(c => ({ ...c })), pull, esc, fold };
+  window.NEXO_APARTADOS = { create, prepare, rich, campaigns: system => campaignsOf(system).map(c => ({ ...c })), pull, esc, fold, flush, reload, diary, cleanCampaign: normalizeCampaign };
 })();

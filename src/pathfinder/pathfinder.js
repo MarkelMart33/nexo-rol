@@ -114,6 +114,16 @@
     words: { campaigns: 'Tus campañas', characters: 'aventureros', character: 'aventurero' }
   });
   const manualLink = (id, label) => ap?.link(id, label) || '';
+  // Nombre de un rasgo que, al tocarlo, asoma su regla del manual.
+  const term = (id, text) => ap?.term(id, text) || esc(text);
+
+  // Exportar, importar e imprimir la ficha (src/nexo/ficha.js).
+  const kit = window.NEXO_FICHA?.create({
+    prefix: 'pf', system: GAME, label: 'Pathfinder',
+    current: () => current, sheet: ch => sheetData(ch), template: newCharacter, before: () => flushSave(), flash: text => flash(text),
+    accept: ch => accept(ch), exists: id => store.characters.some(ch => ch.id === id),
+    put: ch => { store.characters = [ch, ...store.characters.filter(item => item.id !== ch.id)]; persist(); renderList(); }
+  });
 
   function load() {
     try {
@@ -246,6 +256,64 @@
     }
   }
 
+  // Ficha que llega de un archivo: se completa y se deja solo lo que el creador entiende.
+  function accept(raw) {
+    const ch = normalize(raw);
+    const strings = list => list.filter(k => typeof k === 'string');
+    ['ancBoosts', 'bgBoosts', 'freeBoosts', 'freeSkills'].forEach(k => { ch[k] = strings(ch[k]); });
+    ch.lores = strings(ch.lores).map(s => s.slice(0, 40)).slice(0, 30);
+    sanitize(ch);
+    return ch;
+  }
+
+  // La ficha como datos para la hoja de solo lectura: lo que se imprime o se guarda como PDF.
+  function sheetData(ch) {
+    const a = anc(ch);
+    const b = bg(ch);
+    const c = cls(ch);
+    const save = (attr, rank) => (c ? signed(mod(ch, attr) + prof(rank)) : '—');
+    const ac = armorClass(ch);
+    const key = keyAttr(ch);
+    const fue = mod(ch, 'fue');
+    const lores = [b ? (ch.bgLore || b.lore) : '', ...ch.lores].filter(Boolean);
+    const langs = [...(a?.langs || []), ...ch.languages.split(',').map(s => s.trim()).filter(Boolean)];
+    const bgFeat = b ? (ch.background === 'propio' ? ch.bgFeat : b.feat) : '';
+    return {
+      system: 'Pathfinder · 2ª edición Remaster', accent: '#5b3a8c',
+      name: ch.name || 'Aventurero sin nombre', subtitle: describe(ch),
+      meta: [['Nivel', LEVEL], ['Jugador', ch.player], ['Campaña', ch.campaign]],
+      blocks: [
+        { title: 'Aventurero', kind: 'pairs', items: [
+          ['Ascendencia', a?.name], ['Herencia', ch.heritage], ['Bagaje', b?.name], ['Dote del bagaje', bgFeat], ['Clase', c?.name], ['Subclase y elecciones', ch.subclass],
+          ['Atributo clave', key ? ATTR[key].name : ''], ['Dios o filosofía', ch.deity], ['Edad', ch.age], ['Edictos y anatemas', ch.edicts],
+          ['Tamaño', a?.size], ['Sentidos', a?.vision], ['Idiomas', langs.join(', ')], ['Armadura', (ARMORS[ch.armor] || ARMORS.sin).name]
+        ] },
+        { title: 'Atributos', kind: 'stats', items: ATTRS.map(([k, name, short]) => ({ label: name, value: signed(mod(ch, k)), sub: short })) },
+        { title: 'Defensa', kind: 'stats', note: c && !ac.trained ? 'La clase no está entrenada en esa armadura: no suma competencia a la CA.' : '', items: [
+          { label: 'Puntos de golpe', value: a && c ? hp(ch) : '—' }, { label: 'Clase de Armadura', value: c ? ac.total : '—' }, { label: 'Percepción', value: save('sab', c?.perc) },
+          { label: 'Fortaleza', value: save('con', c?.fort) }, { label: 'Reflejos', value: save('des', c?.ref) }, { label: 'Voluntad', value: save('sab', c?.vol) },
+          { label: 'Velocidad', value: a ? a.speed : '—', sub: a ? 'pies' : '' }
+        ] },
+        { title: 'Ataques y CD', kind: 'stats', items: [
+          { label: 'Cuerpo a cuerpo', value: c ? signed(fue + prof(c.weapon)) : '—' }, { label: 'A distancia', value: c ? signed(mod(ch, 'des') + prof(c.weapon)) : '—' },
+          { label: 'CD de clase', value: c ? 10 + mod(ch, key) + prof(1) : '—' },
+          c?.spells ? { label: 'Ataque de conjuro', value: signed(mod(ch, key) + prof(1)) } : null, c?.spells ? { label: 'CD de conjuros', value: 10 + mod(ch, key) + prof(1), sub: c.spells } : null,
+          { label: 'Impedimenta', value: `${5 + fue} / ${10 + fue}`, sub: 'impedido / máx.' }
+        ] },
+        { title: 'En partida', kind: 'tracks', items: [
+          { label: 'Puntos de golpe', value: '', max: a && c ? hp(ch) : '' }, { label: 'Puntos de héroe', value: '', max: 3, boxes: 3, marked: 1 }, { label: 'Moribundo', value: '', max: 4, boxes: 4 }, { label: 'Herido', value: '', max: '' }
+        ] },
+        { title: 'Habilidades', kind: 'list', cols: 2, note: 'El punto marca las habilidades entrenadas (+2 más el nivel).', items: [
+          ...SKILL_KEYS.map(k => ({ name: `${SKILLS[k][0]} (${ATTR[SKILLS[k][1]].short})`, value: signed(skillMod(ch, k)), mark: Boolean(skillSource(ch, k)) })),
+          ...lores.map(name => ({ name: `Saber: ${name} (INT)`, value: signed(loreMod(ch)), mark: true }))
+        ] },
+        { title: 'Dotes y rasgos', kind: 'text', text: ch.feats },
+        { title: 'Equipo', kind: 'text', text: ch.gear },
+        { title: 'Notas', kind: 'text', text: ch.notes }
+      ]
+    };
+  }
+
   function summary(ch) {
     const b = bg(ch);
     const c = cls(ch);
@@ -372,7 +440,7 @@
       const done = isComplete(ch);
       return `<button class="pf-card" data-open="${esc(ch.id)}"><span class="pf-card-mark" aria-hidden="true">${window.NEXO_ICONS?.pathfinder || ''}</span><span class="pf-card-copy"><b>${esc(ch.name || 'Aventurero sin nombre')}</b><small>${esc(describe(ch))}</small></span><span class="pf-badge ${done ? 'is-done' : ''}">${done ? 'Listo' : 'En curso'}</span></button>`;
     }).join('') : `<div class="pf-empty"><span aria-hidden="true">${window.NEXO_ICONS?.pathfinder || ''}</span><b>Aún no hay aventureros</b><small>Pulsa «Nuevo aventurero» para crear tu primer personaje.</small></div>`;
-    frame(`${ap?.tabs('personajes') || ''}<p class="pf-kicker">NEXO / PATHFINDER · 2ª EDICIÓN REMASTER</p><h1>Tus <em>aventureros</em></h1><p class="pf-intro">Crea personajes de nivel 1 para Golarion: ascendencia y herencia, bagaje, clase, mejoras de atributo y habilidades entrenadas. NEXO calcula puntos de golpe, Clase de Armadura, Percepción, salvaciones, CD de clase y de conjuros, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="pf-actions"><button class="pf-button" data-new>NUEVO AVENTURERO</button><button class="pf-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="pf-list">${cards}</div><p class="pf-quote">«Explora, informa, coopera.»</p>`);
+    frame(`${ap?.tabs('personajes') || ''}<p class="pf-kicker">NEXO / PATHFINDER · 2ª EDICIÓN REMASTER</p><h1>Tus <em>aventureros</em></h1><p class="pf-intro">Crea personajes de nivel 1 para Golarion: ascendencia y herencia, bagaje, clase, mejoras de atributo y habilidades entrenadas. NEXO calcula puntos de golpe, Clase de Armadura, Percepción, salvaciones, CD de clase y de conjuros, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="pf-actions"><button class="pf-button" data-new>NUEVO AVENTURERO</button>${kit?.importButton() || ''}<button class="pf-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="pf-list">${cards}</div><p class="pf-quote">«Explora, informa, coopera.»</p>`);
     host.querySelector('[data-new]').addEventListener('click', () => openEditor(newCharacter()));
     host.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
       const ch = store.characters.find(item => item.id === button.dataset.open);
@@ -395,7 +463,7 @@
   function openEditor(ch) {
     current = ch;
     const saved = store.characters.some(item => item.id === ch.id);
-    frame(`<div class="pf-editor-head"><button class="pf-button ghost" data-back>← TUS AVENTUREROS</button><button class="pf-button danger" data-delete ${saved ? '' : 'hidden'}>BORRAR FICHA</button></div>
+    frame(`<div class="pf-editor-head"><button class="pf-button ghost" data-back>← TUS AVENTUREROS</button>${kit?.tools() || ''}<button class="pf-button danger" data-delete ${saved ? '' : 'hidden'}>BORRAR FICHA</button></div>
       <section class="pf-panel">${heading(1, 'Aventurero', 'datos básicos')}<div class="pf-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del personaje' })}${field('Jugador', 'player')}${field('Campaña', 'campaign')}
         ${field('Dios o filosofía', 'deity', { placeholder: 'Iomedae, Desna, ninguno…' })}${field('Edad', 'age')}${field('Edictos y anatemas', 'edicts', { placeholder: 'Lo que defiendes y lo que nunca harías' })}
@@ -494,7 +562,7 @@
       const m = mod(ch, k);
       return `<div class="pf-attr-row ${b && b.attrs.includes(k) && b.attrs.length < 6 ? 'is-bg' : ''}"><span class="pf-attr-name"><b>${short}</b><small>${name}</small></span>${ancCell}${bgCell}${clsCell}${cell('free', k, ch.freeBoosts.includes(k), true, 'Mejora libre')}<b class="pf-attr-mod ${m > 0 ? 'is-up' : m < 0 ? 'is-down' : ''}">${signed(m)}</b></div>`;
     }).join('');
-    return `<section class="pf-panel">${heading(5, 'Atributos', 'mejoras de nivel 1')}
+    return `<section class="pf-panel">${heading(5, term('pf-atributos', 'Atributos'), 'mejoras de nivel 1')}
       <p class="pf-note">Todos los modificadores empiezan en +0. Cada mejora suma +1 y el defecto resta 1; en un mismo apartado no puedes mejorar dos veces el mismo atributo. ${b && b.attrs.length < 6 ? `Una de las mejoras del bagaje va a ${boostList(b.attrs).replace(', ', ' o ')} (filas marcadas).` : ''}</p>
       <div class="pf-attrs"><div class="pf-attr-row pf-attr-head" aria-hidden="true"><span></span><span>Ascend.</span><span>Bagaje</span><span>Clase</span><span>Libres</span><span>Mod.</span></div>${rows}
         <div class="pf-attr-row pf-attr-foot"><span>Por repartir</span><span>${a ? leftBadge(ancFree(ch) - ch.ancBoosts.length, '✓') : '—'}</span><span>${b ? leftBadge(2 - ch.bgBoosts.length, '✓') : '—'}</span><span>${c ? leftBadge(ch.classBoost ? 0 : 1, '✓') : '—'}</span><span>${leftBadge(FREE_BOOSTS - ch.freeBoosts.length, '✓')}</span><span></span></div></div></section>`;
@@ -508,7 +576,7 @@
       const locked = source === 'clase' || source === 'bagaje';
       const total = skillMod(ch, k);
       return `<li class="${source ? 'is-trained' : ''}"><button class="pf-skill-pick" data-skill="${k}" aria-pressed="${Boolean(source)}" ${locked || !c ? 'disabled' : ''} title="${locked ? `Entrenada por ${source === 'clase' ? 'la clase' : 'el bagaje'}` : 'Entrenar esta habilidad'}">${source ? '●' : '○'}</button>
-        <span class="pf-skill-name">${esc(SKILLS[k][0])} <small>${ATTR[SKILLS[k][1]].short}</small></span><span class="pf-skill-src">${source ? `${RANK_SHORT[1]} · ${source}` : 'N'}</span><button class="nd-roll-btn pf-skill-roll" data-pf-roll="sk:${k}" aria-label="Tirar ${esc(SKILLS[k][0])}"><b class="pf-skill-total">${signed(total)}</b></button></li>`;
+        <span class="pf-skill-name">${term(`pf-hab-${k}`, SKILLS[k][0])} <small>${ATTR[SKILLS[k][1]].short}</small></span><span class="pf-skill-src">${source ? `${RANK_SHORT[1]} · ${source}` : 'N'}</span><button class="nd-roll-btn pf-skill-roll" data-pf-roll="sk:${k}" aria-label="Tirar ${esc(SKILLS[k][0])}"><b class="pf-skill-total">${signed(total)}</b></button></li>`;
     }).join('');
     const bgLore = bg(ch) ? (ch.bgLore || bg(ch).lore) : '';
     const lores = [
@@ -523,6 +591,8 @@
       ${c ? '<div class="pf-lore-add"><input data-lore-name maxlength="40" placeholder="Saber nuevo: Absalom, Ingeniería…" aria-label="Nombre del Saber"><button class="pf-button ghost" data-lore-add>AÑADIR SABER</button></div>' : ''}</section>`;
   }
 
+  // Casillas de la hoja calculada que asoman su regla al tocarlas.
+  const STAT_RULES = { 'Clase de Armadura': 'pf-clase-armadura', 'Fortaleza': 'pf-salvaciones', 'Reflejos': 'pf-salvaciones', 'Voluntad': 'pf-salvaciones', 'Puntos de héroe': 'pf-puntos-heroe', 'CD de conjuros': 'pf-cd-conjuro', 'Cuerpo a cuerpo': 'pf-golpe', 'A distancia': 'pf-golpe', 'Ataque de conjuro': 'pf-golpe' };
   const ROLLABLE = { 'Percepción': 'perc', 'Fortaleza': 'fort', 'Reflejos': 'ref', 'Voluntad': 'vol', 'Cuerpo a cuerpo': 'melee', 'A distancia': 'ranged', 'Ataque de conjuro': 'spell' };
   function sheetPanel(ch) {
     const c = cls(ch);
@@ -541,7 +611,7 @@
     ];
     const armors = Object.entries(ARMORS).map(([k, v]) => [k, `${v.name}${v.ac ? ` (+${v.ac}, DES máx. ${v.cap})` : ''}${v.cat ? ` · ${ARMOR_CATS[v.cat]}` : ''}`]);
     return `<section class="pf-panel pf-sheet">${heading(7, 'Hoja calculada', esc(describe(ch)))}
-      <div class="pf-stats">${stats.map(([k, v]) => { const roll = c && ROLLABLE[k]; return `<div><small>${k}</small>${roll ? `<button class="nd-roll-btn" data-pf-roll="${roll}" aria-label="Tirar ${k}"><b>${esc(v)}</b></button>` : `<b>${esc(v)}</b>`}</div>`; }).join('')}</div>
+      <div class="pf-stats">${stats.map(([k, v]) => { const roll = c && ROLLABLE[k]; return `<div><small>${term(STAT_RULES[k], k)}</small>${roll ? `<button class="nd-roll-btn" data-pf-roll="${roll}" aria-label="Tirar ${k}"><b>${esc(v)}</b></button>` : `<b>${esc(v)}</b>`}</div>`; }).join('')}</div>
       <label class="pf-field pf-field-wide"><span>Armadura</span><select data-choice="armor">${options(armors, ch.armor)}</select></label>
       ${c && !ac.trained ? '<p class="pf-note pf-warn">Tu clase no está entrenada en esa armadura: no sumas competencia a la CA.</p>' : ''}
       <p class="pf-note">Competencia: entrenado +2, experto +4, maestro +6 y legendario +8, más el nivel; sin entrenar, +0. Puntos de golpe: los de la ascendencia más los de la clase y CON por nivel. CA: 10 + DES (hasta el máximo de la armadura) + competencia + armadura; un escudo alzado suma su bonificador. CD de clase: 10 + atributo clave + competencia. Impedimenta: impedido a partir de 5 + FUE y máximo 10 + FUE.</p><p class="pf-note">${manualLink('pf-competencia', 'Competencia')} ${manualLink('pf-clase-armadura', 'Clase de Armadura')} ${manualLink('pf-salvaciones', 'Salvaciones')} ${manualLink('pf-grados-exito', 'Grados de éxito')}</p></section>`;
@@ -605,6 +675,7 @@
     host.setAttribute('aria-label', 'NEXO Pathfinder');
     document.body.append(host);
     ap?.mount(host);
+    kit?.mount(host);
     host.addEventListener('keydown', event => {
       if (event.key === 'Escape') host.querySelectorAll('.pf-modal').forEach(modal => { modal.hidden = true; });
     });
