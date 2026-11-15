@@ -251,7 +251,7 @@
       peekBox?.remove();
       const box = document.createElement('div');
       box.className = `ap-peek ap-${p}`;
-      box.innerHTML = `<div class="${p}-panel ap-page ap-peek-card" role="dialog" aria-modal="true" aria-label="${esc(entry.title)}">
+      box.innerHTML = `<div class="${p}-panel ap-peek-card" role="dialog" aria-modal="true" aria-label="${esc(entry.title)}">
         <button type="button" class="ap-peek-x" data-ap-peek-close aria-label="Cerrar">×</button>
         <p class="ap-peek-kicker">${esc(entry.chapter.title)}</p><h2 class="ap-title">${esc(entry.title)}</h2>
         ${entry.summary && entry.summary !== entry.narr ? `<p class="ap-lead">${inline(entry.summary, bk)}</p>` : ''}

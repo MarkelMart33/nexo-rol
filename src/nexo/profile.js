@@ -57,10 +57,12 @@
   // Copia de seguridad: todo lo de este dispositivo en un archivo, y vuelta atrás desde ese archivo (src/nexo/copias.js).
   function backupPanel() {
     if (!window.NEXO_COPIAS) return '';
-    const rows = window.NEXO_COPIAS.summary().filter(row => row.count);
-    const total = rows.reduce((t, row) => t + row.count, 0);
+    const rows = window.NEXO_COPIAS.summary();
+    const count = kind => rows.filter(row => row.kind === kind).reduce((t, row) => t + row.count, 0);
+    const parts = [[count('ficha'), 'ficha', 'fichas'], [count('campana'), 'campaña', 'campañas'], [count('partida'), 'partida de Traveller', 'partidas de Traveller']].filter(([n]) => n).map(([n, one, many]) => `${n} ${n === 1 ? one : many}`);
+    const total = parts.length;
     return `<section class="prf-panel prf-backup"><h2>Copia de seguridad</h2>
-      <p class="prf-note">${total ? `Guarda en un archivo ${rows.map(row => `${row.count} de ${esc(row.label)}`).join(', ').replace(/, ([^,]*)$/, ' y $1')}.` : 'Aún no hay nada que guardar en este dispositivo.'} Sirve de respaldo y para llevar tus cosas a otro dispositivo o a otra cuenta.</p>
+      <p class="prf-note">${total ? `Guarda en un archivo todo lo de este dispositivo: ${parts.join(', ').replace(/, ([^,]*)$/, ' y $1')}.` : 'Aún no hay nada que guardar en este dispositivo.'} Sirve de respaldo y para llevar tus cosas a otro dispositivo o a otra cuenta.</p>
       <div class="prf-pair"><button class="prf-button" data-backup-save ${total ? '' : 'disabled'}>Descargar copia completa</button><button class="prf-button ghost" data-backup-load>Restaurar desde un archivo</button></div>
       <p class="prf-note">Restaurar añade lo que falte y actualiza lo que en el archivo sea más reciente. Nunca borra nada de lo que ya tienes.</p>
       <p class="prf-message" data-backup-message aria-live="polite"></p></section>`;

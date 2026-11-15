@@ -73,9 +73,9 @@
 
   // ── Copia completa
   function summary() {
-    const rows = STORES.map(s => ({ label: s.label, count: list(s.key, s.field).length }));
+    const rows = STORES.map(s => ({ label: s.label, kind: s.field === 'campaigns' ? 'campana' : 'ficha', count: list(s.key, s.field).length }));
     const traveller = read(TRAVELLER_KEY)?.campaigns;
-    rows.unshift({ label: 'Partidas de Traveller', count: Array.isArray(traveller) ? traveller.length : 0 });
+    rows.unshift({ label: 'Partidas de Traveller', kind: 'partida', count: Array.isArray(traveller) ? traveller.length : 0 });
     return rows;
   }
   function exportAll() {
