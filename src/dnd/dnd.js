@@ -103,7 +103,7 @@
 
   // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y el manual de este sistema).
   const ap = window.NEXO_APARTADOS?.create({
-    prefix: 'dnd', system: () => 'dnd', frame: body => frame(body),
+    prefix: 'dnd', system: () => 'dnd', home: true, frame: body => frame(body),
     leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
     characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Aventurero sin nombre', summary: describe(ch) })),
     openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
@@ -832,7 +832,7 @@
     document.head.append(fonts);
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/dnd/dnd.css?v=5';
+    stylesheet.href = './src/dnd/dnd.css?v=6';
     document.head.append(stylesheet);
     host = document.createElement('section');
     host.id = 'nexoDnd';

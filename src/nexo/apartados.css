@@ -148,3 +148,55 @@
 /* El libro de D&D no vuelve a abrirse en cada vista de campañas o manual. */
 .dnd-book:has(.ap-view),.dnd-book:has(.ap-view) .dnd-page{animation:none!important}
 .game-selector .campaign-list[hidden],.game-selector .new-campaign[hidden]{display:none}
+
+/* ───── Movimiento común: entrada de vistas y pulsaciones. Se anula entero con movimiento reducido. ───── */
+@keyframes ap-rise{from{opacity:0;transform:translateY(14px)}}
+@keyframes ap-pop{from{opacity:0;transform:translateY(12px) scale(.95)}}
+@keyframes ap-mark{from{opacity:0;transform:scale(.6) rotate(-14deg)}}
+.ap-in{animation:ap-rise .42s cubic-bezier(.2,.8,.2,1) backwards}
+.ap-tab{transition:color .2s,background .25s,transform .15s cubic-bezier(.2,.8,.2,1)}
+.ap-tab:active{transform:scale(.95)}
+.ap-camp-card{transition:transform .2s cubic-bezier(.2,.8,.2,1),border-color .2s,box-shadow .2s}
+.ap-camp-card:active{transform:scale(.985)}
+
+/* ───── Inicio de campaña: portada y herramientas (el modelo de las partidas de Traveller) ───── */
+.ap-home .ap-head-row{margin-bottom:6px}
+.ap-hero{display:grid;justify-items:center;gap:4px;padding:18px 0 6px;text-align:center}
+.ap-hero-mark{display:grid;place-items:center;width:84px;height:84px;margin-bottom:12px;border:1px solid var(--ap-accent);border-radius:50%;color:var(--ap-accent);font:700 38px/1 var(--ap-head);background:radial-gradient(circle at 35% 28%,color-mix(in srgb,var(--ap-accent) 26%,transparent),transparent 70%);box-shadow:0 0 0 5px color-mix(in srgb,var(--ap-accent) 12%,transparent),0 14px 30px -16px #000c;animation:ap-mark .6s cubic-bezier(.2,.9,.25,1.2) backwards}
+.ap-view .ap-hero h1{margin:6px 0 0;max-width:100%;overflow-wrap:anywhere;font-size:clamp(30px,6vw,52px)}
+.ap-hero-premise{max-width:620px;margin:10px 0 0;color:var(--ap-muted);line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.ap-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:28px}
+.ap-tile{position:relative;display:grid;justify-items:center;align-content:start;gap:7px;min-width:0;padding:22px 10px 16px;border:1px solid var(--ap-line);border-radius:10px;background:color-mix(in srgb,var(--ap-line) 20%,transparent);color:var(--ap-text);font:inherit;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .2s cubic-bezier(.2,.8,.2,1),border-color .2s,box-shadow .25s,background .25s;animation:ap-pop .5s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0)*50ms + 90ms)}
+.ap-tile:hover{transform:translateY(-4px);border-color:var(--ap-accent);box-shadow:0 16px 28px -18px #000d}
+.ap-tile:active{transform:scale(.96);transition-duration:.08s}
+.ap-tile-icon{display:grid;place-items:center;width:52px;height:52px;color:var(--ap-accent);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.ap-tile-icon svg{width:38px;height:38px}
+.ap-tile:hover .ap-tile-icon{transform:scale(1.1) rotate(-4deg)}
+.ap-tile b{max-width:100%;font:700 14px var(--ap-head);letter-spacing:.12em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis}
+.ap-tile small{color:var(--ap-muted);font-size:12.5px}
+
+/* Herramienta abierta: barra con el botón de inicio, la herramienta y la campaña; pie con el guardado */
+.ap-appbar{display:flex;align-items:center;gap:12px;margin:0 0 18px;padding:8px 12px 8px 8px;border:1px solid var(--ap-line);border-radius:12px;background:color-mix(in srgb,var(--ap-line) 20%,transparent)}
+.ap-appbar-home{flex:none;display:grid;place-items:center;width:44px;height:44px;border:1px solid var(--ap-line);border-radius:9px;background:transparent;color:var(--ap-accent);cursor:pointer;transition:transform .15s,border-color .2s,background .2s}
+.ap-appbar-home:hover{border-color:var(--ap-accent);background:color-mix(in srgb,var(--ap-accent) 12%,transparent)}
+.ap-appbar-home:active{transform:scale(.92)}
+.ap-appbar-home svg{width:24px;height:24px}
+.ap-appbar-icon{flex:none;display:grid;place-items:center;width:30px;height:30px;color:var(--ap-accent)}
+.ap-appbar-icon svg{width:28px;height:28px}
+.ap-appbar-copy{display:grid;flex:1;min-width:0}
+.ap-appbar-copy small{color:var(--ap-muted);font:500 11px var(--ap-head);letter-spacing:.14em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ap-appbar-copy b{font:700 19px var(--ap-head);letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ap-danger-row{justify-content:flex-end}
+.ap-statusbar{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 14px;margin-top:20px;padding-top:12px;border-top:1px solid var(--ap-line);color:var(--ap-muted);font:500 11px var(--ap-head);letter-spacing:.13em;text-transform:uppercase}
+@media(max-width:520px){
+  .ap-tabs{width:100%}
+  .ap-tabs .ap-tab{flex:1 1 0;min-width:0;padding:9px 4px;font-size:13px;letter-spacing:.05em}
+  .ap-tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:22px}
+  .ap-tile{padding:18px 6px 14px}
+  .ap-hero-mark{width:70px;height:70px;font-size:32px}
+}
+@media(prefers-reduced-motion:reduce){
+  .ap-in,.ap-tile,.ap-hero-mark{animation:none!important}
+  .ap-tab,.ap-tile,.ap-tile-icon,.ap-camp-card,.ap-appbar-home{transition:none!important}
+  .ap-tile:hover,.ap-tile:active,.ap-tile:hover .ap-tile-icon,.ap-tab:active,.ap-camp-card:active,.ap-appbar-home:active{transform:none}
+}
