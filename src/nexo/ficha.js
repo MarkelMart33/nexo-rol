@@ -110,11 +110,11 @@
   }
 
   // ───────────── Importación segura ─────────────
-  // Un archivo importado viene de fuera: se le quitan los caracteres de marcado y se ajustan los tipos
+  // Un archivo importado viene de fuera: se le cambian los signos de marcado por comillas angulares y se ajustan los tipos
   // a los de una ficha nueva, para que nada de lo que traiga pueda acabar como código en la página.
   function scrub(value, depth = 0) {
     if (depth > 12) return null;
-    if (typeof value === 'string') return value.replace(/[<>]/g, '').slice(0, 20000);
+    if (typeof value === 'string') return value.replace(/</g, '‹').replace(/>/g, '›').slice(0, 20000);
     if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
     if (typeof value === 'boolean' || value === null) return value;
     if (Array.isArray(value)) return value.slice(0, 2000).map(item => scrub(item, depth + 1));
@@ -153,9 +153,18 @@
    *   before: () => void                   (guardar lo pendiente antes de exportar)
    * }
    */
+  // Cada sistema deja aquí cómo acepta una ficha de fuera; lo usa también la copia de seguridad al restaurar.
+  const accepting = new Map();
+  function accept(system, raw) {
+    const fn = accepting.get(system);
+    if (!fn) throw new Error('Sistema desconocido.');
+    return fn(raw);
+  }
+
   function create(cfg) {
     const p = cfg.prefix;
     let host = null;
+    accepting.set(cfg.system, raw => cfg.accept(conform(raw, cfg.template())));
 
     function exportCurrent() {
       const ch = cfg.current();
@@ -192,8 +201,7 @@
       if (!parsed) return;
       let ch;
       try {
-        const raw = window.NEXO_COPIAS.characterFrom(parsed, cfg.system, cfg.label);
-        ch = cfg.accept(conform(raw, cfg.template()));
+        ch = accept(cfg.system, window.NEXO_COPIAS.characterFrom(parsed, cfg.system, cfg.label));
       } catch (error) { cfg.flash?.(error.message || 'No se pudo importar la ficha.'); return; }
       if (!ch.id || typeof ch.id !== 'string') ch.id = crypto.randomUUID();
       if (cfg.exists(ch.id)) {
@@ -231,5 +239,5 @@
     };
   }
 
-  window.NEXO_FICHA = { create, view, close: closeView, sheetHtml, scrub, conform, esc };
+  window.NEXO_FICHA = { create, view, close: closeView, sheetHtml, scrub, conform, accept, esc };
 })();

@@ -4,6 +4,7 @@
  * - Copia completa: { app: 'NEXO', kind: 'copia', data: { <clave de localStorage>: almacén } }.
  * Al restaurar se mezcla por id y gana lo más reciente (updatedAt); nunca se borra nada de este dispositivo.
  * Con cuenta, lo restaurado se sube también a la nube.
+ * Lo que llega de un archivo pasa por el mismo filtro que una ficha importada (NEXO_FICHA.accept).
  */
 (() => {
   // Almacenes con una lista de registros con id: fichas de cada sistema y campañas de todos.
@@ -78,6 +79,7 @@
     return rows;
   }
   function exportAll() {
+    window.NEXO_APARTADOS?.flush?.();
     const data = {};
     STORES.forEach(s => { data[s.key] = { [s.field]: list(s.key, s.field) }; });
     const traveller = read(TRAVELLER_KEY);
@@ -99,15 +101,36 @@
     return { rows: [...local.map(row => byId.get(row.id)), ...incoming.filter(row => !localIds.has(row.id))], added, updated };
   }
 
+  // Texto de un archivo de fuera: sin los signos con los que se escribe marcado.
+  function tame(value, depth = 0) {
+    if (depth > 40) return null;
+    if (typeof value === 'string') return value.replace(/</g, '‹').replace(/>/g, '›');
+    if (Array.isArray(value)) return value.map(item => tame(item, depth + 1));
+    if (value && typeof value === 'object') {
+      const out = {};
+      Object.keys(value).forEach(key => { if (!['__proto__', 'constructor', 'prototype'].includes(key)) out[tame(key)] = tame(value[key], depth + 1); });
+      return out;
+    }
+    return value;
+  }
+  // Una fila del archivo, ya revisada por su sistema; lo que no se entiende se descarta.
+  function cleanRow(s, row) {
+    if (!row || typeof row !== 'object' || typeof row.id !== 'string' || !row.id) return null;
+    try {
+      return s.field === 'campaigns' ? window.NEXO_APARTADOS.cleanCampaign(window.NEXO_FICHA.scrub(row)) : window.NEXO_FICHA.accept(s.game, row);
+    } catch { return null; }
+  }
+
   async function restore(parsed) {
     if (!parsed || parsed.app !== 'NEXO') throw new Error('El archivo no es una copia de NEXO.');
     if (parsed.kind === 'ficha') throw new Error('Ese archivo es una sola ficha: impórtala desde la lista de personajes de su sistema.');
     if (parsed.kind !== 'copia' || !parsed.data || typeof parsed.data !== 'object') throw new Error('El archivo no es una copia completa de NEXO.');
     const result = [];
+    window.NEXO_APARTADOS?.flush?.();
     for (const s of STORES) {
       const incoming = parsed.data[s.key]?.[s.field];
       if (!Array.isArray(incoming)) continue;
-      const clean = incoming.filter(row => row && typeof row === 'object' && row.id);
+      const clean = incoming.map(row => cleanRow(s, row)).filter(Boolean);
       const { rows, added, updated } = merge(list(s.key, s.field), clean);
       if (!added && !updated) { result.push({ label: s.label, added, updated }); continue; }
       const store = { [s.field]: rows };
@@ -119,7 +142,7 @@
     window.NEXO_APARTADOS?.reload?.();
     const traveller = parsed.data[TRAVELLER_KEY]?.campaigns;
     if (Array.isArray(traveller) && window.NEXO_TRAVELLER?.restore) {
-      const added = window.NEXO_TRAVELLER.restore(traveller);
+      const added = window.NEXO_TRAVELLER.restore(tame(traveller));
       result.unshift({ label: 'Partidas de Traveller', added, updated: 0 });
     }
     return result;

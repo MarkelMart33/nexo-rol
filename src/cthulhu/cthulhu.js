@@ -106,6 +106,8 @@
     words: { characters: 'investigadores', character: 'investigador' }
   });
   const manualLink = (id, label) => ap?.link(id, label) || '';
+  // Nombre de un rasgo que, al tocarlo, asoma su regla del manual.
+  const term = (id, text) => ap?.term(id, text) || esc(text);
 
   // Exportar, importar e imprimir la ficha (src/nexo/ficha.js).
   const kit = window.NEXO_FICHA?.create({
@@ -520,7 +522,7 @@
       const input = ch.method === 'rapida'
         ? `<select data-char="${k}" aria-label="${name}">${options(QUICK.filter((v, i, a) => a.indexOf(v) === i).map(v => [v, v]), ch.chars[k] || '', '—')}</select>`
         : `<input type="number" min="0" max="99" data-char="${k}" value="${ch.chars[k] || ''}" placeholder="—" aria-label="${name}">`;
-      return `<div class="cth-char"><span class="cth-char-head"><b>${short}</b><small>${name}</small></span>${input}
+      return `<div class="cth-char"><span class="cth-char-head"><b>${short}</b><small>${term(`cth-car-${k}`, name)}</small></span>${input}
         <span class="cth-char-final ${changedByAge ? 'is-aged' : ''}" title="${changedByAge ? 'Valor tras aplicar la edad' : ''}">${final ? `<button class="nd-roll-btn" data-cth-roll="ch:${k}" aria-label="Tirar ${name}"><b>${final}</b></button>` : '<b>—</b>'}<small>${final ? `${Math.floor(final / 2)} · ${Math.floor(final / 5)}` : 'mitad · quinto'}</small></span></div>`;
     }).join('');
     const lossRows = band.loss ? band.from.map(k => `<div class="cth-loss"><span>${CH[k].name}</span><span class="cth-stepper"><button data-loss="${k}" data-d="-1" aria-label="Devolver punto a ${CH[k].name}" ${(ch.ageLoss[k] || 0) <= 0 ? 'disabled' : ''}>−</button><b>−${ch.ageLoss[k] || 0}</b><button data-loss="${k}" data-d="1" aria-label="Restar punto a ${CH[k].name}">+</button></span></div>`).join('') : '';
@@ -570,7 +572,7 @@
       const spec = SKILLS[k][2] ? `<input class="cth-spec" data-spec="${k}" value="${esc(ch.specs[k] || '')}" maxlength="30" placeholder="${esc(SKILLS[k][2])}" aria-label="Especialidad de ${esc(SKILLS[k][0])}">` : '';
       const pDisabled = NO_PERSONAL.includes(k) || k === 'credito';
       return `<li class="${isOcc ? 'is-occ' : ''} ${total > base(ch, k) ? 'is-raised' : ''}" data-row="${k}">
-        <span class="cth-skill-name">${isOcc ? '<i class="cth-occ-mark" title="Habilidad de ocupación">◆</i>' : ''}${esc(SKILLS[k][0])}${spec}</span>
+        <span class="cth-skill-name">${isOcc ? '<i class="cth-occ-mark" title="Habilidad de ocupación">◆</i>' : ''}${term(`cth-hab-${k}`, SKILLS[k][0])}${spec}</span>
         <span class="cth-skill-base">${base(ch, k)}</span>
         <input type="number" min="0" max="99" data-alloc="${k}" data-kind="o" value="${alloc(ch, k, 'o') || ''}" placeholder="${isOcc ? '0' : ''}" ${isOcc ? '' : 'disabled'} aria-label="Puntos de ocupación en ${esc(SKILLS[k][0])}">
         <input type="number" min="0" max="99" data-alloc="${k}" data-kind="p" value="${alloc(ch, k, 'p') || ''}" placeholder="${pDisabled ? '' : '0'}" ${pDisabled ? 'disabled' : ''} aria-label="Puntos de interés personal en ${esc(SKILLS[k][0])}">
@@ -583,6 +585,8 @@
       <ul class="cth-skills">${rows}</ul></section>`;
   }
 
+  // Casillas de la hoja calculada que asoman su regla al tocarlas.
+  const STAT_RULES = { 'Puntos de vida': 'cth-vida', 'Cordura': 'cth-cordura', 'Cordura máxima': 'cth-cordura', 'Suerte': 'cth-suerte', 'Bonificación al daño': 'cth-dano', 'Edad': 'cth-edad' };
   function sheetPanel(ch) {
     const [bd, corp] = build(ch);
     const credit = skill(ch, 'credito');
@@ -592,7 +596,7 @@
       ['Esquivar', skill(ch, 'esquivar')], ['Crédito', credit], ['Nivel de vida', living(credit)], ['Edad', ch.age]
     ];
     return `<section class="cth-panel cth-sheet">${heading(5, 'Hoja calculada', esc(describe(ch)))}
-      <div class="cth-stats">${stats.map(([k, v]) => `<div><small>${k}</small><b>${esc(v)}</b></div>`).join('')}</div>
+      <div class="cth-stats">${stats.map(([k, v]) => `<div><small>${term(STAT_RULES[k], k)}</small><b>${esc(v)}</b></div>`).join('')}</div>
       <p class="cth-note">Puntos de vida: (CON + TAM) / 10. Cordura inicial: POD; la máxima es 99 menos Mitos de Cthulhu. Puntos de magia: POD / 5. Movimiento: 7 si FUE y DES son menores que TAM, 9 si ambas son mayores y 8 en otro caso, menos lo que reste la edad. Bonificación al daño y corpulencia salen de FUE + TAM.</p><p class="cth-note">${manualLink('cth-cordura', 'Cordura')} ${manualLink('cth-vida', 'Puntos de vida')} ${manualLink('cth-suerte', 'Suerte')} ${manualLink('cth-grados', 'Niveles de éxito')}</p></section>`;
   }
 

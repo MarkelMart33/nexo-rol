@@ -326,7 +326,7 @@
   };
 
   // Estado de la ventana: un sistema activo, valores recordados por modo y un breve historial.
-  const state = { system: null, theme: null, mode: 'test', values: {}, sources: null, history: [], last: null, lastOpts: null, label: '', picks: {}, formOpen: false };
+  const state = { system: null, theme: null, mode: 'test', values: {}, sources: null, history: [], last: null, lastOpts: null, label: '', picks: {}, formOpen: false, diary: '' };
   let win, stage, fadeTimer = 0;
 
   function ensure() {
@@ -375,6 +375,30 @@
     </div>`;
   }
 
+  // Diario: la última tirada se puede apuntar en la sesión de hoy de una campaña del sistema abierto.
+  const diaryContext = () => (state.last && !state.last.error ? window.NEXO_APARTADOS?.diary?.() || null : null);
+  function diaryHtml() {
+    const ctx = diaryContext();
+    if (!ctx) return '';
+    if (!ctx.campaigns.length) return '<p class="nd-diary-hint">Crea una campaña en la pestaña «Campañas» y podrás apuntar aquí las tiradas en su diario.</p>';
+    const chosen = ctx.campaigns.some(c => c.id === state.diary) ? state.diary : ctx.preferred;
+    const where = ctx.campaigns.length > 1
+      ? `<select data-nd-diary-campaign aria-label="Campaña en la que se apunta">${ctx.campaigns.map(c => `<option value="${esc(c.id)}" ${c.id === chosen ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select>`
+      : `<span>${esc(ctx.campaigns[0].name)}</span>`;
+    return `<div class="nd-diary">${where}<button type="button" data-nd-diary ${state.last.logged ? 'disabled' : ''}>${state.last.logged ? '✓ Apuntada' : '✎ Al diario'}</button></div>`;
+  }
+  function logToDiary() {
+    const ctx = diaryContext();
+    const r = state.last;
+    if (!ctx || !r || r.logged) return;
+    const id = win.querySelector('[data-nd-diary-campaign]')?.value || ctx.preferred;
+    const text = `🎲 ${ctx.who ? `${ctx.who} · ` : ''}${r.title}: ${r.total}${r.unit ? ` ${r.unit}` : ''} — ${r.verdict}${r.badge ? ` (${r.badge})` : ''} [${r.formula}]`;
+    if (!ctx.add(id, text)) return;
+    state.diary = id;
+    r.logged = true;
+    render();
+  }
+
   function render() {
     const rules = RULES[state.system];
     const mode = modeOf();
@@ -392,6 +416,7 @@
         <div class="nd-grid">${mode.fields.map(f => fieldHtml(f, v[f.key])).join('')}</div>
       </form>
       <div class="nd-actions"><button type="button" class="nd-roll" data-nd-roll>⚄ ${state.formOpen || !state.lastOpts ? 'Tirar' : 'Repetir'}</button></div>
+      ${diaryHtml()}
       ${history ? `<details class="nd-history"><summary>Tiradas anteriores</summary><ul>${history}</ul></details>` : ''}`;
     bind();
   }
@@ -415,6 +440,8 @@
       render();
     }));
     win.querySelector('[data-nd-form]').addEventListener('submit', event => { event.preventDefault(); rollFromForm(); });
+    win.querySelector('[data-nd-diary]')?.addEventListener('click', logToDiary);
+    win.querySelector('[data-nd-diary-campaign]')?.addEventListener('change', event => { state.diary = event.target.value; });
     win.querySelector('[data-nd-roll]').addEventListener('click', () => {
       if (state.formOpen || !state.lastOpts) return rollFromForm();
       state.mode = state.lastOpts.mode;
@@ -742,7 +769,7 @@
   // Estilos del lanzador: se cargan una vez para todos los apartados.
   const css = document.createElement('link');
   css.rel = 'stylesheet';
-  css.href = './src/nexo/dice.css?v=2';
+  css.href = './src/nexo/dice.css?v=3';
   document.head.append(css);
 
   window.NEXO_DICE = { tray, roll, close, die, rules: RULES };

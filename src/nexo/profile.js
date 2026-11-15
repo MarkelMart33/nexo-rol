@@ -17,7 +17,7 @@
     if (host) return;
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/nexo/profile.css?v=6';
+    stylesheet.href = './src/nexo/profile.css?v=7';
     document.head.append(stylesheet);
     host = document.createElement('section');
     host.className = 'nexo-profile';
@@ -54,11 +54,49 @@
     return `<section class="prf-panel"><h2>Personajes</h2>${group('vampire', 'Vampiro: La Mascarada', window.NEXO_VAMPIRE, window.NEXO_ICONS?.vampire || '')}${group('dnd', 'Dungeons &amp; Dragons', window.NEXO_DND, window.NEXO_ICONS?.dnd || '')}${group('tormentas', 'El Archivo de las Tormentas', window.NEXO_TORMENTAS, window.NEXO_ICONS?.tormentas || '')}${group('cthulhu', 'La llamada de Cthulhu', window.NEXO_CTHULHU, window.NEXO_ICONS?.cthulhu || '')}${group('pathfinder', 'Pathfinder', window.NEXO_PATHFINDER, window.NEXO_ICONS?.pathfinder || '')}<p class="prf-note">Los personajes de Traveller están dentro de cada campaña.</p></section>`;
   }
 
+  // Copia de seguridad: todo lo de este dispositivo en un archivo, y vuelta atrás desde ese archivo (src/nexo/copias.js).
+  function backupPanel() {
+    if (!window.NEXO_COPIAS) return '';
+    const rows = window.NEXO_COPIAS.summary().filter(row => row.count);
+    const total = rows.reduce((t, row) => t + row.count, 0);
+    return `<section class="prf-panel prf-backup"><h2>Copia de seguridad</h2>
+      <p class="prf-note">${total ? `Guarda en un archivo ${rows.map(row => `${row.count} de ${esc(row.label)}`).join(', ').replace(/, ([^,]*)$/, ' y $1')}.` : 'Aún no hay nada que guardar en este dispositivo.'} Sirve de respaldo y para llevar tus cosas a otro dispositivo o a otra cuenta.</p>
+      <div class="prf-pair"><button class="prf-button" data-backup-save ${total ? '' : 'disabled'}>Descargar copia completa</button><button class="prf-button ghost" data-backup-load>Restaurar desde un archivo</button></div>
+      <p class="prf-note">Restaurar añade lo que falte y actualiza lo que en el archivo sea más reciente. Nunca borra nada de lo que ya tienes.</p>
+      <p class="prf-message" data-backup-message aria-live="polite"></p></section>`;
+  }
+  function backupMessage(text, error = false) {
+    const node = host.querySelector('[data-backup-message]');
+    if (!node) return;
+    node.textContent = text;
+    node.classList.toggle('error', error);
+  }
+  function saveBackup() {
+    try { window.NEXO_COPIAS.exportAll(); backupMessage('Copia descargada. Guárdala en un sitio seguro.'); }
+    catch (error) { console.error('NEXO backup error', error); backupMessage('No se pudo crear la copia.', true); }
+  }
+  async function loadBackup() {
+    let result;
+    try {
+      const parsed = await window.NEXO_COPIAS.pick();
+      if (!parsed) return;
+      result = await window.NEXO_COPIAS.restore(parsed);
+    } catch (error) { backupMessage(error.message || 'No se pudo restaurar la copia.', true); return; }
+    const changed = result.filter(row => row.added || row.updated);
+    const text = changed.length
+      ? `Restaurado: ${changed.map(row => `${row.label} (${[row.added ? `${row.added} ${row.added === 1 ? 'nueva' : 'nuevas'}` : '', row.updated ? `${row.updated} ${row.updated === 1 ? 'actualizada' : 'actualizadas'}` : ''].filter(Boolean).join(', ')})`).join(' · ')}.`
+      : 'Ya lo tenías todo: el archivo no trae nada nuevo ni más reciente.';
+    render();
+    backupMessage(text);
+  }
+
   function render() {
     const u = user();
     host.innerHTML = `<div class="prf-wrap"><button class="prf-back" data-back>← Volver a la mesa</button>
       <header class="prf-title"><span class="nexo-seal prf-seal" aria-hidden="true">${esc(initials(u))}</span><div><h1>Tu perfil</h1><p>${u ? 'Tus partidas y fichas se sincronizan con tu cuenta.' : 'Sin cuenta: todo se guarda en este dispositivo.'}</p></div></header>
-      <div class="prf-grid">${accountPanel()}<div class="prf-stack">${campaignsPanel()}${charactersPanel()}</div></div></div>`;
+      <div class="prf-grid"><div class="prf-stack prf-side">${accountPanel()}${backupPanel()}</div><div class="prf-stack">${campaignsPanel()}${charactersPanel()}</div></div></div>`;
+    host.querySelector('[data-backup-save]')?.addEventListener('click', saveBackup);
+    host.querySelector('[data-backup-load]')?.addEventListener('click', loadBackup);
     host.querySelectorAll('[data-back]').forEach(button => button.addEventListener('click', close));
     host.querySelector('[data-sign-in]')?.addEventListener('click', signIn);
     host.querySelector('[data-sign-out]')?.addEventListener('click', signOut);

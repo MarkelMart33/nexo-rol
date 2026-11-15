@@ -114,6 +114,8 @@
     words: { campaigns: 'Tus campañas', characters: 'aventureros', character: 'aventurero' }
   });
   const manualLink = (id, label) => ap?.link(id, label) || '';
+  // Nombre de un rasgo que, al tocarlo, asoma su regla del manual.
+  const term = (id, text) => ap?.term(id, text) || esc(text);
 
   // Exportar, importar e imprimir la ficha (src/nexo/ficha.js).
   const kit = window.NEXO_FICHA?.create({
@@ -560,7 +562,7 @@
       const m = mod(ch, k);
       return `<div class="pf-attr-row ${b && b.attrs.includes(k) && b.attrs.length < 6 ? 'is-bg' : ''}"><span class="pf-attr-name"><b>${short}</b><small>${name}</small></span>${ancCell}${bgCell}${clsCell}${cell('free', k, ch.freeBoosts.includes(k), true, 'Mejora libre')}<b class="pf-attr-mod ${m > 0 ? 'is-up' : m < 0 ? 'is-down' : ''}">${signed(m)}</b></div>`;
     }).join('');
-    return `<section class="pf-panel">${heading(5, 'Atributos', 'mejoras de nivel 1')}
+    return `<section class="pf-panel">${heading(5, term('pf-atributos', 'Atributos'), 'mejoras de nivel 1')}
       <p class="pf-note">Todos los modificadores empiezan en +0. Cada mejora suma +1 y el defecto resta 1; en un mismo apartado no puedes mejorar dos veces el mismo atributo. ${b && b.attrs.length < 6 ? `Una de las mejoras del bagaje va a ${boostList(b.attrs).replace(', ', ' o ')} (filas marcadas).` : ''}</p>
       <div class="pf-attrs"><div class="pf-attr-row pf-attr-head" aria-hidden="true"><span></span><span>Ascend.</span><span>Bagaje</span><span>Clase</span><span>Libres</span><span>Mod.</span></div>${rows}
         <div class="pf-attr-row pf-attr-foot"><span>Por repartir</span><span>${a ? leftBadge(ancFree(ch) - ch.ancBoosts.length, '✓') : '—'}</span><span>${b ? leftBadge(2 - ch.bgBoosts.length, '✓') : '—'}</span><span>${c ? leftBadge(ch.classBoost ? 0 : 1, '✓') : '—'}</span><span>${leftBadge(FREE_BOOSTS - ch.freeBoosts.length, '✓')}</span><span></span></div></div></section>`;
@@ -574,7 +576,7 @@
       const locked = source === 'clase' || source === 'bagaje';
       const total = skillMod(ch, k);
       return `<li class="${source ? 'is-trained' : ''}"><button class="pf-skill-pick" data-skill="${k}" aria-pressed="${Boolean(source)}" ${locked || !c ? 'disabled' : ''} title="${locked ? `Entrenada por ${source === 'clase' ? 'la clase' : 'el bagaje'}` : 'Entrenar esta habilidad'}">${source ? '●' : '○'}</button>
-        <span class="pf-skill-name">${esc(SKILLS[k][0])} <small>${ATTR[SKILLS[k][1]].short}</small></span><span class="pf-skill-src">${source ? `${RANK_SHORT[1]} · ${source}` : 'N'}</span><button class="nd-roll-btn pf-skill-roll" data-pf-roll="sk:${k}" aria-label="Tirar ${esc(SKILLS[k][0])}"><b class="pf-skill-total">${signed(total)}</b></button></li>`;
+        <span class="pf-skill-name">${term(`pf-hab-${k}`, SKILLS[k][0])} <small>${ATTR[SKILLS[k][1]].short}</small></span><span class="pf-skill-src">${source ? `${RANK_SHORT[1]} · ${source}` : 'N'}</span><button class="nd-roll-btn pf-skill-roll" data-pf-roll="sk:${k}" aria-label="Tirar ${esc(SKILLS[k][0])}"><b class="pf-skill-total">${signed(total)}</b></button></li>`;
     }).join('');
     const bgLore = bg(ch) ? (ch.bgLore || bg(ch).lore) : '';
     const lores = [
@@ -589,6 +591,8 @@
       ${c ? '<div class="pf-lore-add"><input data-lore-name maxlength="40" placeholder="Saber nuevo: Absalom, Ingeniería…" aria-label="Nombre del Saber"><button class="pf-button ghost" data-lore-add>AÑADIR SABER</button></div>' : ''}</section>`;
   }
 
+  // Casillas de la hoja calculada que asoman su regla al tocarlas.
+  const STAT_RULES = { 'Clase de Armadura': 'pf-clase-armadura', 'Fortaleza': 'pf-salvaciones', 'Reflejos': 'pf-salvaciones', 'Voluntad': 'pf-salvaciones', 'Puntos de héroe': 'pf-puntos-heroe', 'CD de conjuros': 'pf-cd-conjuro', 'Cuerpo a cuerpo': 'pf-golpe', 'A distancia': 'pf-golpe', 'Ataque de conjuro': 'pf-golpe' };
   const ROLLABLE = { 'Percepción': 'perc', 'Fortaleza': 'fort', 'Reflejos': 'ref', 'Voluntad': 'vol', 'Cuerpo a cuerpo': 'melee', 'A distancia': 'ranged', 'Ataque de conjuro': 'spell' };
   function sheetPanel(ch) {
     const c = cls(ch);
@@ -607,7 +611,7 @@
     ];
     const armors = Object.entries(ARMORS).map(([k, v]) => [k, `${v.name}${v.ac ? ` (+${v.ac}, DES máx. ${v.cap})` : ''}${v.cat ? ` · ${ARMOR_CATS[v.cat]}` : ''}`]);
     return `<section class="pf-panel pf-sheet">${heading(7, 'Hoja calculada', esc(describe(ch)))}
-      <div class="pf-stats">${stats.map(([k, v]) => { const roll = c && ROLLABLE[k]; return `<div><small>${k}</small>${roll ? `<button class="nd-roll-btn" data-pf-roll="${roll}" aria-label="Tirar ${k}"><b>${esc(v)}</b></button>` : `<b>${esc(v)}</b>`}</div>`; }).join('')}</div>
+      <div class="pf-stats">${stats.map(([k, v]) => { const roll = c && ROLLABLE[k]; return `<div><small>${term(STAT_RULES[k], k)}</small>${roll ? `<button class="nd-roll-btn" data-pf-roll="${roll}" aria-label="Tirar ${k}"><b>${esc(v)}</b></button>` : `<b>${esc(v)}</b>`}</div>`; }).join('')}</div>
       <label class="pf-field pf-field-wide"><span>Armadura</span><select data-choice="armor">${options(armors, ch.armor)}</select></label>
       ${c && !ac.trained ? '<p class="pf-note pf-warn">Tu clase no está entrenada en esa armadura: no sumas competencia a la CA.</p>' : ''}
       <p class="pf-note">Competencia: entrenado +2, experto +4, maestro +6 y legendario +8, más el nivel; sin entrenar, +0. Puntos de golpe: los de la ascendencia más los de la clase y CON por nivel. CA: 10 + DES (hasta el máximo de la armadura) + competencia + armadura; un escudo alzado suma su bonificador. CD de clase: 10 + atributo clave + competencia. Impedimenta: impedido a partir de 5 + FUE y máximo 10 + FUE.</p><p class="pf-note">${manualLink('pf-competencia', 'Competencia')} ${manualLink('pf-clase-armadura', 'Clase de Armadura')} ${manualLink('pf-salvaciones', 'Salvaciones')} ${manualLink('pf-grados-exito', 'Grados de éxito')}</p></section>`;

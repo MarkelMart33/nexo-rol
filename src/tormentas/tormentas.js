@@ -99,6 +99,8 @@
     words: { characters: 'héroes', character: 'héroe' }
   });
   const manualLink = (id, label) => ap?.link(id, label) || '';
+  // Nombre de un rasgo que, al tocarlo, asoma su regla del manual.
+  const term = (id, text) => ap?.term(id, text) || esc(text);
 
   // Exportar, importar e imprimir la ficha (src/nexo/ficha.js).
   const kit = window.NEXO_FICHA?.create({
@@ -431,9 +433,9 @@
     const left = attrBudget(ch) - attrSpent(ch);
     const cols = REALMS.map(([realm, name, def]) => {
       const rows = ATTRS.filter(a => a[3] === realm).map(([k, n]) => `<div class="tor-attr"><span class="tor-attr-name">${n}</span><span class="tor-stepper"><button data-attr="${k}" data-d="-1" aria-label="Bajar ${n}" ${attr(ch, k) <= 0 ? 'disabled' : ''}>−</button><b>${attr(ch, k)}</b><button data-attr="${k}" data-d="1" aria-label="Subir ${n}">+</button></span></div>`).join('');
-      return `<div class="tor-realm is-${realm}"><div class="tor-realm-head"><b>${name}</b><span class="tor-def"><small>${def}</small><b>${defense(ch, realm)}</b></span></div>${rows}</div>`;
+      return `<div class="tor-realm is-${realm}"><div class="tor-realm-head"><b>${name}</b><span class="tor-def"><small>${term('tor-defensas', def)}</small><b>${defense(ch, realm)}</b></span></div>${rows}</div>`;
     }).join('');
-    return `<section class="tor-panel">${heading(3, 'Atributos', `${attrBudget(ch)} puntos`)}<p class="tor-note">Reparte ${attrBudget(ch)} puntos entre los seis atributos (todos empiezan en 0${ch.level === 1 ? ', máximo 3 a nivel 1' : ''}). Cada pareja forma la defensa de su reino: 10 + los dos atributos. <span class="tor-left ${left === 0 ? 'is-done' : left < 0 ? 'is-over' : ''}">${left === 0 ? 'Todo repartido' : left > 0 ? `Te quedan ${left}` : `Te pasas en ${-left}`}</span></p><div class="tor-realms">${cols}</div></section>`;
+    return `<section class="tor-panel">${heading(3, term('tor-atributos', 'Atributos'), `${attrBudget(ch)} puntos`)}<p class="tor-note">Reparte ${attrBudget(ch)} puntos entre los seis atributos (todos empiezan en 0${ch.level === 1 ? ', máximo 3 a nivel 1' : ''}). Cada pareja forma la defensa de su reino: 10 + los dos atributos. <span class="tor-left ${left === 0 ? 'is-done' : left < 0 ? 'is-over' : ''}">${left === 0 ? 'Todo repartido' : left > 0 ? `Te quedan ${left}` : `Te pasas en ${-left}`}</span></p><div class="tor-realms">${cols}</div></section>`;
   }
 
   function skillsPanel(ch) {
@@ -444,7 +446,7 @@
         const r = rank(ch, k);
         const fromPath = pathSkill(ch) === k;
         const pips = Array.from({ length: cap }, (_, i) => `<i class="${i < r ? (fromPath && i === 0 ? 'is-path' : 'is-on') : ''}"></i>`).join('');
-        return `<li class="${r ? 'is-ranked' : ''}"><span class="tor-skill-name">${esc(n)} <small>${AT[a].short}</small></span><span class="tor-pips" aria-label="Rango ${r}">${pips}</span><span class="tor-mini"><button data-rank="${k}" data-d="-1" aria-label="Quitar rango a ${esc(n)}" ${(ch.ranks[k] || 0) <= 0 ? 'disabled' : ''}>−</button><button data-rank="${k}" data-d="1" aria-label="Añadir rango a ${esc(n)}">+</button></span><button class="nd-roll-btn tor-skill-mod" data-tor-roll="${k}" aria-label="Tirar ${esc(n)}"><b>${signed(skillMod(ch, k))}</b></button></li>`;
+        return `<li class="${r ? 'is-ranked' : ''}"><span class="tor-skill-name">${term(`tor-hab-${k}`, n)} <small>${AT[a].short}</small></span><span class="tor-pips" aria-label="Rango ${r}">${pips}</span><span class="tor-mini"><button data-rank="${k}" data-d="-1" aria-label="Quitar rango a ${esc(n)}" ${(ch.ranks[k] || 0) <= 0 ? 'disabled' : ''}>−</button><button data-rank="${k}" data-d="1" aria-label="Añadir rango a ${esc(n)}">+</button></span><button class="nd-roll-btn tor-skill-mod" data-tor-roll="${k}" aria-label="Tirar ${esc(n)}"><b>${signed(skillMod(ch, k))}</b></button></li>`;
       }).join('');
       return `<div class="tor-col"><h3>${name}</h3><ul class="tor-skills">${rows}</ul></div>`;
     }).join('');
@@ -461,6 +463,8 @@
       <label class="tor-field"><span>Pericias adicionales, separadas por comas ${need ? `<em class="tor-left ${left === 0 ? 'is-done' : left < 0 ? 'is-over' : ''}">${left === 0 ? 'Completo' : left > 0 ? `Faltan ${left}` : `Sobran ${-left}`}</em>` : ''}</span><input data-expertise value="${esc(ch.expertises)}" maxlength="300" placeholder="Ej.: Armadura ligera, Fabriales, Historia vorin"></label></section>`;
   }
 
+  // Casillas de la hoja calculada que asoman su regla al tocarlas.
+  const STAT_RULES = { 'Defensa física': 'tor-defensas', 'Defensa cognitiva': 'tor-defensas', 'Defensa espiritual': 'tor-defensas', 'Salud': 'tor-recursos', 'Concentración': 'tor-recursos', 'Investidura': 'tor-recursos', 'Dado de recuperación': 'tor-descanso' };
   function sheetPanel(ch) {
     const fue = band(attr(ch, 'fue'));
     const stats = [
@@ -470,13 +474,13 @@
       ['Capacidad de carga', `${LIFT[fue][1]} lb`], ['Levantar', `${LIFT[fue][0]} lb`], ['Nivel', `${ch.level} · escalón ${tier(ch)}`]
     ];
     return `<section class="tor-panel">${heading(6, 'Hoja calculada', esc(describe(ch)))}
-      <div class="tor-stats">${stats.map(([k, v]) => `<div><small>${k}</small><b>${esc(v)}</b></div>`).join('')}</div>
+      <div class="tor-stats">${stats.map(([k, v]) => `<div><small>${term(STAT_RULES[k], k)}</small><b>${esc(v)}</b></div>`).join('')}</div>
       <p class="tor-note">Salud: 10 + Fuerza${ch.healthBonus ? ' + lo ganado al subir de nivel' : ''}. Concentración: 2 + Voluntad. Investidura: 2 + el mayor entre Consciencia y Presencia, solo tras pronunciar el Primer Ideal. Movimiento, carga, sentidos y dado de recuperación salen de Velocidad, Fuerza, Consciencia y Voluntad.</p></section>`;
   }
 
   function radiantPanel(ch) {
     const order = ORDERS[ch.order];
-    const surges = order ? order.surges.map(k => `<div class="tor-surge"><b>${esc(SURGES[k][0])}</b><small>${esc(SURGES[k][1])}</small></div>`).join('') : '';
+    const surges = order ? order.surges.map(k => `<div class="tor-surge"><b>${term(`tor-pot-${k}`, SURGES[k][0])}</b><small>${esc(SURGES[k][1])}</small></div>`).join('') : '';
     const ideals = Array.from({ length: MAX_IDEAL }, (_, i) => `<button class="tor-ideal ${i < ch.ideal ? 'is-on' : ''}" data-ideal="${i + 1}" aria-pressed="${i < ch.ideal}" aria-label="${i + 1}º Ideal">${ROMAN[i]}</button>`).join('');
     return `<section class="tor-panel tor-radiant ${ch.radiant ? 'is-active' : ''}">${heading(7, 'Camino radiante', 'vínculo náhel')}
       <label class="tor-switch"><input type="checkbox" data-radiant ${ch.radiant ? 'checked' : ''}><span>Mi personaje sigue el camino radiante</span></label>

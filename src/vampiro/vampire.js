@@ -103,6 +103,8 @@
     words: { characters: 'vástagos', character: 'vástago' }
   });
   const manualLink = (id, label) => ap?.link(id, label) || '';
+  // Nombre de un rasgo que, al tocarlo, asoma su regla del manual.
+  const term = (id, text) => ap?.term(id, text) || esc(text);
 
   // Exportar, importar e imprimir la ficha (src/nexo/ficha.js).
   const kit = window.NEXO_FICHA?.create({
@@ -599,7 +601,7 @@
       const cls = i <= min ? 'inn' : i <= min + g ? 'dia' : i <= min + g + t.b ? 'base' : i <= min + g + t.b + t.f ? 'free' : i <= min + g + t.b + t.f + t.x ? 'xp' : '';
       html += `<button class="vtm-dot ${cls}" data-dot="${kind}" data-key="${key}" data-n="${i}" ${i > max ? 'disabled' : ''} aria-label="${esc(label)} ${i}"></button>`;
     }
-    return `<div class="vtm-trait"><span>${esc(label)}${extra}</span><span class="vtm-dots">${html}</span></div>`;
+    return `<div class="vtm-trait"><span>${kind === 'disc' ? term(`vtm-dis-${key}`, label) : esc(label)}${extra}</span><span class="vtm-dots">${html}</span></div>`;
   }
   function track(kind, label, base, free, xp, lost = 0) {
     const total = Math.min(10, base + free + xp);
@@ -608,7 +610,8 @@
       const cls = i > total - lost && i <= total ? 'lost' : i <= base ? 'base' : i <= base + free ? 'free' : i <= base + free + xp ? 'xp' : '';
       html += `<button class="vtm-dot ${cls}" data-track="${kind}" data-n="${i}" aria-label="${esc(label)} ${i}"></button>`;
     }
-    return `<div class="vtm-track"><span>${esc(label)} <b>${Math.max(0, total - lost)}</b>${lost ? ` <small class="vtm-out">−${lost} por ${current?.era === 'da' ? 'Amaranto' : 'diablerie'}</small>` : ''}</span><span class="vtm-dots">${html}</span></div>`;
+    const rule = kind === 'wp' ? 'vtm-voluntad' : current?.road && current.road !== 'humanidad' ? `vtm-senda-${current.road}` : 'vtm-humanidad';
+    return `<div class="vtm-track"><span>${term(rule, label)} <b>${Math.max(0, total - lost)}</b>${lost ? ` <small class="vtm-out">−${lost} por ${current?.era === 'da' ? 'Amaranto' : 'diablerie'}</small>` : ''}</span><span class="vtm-dots">${html}</span></div>`;
   }
   function left(kind, key) {
     const p = pool(current, kind, key);
@@ -656,13 +659,13 @@
         <ul class="vtm-pools">${rows.map(r => `<li class="${r.left === 0 ? 'is-done' : r.left < 0 ? 'is-over' : ''}${r.kind ? ' is-free' : ''}"><span>${r.label}</span><b>${r.left < 0 ? '+' + (-r.left) : r.left}</b><small>/ ${r.budget}</small></li>`).join('')}<li class="is-xp ${xpLeft < 0 ? 'is-over' : ''}"><span>PX disponibles</span><b>${xpLeft}</b><small>/ ${xpBudget(ch)}</small></li></ul>
         <p class="vtm-legend"><i class="vtm-dot inn"></i> Base <i class="vtm-dot base"></i> Reparto inicial <i class="vtm-dot free"></i> Puntos gratuitos <i class="vtm-dot xp"></i> Experiencia</p>
       </section>
-      <section class="vtm-panel"><h2><span>III</span> Atributos <small>7 / 5 / 3</small></h2><div class="vtm-cols">${ATTRS.map(g => `<div class="vtm-col"><div class="vtm-col-head"><h3>${g.label}</h3>${prioSelect('attrs', g)}${left('attrs', g.traits[0][0])}</div>${g.traits.map(([k, l]) => dots('attrs', k, l)).join('')}</div>`).join('')}</div></section>
-      <section class="vtm-panel"><h2><span>IV</span> Habilidades <small>13 / 9 / 5</small></h2><div class="vtm-cols">${abilityGroups(ch).map(g => `<div class="vtm-col"><div class="vtm-col-head"><h3>${g.label}</h3>${prioSelect('abil', g)}${left('abil', g.traits[0][0])}</div>${g.traits.map(([k, l]) => dots('abil', k, l)).join('')}</div>`).join('')}</div></section>
+      <section class="vtm-panel"><h2><span>III</span> Atributos <small>7 / 5 / 3</small></h2><div class="vtm-cols">${ATTRS.map(g => `<div class="vtm-col"><div class="vtm-col-head"><h3>${term(`vtm-atr-${g.id}`, g.label)}</h3>${prioSelect('attrs', g)}${left('attrs', g.traits[0][0])}</div>${g.traits.map(([k, l]) => dots('attrs', k, l)).join('')}</div>`).join('')}</div></section>
+      <section class="vtm-panel"><h2><span>IV</span> Habilidades <small>13 / 9 / 5</small></h2><div class="vtm-cols">${abilityGroups(ch).map(g => `<div class="vtm-col"><div class="vtm-col-head"><h3>${term(`vtm-hab-${g.id}`, g.label)}</h3>${prioSelect('abil', g)}${left('abil', g.traits[0][0])}</div>${g.traits.map(([k, l]) => dots('abil', k, l)).join('')}</div>`).join('')}</div></section>
       <section class="vtm-panel"><h2><span>V</span> Ventajas</h2><div class="vtm-cols">
         <div class="vtm-col"><div class="vtm-col-head"><h3>Disciplinas</h3><span class="vtm-note">3 puntos${ch.clan === 'caitiff' ? ' · libres' : ' · de clan'}</span>${left('disc')}</div>${discRows || '<p class="vtm-note">Añade las disciplinas de tu vástago.</p>'}
           <div class="vtm-add"><select data-disc-add aria-label="Disciplina para añadir"><option value="">${ch.clan === 'caitiff' ? 'Añadir disciplina…' : 'Añadir de otro clan…'}</option>${addable.map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('')}</select></div></div>
-        <div class="vtm-col"><div class="vtm-col-head"><h3>Trasfondos</h3><span class="vtm-note">5 puntos</span>${left('bg')}</div>${era(ch).backgrounds.map(([k, l]) => dots('bg', k, l)).join('')}</div>
-        <div class="vtm-col"><div class="vtm-col-head"><h3>Virtudes</h3><span class="vtm-note">7 puntos</span>${left('virt')}</div>${virt.map(([k, l]) => dots('virt', k, l)).join('')}
+        <div class="vtm-col"><div class="vtm-col-head"><h3>${term('vtm-trasfondos', 'Trasfondos')}</h3><span class="vtm-note">5 puntos</span>${left('bg')}</div>${era(ch).backgrounds.map(([k, l]) => dots('bg', k, l)).join('')}</div>
+        <div class="vtm-col"><div class="vtm-col-head"><h3>${term('vtm-virtudes', 'Virtudes')}</h3><span class="vtm-note">7 puntos</span>${left('virt')}</div>${virt.map(([k, l]) => dots('virt', k, l)).join('')}
           <div class="vtm-derived">${track('hum', road(ch).name, humanityBase(ch), ch.humF, ch.humX, humLoss(ch))}${track('wp', 'Fuerza de Voluntad', willpowerBase(ch), ch.wpF, ch.wpX)}</div></div>
       </div></section>
       <section class="vtm-panel"><h2><span>VI</span> Méritos y defectos</h2><p class="vtm-note">Los méritos se pagan con puntos gratuitos. Los defectos dan puntos extra, hasta un máximo de ${FLAW_CAP} (llevas ${Math.min(flaws, FLAW_CAP)}${flaws > FLAW_CAP ? ', el resto no cuenta' : ''}).</p><div class="vtm-merits">${meritRows}</div><button class="vtm-button ghost" data-merit-add>✚ AÑADIR MÉRITO O DEFECTO</button></section>
@@ -671,7 +674,7 @@
       </div><form class="vtm-xp-form" data-xp-form><label class="vtm-field"><span>PX a añadir</span><input type="number" inputmode="numeric" min="1" max="999" step="1" name="amount" required placeholder="Ej.: 5"></label><label class="vtm-field"><span>Motivo</span><input name="note" maxlength="80" placeholder="Ej.: Fin de la sesión 3"></label><button class="vtm-button" type="submit">✚ AÑADIR PX</button></form>
       ${logRows ? `<ul class="vtm-xp-log">${logRows}</ul>` : '<p class="vtm-note">Aún no has añadido experiencia después de la creación. Gasta los PX en la pestaña «3 · Experiencia».</p>'}</section>
       <section class="vtm-panel"><h2><span>VIII</span> La sangre</h2><div class="vtm-stats">
-        <div><small>Generación</small><b>${gen}ª</b></div><div><small>Reserva de sangre máx.</small><b>${blood}</b></div><div><small>Sangre por turno</small><b>${perTurn}</b></div><div><small>${esc(road(ch).name)}</small><b>${humanity(ch)}</b></div><div><small>Fuerza de Voluntad</small><b>${willpower(ch)}</b></div>
+        <div><small>${term('vtm-generacion', 'Generación')}</small><b>${gen}ª</b></div><div><small>${term('vtm-sangre', 'Reserva de sangre máx.')}</small><b>${blood}</b></div><div><small>Sangre por turno</small><b>${perTurn}</b></div><div><small>${esc(road(ch).name)}</small><b>${humanity(ch)}</b></div><div><small>Fuerza de Voluntad</small><b>${willpower(ch)}</b></div>
       </div><div class="vtm-blood" aria-label="Reserva de sangre máxima: ${blood}">${'<i></i>'.repeat(blood)}</div><p class="vtm-note">La reserva inicial se determina tirando un dado de diez caras. Sube el trasfondo Generación para bajar de la ${ch.baseGen}ª${TRAIT_MAX[gen] ? `; en la ${gen}ª generación los rasgos pueden llegar a ${TRAIT_MAX[gen]}` : ''}.</p></section>
       ${diablerieSection(ch)}`;
 

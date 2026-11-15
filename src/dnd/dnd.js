@@ -112,6 +112,8 @@
     words: { characters: 'aventureros', character: 'aventurero' }
   });
   const manualLink = (id, label) => ap?.link(id, label) || '';
+  // Nombre de un rasgo que, al tocarlo, asoma su regla del manual.
+  const term = (id, text) => ap?.term(id, text) || esc(text);
 
   // Ficha común: exportar, importar e imprimir (src/nexo/ficha.js).
   const kit = window.NEXO_FICHA?.create({
@@ -708,15 +710,18 @@
       const p = saveProf.includes(k);
       return `<li class="${p ? 'is-prof' : ''}"><i></i><span>${name}</span><button class="nd-roll-btn" data-dnd-roll="sv:${k}" aria-label="Tirar salvación de ${name}"><b>${signed(mod(ch, k) + (p ? pb : 0))}</b></button></li>`;
     }).join('');
-    const skills = ALL_SKILLS.map(k => `<li class="${prof.has(k) ? 'is-prof' : ''}"><i></i><span>${esc(SKILLS[k][0])} <small>${AB[SKILLS[k][1]].short}</small></span><button class="nd-roll-btn" data-dnd-roll="sk:${k}" aria-label="Tirar ${esc(SKILLS[k][0])}"><b>${signed(skillTotal(ch, k, prof))}</b></button></li>`).join('');
+    const skills = ALL_SKILLS.map(k => `<li class="${prof.has(k) ? 'is-prof' : ''}"><i></i><span>${term(`dnd-hab-${k}`, SKILLS[k][0])} <small>${AB[SKILLS[k][1]].short}</small></span><button class="nd-roll-btn" data-dnd-roll="sk:${k}" aria-label="Tirar ${esc(SKILLS[k][0])}"><b>${signed(skillTotal(ch, k, prof))}</b></button></li>`).join('');
     const extra = unarmoredExtra(ch);
     const unarmored = extra ? `Defensa sin armadura: 10 + DES + ${AB[extra].short}.` : 'Sin armadura: 10 + DES.';
     return `<section class="dnd-panel"><h2><span>V</span> Hoja calculada <small>${esc(describe(ch))}</small></h2>
-      <div class="dnd-stats">${stats.map(([k, v]) => `<div><small>${k}</small><b>${esc(v)}</b></div>`).join('')}</div>
-      ${slots ? `<p class="dnd-slots"><b>Espacios de conjuro</b>${slots.map((n, i) => `<span>${i + 1}º <b>${n}</b></span>`).join('')}</p>` : ''}
+      <div class="dnd-stats">${stats.map(([k, v]) => `<div><small>${STAT_RULES[k] ? term(STAT_RULES[k], k) : k}</small><b>${esc(v)}</b></div>`).join('')}</div>
+      ${slots ? `<p class="dnd-slots"><b>${term('dnd-espacios', 'Espacios de conjuro')}</b>${slots.map((n, i) => `<span>${i + 1}º <b>${n}</b></span>`).join('')}</p>` : ''}
       <p class="dnd-note dnd-stats-note">${unarmored} Puntos de golpe: máximo del dado + CON a nivel 1 y, en cada nivel siguiente, la media (${cls ? cls.die / 2 + 1 : '—'}) o tu tirada + CON${SPECIES[ch.species]?.hpPerLevel ? ', +1 por nivel (enano)' : ''}${hasFeat(ch, 'duro') ? ', +2 por nivel (Duro)' : ''}.</p>
-      <div class="dnd-cols dnd-cols-2"><div class="dnd-col"><div class="dnd-col-head"><h3>Tiradas de salvación</h3></div><ul class="dnd-rolls">${saves}</ul></div><div class="dnd-col"><div class="dnd-col-head"><h3>Habilidades</h3></div><ul class="dnd-rolls dnd-rolls-2">${skills}</ul></div></div></section>`;
+      <div class="dnd-cols dnd-cols-2"><div class="dnd-col"><div class="dnd-col-head"><h3>${term('dnd-salvaciones', 'Tiradas de salvación')}</h3></div><ul class="dnd-rolls">${saves}</ul></div><div class="dnd-col"><div class="dnd-col-head"><h3>Habilidades</h3></div><ul class="dnd-rolls dnd-rolls-2">${skills}</ul></div></div></section>`;
   }
+
+  // Casillas de la hoja calculada que asoman su regla al tocarlas.
+  const STAT_RULES = { 'Bonif. competencia': 'dnd-competencia', 'Dados de golpe': 'dnd-descansos', 'CA sin armadura': 'dnd-clase-armadura', 'Iniciativa': 'dnd-iniciativa', 'CD de conjuros': 'dnd-cd-conjuros', 'Ataque de conjuro': 'dnd-ataque' };
 
   // Hoja de solo lectura: lo que se imprime y lo que ve el narrador de una campaña compartida.
   function sheetData(ch) {
