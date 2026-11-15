@@ -195,7 +195,7 @@ html.nexo-dnd-open,html.nexo-dnd-open body{overflow:hidden}
 @media(max-width:640px){.dnd-top{height:62px;padding:0 16px}.dnd-brand small{font-size:9px;letter-spacing:.08em;white-space:nowrap}.dnd-tracker{position:static;padding:10px 12px}.dnd-main{padding:36px 16px 70px}.dnd-fields{grid-template-columns:1fr}.dnd-abilities{grid-template-columns:1fr 1fr}.dnd-stats{grid-template-columns:1fr 1fr}.dnd-panel{padding:16px}.dnd-list{grid-template-columns:1fr}.dnd-status{font-size:9px;max-width:130px}.dnd-rolls-2{columns:1}.dnd-method{display:flex}.dnd-method button{flex:1;padding:8px 4px;font-size:12px}.dnd-pools li{font-size:12px;padding:3px 7px}.dnd-info div{grid-template-columns:100px 1fr}.dnd-subs{grid-template-columns:1fr}.dnd-feat p{margin-left:12px}.dnd-lvl-head{flex-wrap:wrap}}
 .dnd-seal svg{width:27px;height:27px}
 /* Cuaderno de cuero sobre la mesa de madera: mismo aspecto que el cuaderno que abre D&D en la vista principal. */
-.dnd{overflow-x:hidden;background:var(--nexo-wood);background-attachment:fixed,fixed,scroll,scroll,scroll}
+.dnd{overflow-x:hidden;background:var(--nexo-wood);background-attachment:fixed,fixed,scroll,scroll,scroll,scroll}
 .dnd-top{max-width:none;border-bottom:0;background:linear-gradient(#5a2f17,#3e1f0e);box-shadow:0 1px 0 #c79a4a55 inset,0 -1px 0 #1d0d05 inset,0 8px 18px -6px #000c;backdrop-filter:none}
 .dnd-top:after{content:'';position:absolute;left:12px;right:12px;bottom:6px;border-bottom:1.5px dashed #c79a4a80;pointer-events:none}
 .dnd-brand b{font:400 22px var(--dnd-fell);letter-spacing:.12em;color:#ecc77f;text-shadow:0 1px 0 #1d0d05}
@@ -262,3 +262,26 @@ html.nexo-dnd-open,html.nexo-dnd-open body{overflow:hidden}
 @media(max-width:900px){.dnd-page{padding:32px 26px 40px}}
 @media(max-width:640px){.dnd-top{padding:0 12px}.dnd-status{font-size:10px;max-width:96px;line-height:1.25}.dnd-brand b{font-size:19px}.dnd-brand small{font-size:10px;letter-spacing:.04em}.dnd-main{padding:18px 8px 50px}.dnd-book{padding:10px 10px 10px 16px;border-radius:4px 10px 10px 4px}.dnd-book:before{inset:7px 8px 7px 12px}.dnd-strap{display:none}.dnd-page{padding:24px 14px 30px}.dnd-panel{padding:20px 0 14px}.dnd-panel h2{font-size:22px}.dnd-card:nth-child(n){transform:none}}
 @media(prefers-reduced-motion:reduce){.dnd-book{animation:none}}
+
+/* ───── Inicio de campaña y texturas del cuaderno: pergamino con grano, cuero repujado y pan de oro ───── */
+.dnd{--dnd-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 .32 0 0 0 0 .2 0 0 0 0 .08 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.34'/%3E%3C/svg%3E")}
+.dnd-panel,.dnd-card{background-image:var(--dnd-grain),linear-gradient(170deg,var(--dnd-paper),var(--dnd-paper-2));background-blend-mode:multiply,normal}
+.dnd-card{transition:transform .2s cubic-bezier(.2,.8,.2,1),border-color .2s,box-shadow .25s}
+.dnd-card:hover{box-shadow:0 12px 20px -12px #3e1f0e88}
+.dnd-card:active{transform:scale(.985)}
+.dnd-list>.dnd-card{animation:ap-pop .45s cubic-bezier(.2,.8,.2,1) backwards}
+.dnd-list>.dnd-card:nth-child(2){animation-delay:.05s}.dnd-list>.dnd-card:nth-child(3){animation-delay:.1s}.dnd-list>.dnd-card:nth-child(4){animation-delay:.15s}.dnd-list>.dnd-card:nth-child(n+5){animation-delay:.2s}
+.ap-dnd .ap-hero-mark{border:0;color:#f7e7c4;background:radial-gradient(circle at 35% 30%,#c9902a,var(--dnd-amber) 60%,#4f3306);box-shadow:0 3px 0 #4f3306,inset 0 0 0 4px #6b4508,inset 0 0 0 5px #e6b96655,0 16px 26px -14px #3e1f0e}
+.ap-dnd .ap-tile{border:1px solid #2a1408;border-radius:7px;color:#f3e2bd;background:var(--dnd-grain),radial-gradient(120% 90% at 30% 0%,#8a4c26,var(--dnd-leather) 45%,var(--dnd-leather-dark));background-blend-mode:overlay,normal;box-shadow:inset 0 0 0 4px #0000,inset 0 0 0 5px #d1a92e59,inset 0 1px 0 #ffffff26,0 4px 0 #2a1408,0 12px 18px -10px #2a1408cc}
+.ap-dnd .ap-tile::after{content:'';position:absolute;inset:5px;border:1px dashed #e6c98a40;border-radius:4px;pointer-events:none}
+.ap-dnd .ap-tile:hover{border-color:#2a1408;box-shadow:inset 0 0 0 5px #d1a92e99,inset 0 1px 0 #ffffff33,0 6px 0 #2a1408,0 20px 24px -12px #2a1408}
+.ap-dnd .ap-tile:active{transform:translateY(3px) scale(.985);box-shadow:inset 0 0 0 5px #d1a92e80,0 1px 0 #2a1408}
+.ap-dnd .ap-tile-icon{color:var(--dnd-gold-hi);filter:drop-shadow(0 1px 0 #2a1408)}
+.ap-dnd .ap-tile b{color:#f7e7c4;text-shadow:0 1px 0 #2a1408}
+.ap-dnd .ap-tile small{color:#dcc391;font-family:var(--dnd-body);font-size:14px}
+.ap-dnd .ap-appbar{border-color:var(--dnd-line);background:var(--dnd-grain),linear-gradient(170deg,var(--dnd-paper),var(--dnd-paper-2));background-blend-mode:multiply,normal;box-shadow:0 2px 10px #615a4b1a}
+.ap-dnd .ap-appbar-home{border-color:#4f3306;background:linear-gradient(var(--dnd-amber-hi),var(--dnd-amber));color:#fbefd6;box-shadow:0 2px 0 #4f3306}
+.ap-dnd .ap-appbar-home:hover{background:linear-gradient(var(--dnd-gold),var(--dnd-amber-hi))}
+.ap-dnd .ap-appbar-copy b{color:var(--dnd-amber)}
+.ap-dnd .ap-hero-premise{font-family:var(--dnd-hand);font-size:18px}
+@media(prefers-reduced-motion:reduce){.dnd-list>.dnd-card{animation:none}.dnd-card,.dnd-button{transition:none}.dnd-card:hover,.dnd-card:active,.ap-dnd .ap-tile:active{transform:none}}

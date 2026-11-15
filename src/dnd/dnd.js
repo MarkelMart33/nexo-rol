@@ -103,7 +103,7 @@
 
   // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y el manual de este sistema).
   const ap = window.NEXO_APARTADOS?.create({
-    prefix: 'dnd', system: () => 'dnd', frame: body => frame(body),
+    prefix: 'dnd', system: () => 'dnd', home: true, frame: body => frame(body),
     leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
     characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Aventurero sin nombre', summary: describe(ch) })),
     openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
@@ -112,6 +112,16 @@
     words: { characters: 'aventureros', character: 'aventurero' }
   });
   const manualLink = (id, label) => ap?.link(id, label) || '';
+  // Nombre de un rasgo que, al tocarlo, asoma su regla del manual.
+  const term = (id, text) => ap?.term(id, text) || esc(text);
+
+  // Ficha común: exportar, importar e imprimir (src/nexo/ficha.js).
+  const kit = window.NEXO_FICHA?.create({
+    prefix: 'dnd', system: 'dnd', label: 'Dungeons & Dragons',
+    current: () => current, sheet: ch => sheetData(ch), template: newCharacter, before: () => flushSave(), flash: text => flash(text),
+    accept: ch => accept(ch), exists: id => store.characters.some(ch => ch.id === id),
+    put: ch => { store.characters = [ch, ...store.characters.filter(item => item.id !== ch.id)]; persist(); renderList(); }
+  });
 
   function load() {
     try {
@@ -122,6 +132,41 @@
   function normalize(ch) {
     ch.levels ||= {};
     ch.subclass ||= '';
+    return ch;
+  }
+  // Ficha que llega de un archivo: se ajusta a lo que el creador sabe manejar.
+  function accept(ch) {
+    normalize(ch);
+    ch.level = Math.max(1, Math.min(MAX_LEVEL, Math.trunc(ch.level) || 1));
+    if (!CLASSES[ch.cls]) ch.cls = '';
+    if (!SPECIES[ch.species]) ch.species = '';
+    if (!BACKGROUNDS[ch.bg]) ch.bg = '';
+    if (!['array', 'buy', 'roll'].includes(ch.method)) ch.method = 'roll';
+    if (!['21', '111'].includes(ch.bonusMode)) ch.bonusMode = '21';
+    if (!FEATS[ch.humanFeat]) ch.humanFeat = '';
+    const lo = ch.method === 'buy' ? 8 : 3;
+    const hi = ch.method === 'buy' ? 15 : 18;
+    ch.base = Object.fromEntries(ABILITIES.map(([k]) => {
+      const n = Math.trunc(Number(ch.base?.[k]));
+      return [k, ch.base?.[k] == null || !Number.isFinite(n) ? (ch.method === 'buy' ? 8 : null) : Math.max(lo, Math.min(hi, n))];
+    }));
+    ch.picks = Object.fromEntries(['class', 'species', 'feat', 'featH'].map(id => [id, Array.isArray(ch.picks?.[id]) ? ch.picks[id].filter(k => SKILLS[k]) : []]));
+    ch.langs = (Array.isArray(ch.langs) ? ch.langs : []).filter(l => LANGUAGES.includes(l)).slice(0, LANG_PICKS);
+    const keys = ABILITIES.map(([k]) => k);
+    const levels = {};
+    for (let l = 2; l <= MAX_LEVEL; l += 1) {
+      const e = ch.levels?.[l];
+      if (!e || typeof e !== 'object') continue;
+      const roll = Math.trunc(Number(e.roll));
+      levels[l] = { hp: e.hp === 'roll' ? 'roll' : 'avg' };
+      if (Number.isFinite(roll) && roll >= 1 && roll <= 12 && e.roll !== null && e.roll !== '') levels[l].roll = roll;
+      if (['asi2', 'asi11', 'feat'].includes(e.mode)) levels[l].mode = e.mode;
+      if (keys.includes(e.a)) levels[l].a = e.a;
+      if (keys.includes(e.b)) levels[l].b = e.b;
+      if (typeof e.feat === 'string') levels[l].feat = e.feat.slice(0, 60);
+    }
+    ch.levels = levels;
+    sanitize(ch);
     return ch;
   }
   function persist() {
@@ -510,7 +555,7 @@
       const done = isComplete(ch);
       return `<button class="dnd-card" data-open="${esc(ch.id)}"><span class="dnd-card-seal">${esc((ch.name || '?').trim().charAt(0).toUpperCase() || '?')}</span><span class="dnd-card-copy"><b>${esc(ch.name || 'Aventurero sin nombre')}</b><small>${esc(describe(ch))}</small></span><span class="dnd-badge ${done ? 'is-done' : ''}">${done ? 'LISTO' : 'EN CREACIÓN'}</span></button>`;
     }).join('') : '<div class="dnd-empty"><span>⚔</span><b>La taberna está vacía</b><small>Pulsa «Forjar un nuevo aventurero» para crear tu primer personaje.</small></div>';
-    frame(`${ap?.tabs('personajes') || ''}<p class="dnd-kicker">NEXO / DUNGEONS &amp; DRAGONS · REGLAS DE 2024</p><h1>Tus <em>aventureros</em></h1><p class="dnd-intro">Crea personajes con el Manual del Jugador de 2024: clase, especie y trasfondo, puntuaciones de característica con su mejora de trasfondo, habilidades e idiomas. NEXO calcula modificadores, puntos de golpe, salvaciones y habilidades, y guarda las fichas en este dispositivo.</p><div class="dnd-actions"><button class="dnd-button" data-new>✚ FORJAR UN NUEVO AVENTURERO</button><button class="dnd-button ghost" data-exit>← VOLVER A SISTEMAS</button></div><div class="dnd-list">${cards}</div>`);
+    frame(`${ap?.tabs('personajes') || ''}<p class="dnd-kicker">NEXO / DUNGEONS &amp; DRAGONS · REGLAS DE 2024</p><h1>Tus <em>aventureros</em></h1><p class="dnd-intro">Crea personajes con el Manual del Jugador de 2024: clase, especie y trasfondo, puntuaciones de característica con su mejora de trasfondo, habilidades e idiomas. NEXO calcula modificadores, puntos de golpe, salvaciones y habilidades, y guarda las fichas en este dispositivo.</p><div class="dnd-actions"><button class="dnd-button" data-new>✚ FORJAR UN NUEVO AVENTURERO</button>${kit?.importButton() || ''}<button class="dnd-button ghost" data-exit>← VOLVER A SISTEMAS</button></div><div class="dnd-list">${cards}</div>`);
     host.querySelector('[data-new]').addEventListener('click', () => openEditor(newCharacter()));
     host.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
       const ch = store.characters.find(item => item.id === button.dataset.open);
@@ -531,7 +576,7 @@
   function openEditor(ch) {
     current = ch;
     const saved = store.characters.some(item => item.id === ch.id);
-    frame(`<div class="dnd-editor-head"><button class="dnd-button ghost" data-back>← TUS AVENTUREROS</button><button class="dnd-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
+    frame(`<div class="dnd-editor-head"><button class="dnd-button ghost" data-back>← TUS AVENTUREROS</button>${kit?.tools() || ''}<button class="dnd-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
       <section class="dnd-panel"><h2><span>I</span> Identidad</h2><div class="dnd-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del personaje' })}${field('Jugador', 'player')}${field('Campaña', 'campaign')}${field('Alineamiento', 'alignment', { list: 'dndAlignments' })}
       </div><datalist id="dndAlignments">${ALIGNMENTS.map(a => `<option value="${esc(a)}">`).join('')}</datalist></section>
@@ -665,14 +710,65 @@
       const p = saveProf.includes(k);
       return `<li class="${p ? 'is-prof' : ''}"><i></i><span>${name}</span><button class="nd-roll-btn" data-dnd-roll="sv:${k}" aria-label="Tirar salvación de ${name}"><b>${signed(mod(ch, k) + (p ? pb : 0))}</b></button></li>`;
     }).join('');
-    const skills = ALL_SKILLS.map(k => `<li class="${prof.has(k) ? 'is-prof' : ''}"><i></i><span>${esc(SKILLS[k][0])} <small>${AB[SKILLS[k][1]].short}</small></span><button class="nd-roll-btn" data-dnd-roll="sk:${k}" aria-label="Tirar ${esc(SKILLS[k][0])}"><b>${signed(skillTotal(ch, k, prof))}</b></button></li>`).join('');
+    const skills = ALL_SKILLS.map(k => `<li class="${prof.has(k) ? 'is-prof' : ''}"><i></i><span>${term(`dnd-hab-${k}`, SKILLS[k][0])} <small>${AB[SKILLS[k][1]].short}</small></span><button class="nd-roll-btn" data-dnd-roll="sk:${k}" aria-label="Tirar ${esc(SKILLS[k][0])}"><b>${signed(skillTotal(ch, k, prof))}</b></button></li>`).join('');
     const extra = unarmoredExtra(ch);
     const unarmored = extra ? `Defensa sin armadura: 10 + DES + ${AB[extra].short}.` : 'Sin armadura: 10 + DES.';
     return `<section class="dnd-panel"><h2><span>V</span> Hoja calculada <small>${esc(describe(ch))}</small></h2>
-      <div class="dnd-stats">${stats.map(([k, v]) => `<div><small>${k}</small><b>${esc(v)}</b></div>`).join('')}</div>
-      ${slots ? `<p class="dnd-slots"><b>Espacios de conjuro</b>${slots.map((n, i) => `<span>${i + 1}º <b>${n}</b></span>`).join('')}</p>` : ''}
+      <div class="dnd-stats">${stats.map(([k, v]) => `<div><small>${STAT_RULES[k] ? term(STAT_RULES[k], k) : k}</small><b>${esc(v)}</b></div>`).join('')}</div>
+      ${slots ? `<p class="dnd-slots"><b>${term('dnd-espacios', 'Espacios de conjuro')}</b>${slots.map((n, i) => `<span>${i + 1}º <b>${n}</b></span>`).join('')}</p>` : ''}
       <p class="dnd-note dnd-stats-note">${unarmored} Puntos de golpe: máximo del dado + CON a nivel 1 y, en cada nivel siguiente, la media (${cls ? cls.die / 2 + 1 : '—'}) o tu tirada + CON${SPECIES[ch.species]?.hpPerLevel ? ', +1 por nivel (enano)' : ''}${hasFeat(ch, 'duro') ? ', +2 por nivel (Duro)' : ''}.</p>
-      <div class="dnd-cols dnd-cols-2"><div class="dnd-col"><div class="dnd-col-head"><h3>Tiradas de salvación</h3></div><ul class="dnd-rolls">${saves}</ul></div><div class="dnd-col"><div class="dnd-col-head"><h3>Habilidades</h3></div><ul class="dnd-rolls dnd-rolls-2">${skills}</ul></div></div></section>`;
+      <div class="dnd-cols dnd-cols-2"><div class="dnd-col"><div class="dnd-col-head"><h3>${term('dnd-salvaciones', 'Tiradas de salvación')}</h3></div><ul class="dnd-rolls">${saves}</ul></div><div class="dnd-col"><div class="dnd-col-head"><h3>Habilidades</h3></div><ul class="dnd-rolls dnd-rolls-2">${skills}</ul></div></div></section>`;
+  }
+
+  // Casillas de la hoja calculada que asoman su regla al tocarlas.
+  const STAT_RULES = { 'Bonif. competencia': 'dnd-competencia', 'Dados de golpe': 'dnd-descansos', 'CA sin armadura': 'dnd-clase-armadura', 'Iniciativa': 'dnd-iniciativa', 'CD de conjuros': 'dnd-cd-conjuros', 'Ataque de conjuro': 'dnd-ataque' };
+
+  // Hoja de solo lectura: lo que se imprime y lo que ve el narrador de una campaña compartida.
+  function sheetData(ch) {
+    const cls = CLASSES[ch.cls];
+    const sp = speciesInfo(ch);
+    const pb = profBonus(ch);
+    const prof = proficientSkills(ch);
+    const saveProf = saveProficiencies(ch);
+    const sub = subclassOf(ch);
+    const combat = [
+      { label: 'Puntos de golpe', value: hitPoints(ch) ?? '—' }, { label: 'CA sin armadura', value: armorClass(ch) },
+      { label: 'Iniciativa', value: signed(mod(ch, 'des') + (hasFeat(ch, 'alerta') ? pb : 0)) }, { label: 'Velocidad', value: sp ? speed(ch, sp) + ' pies' : '—' },
+      { label: 'Competencia', value: signed(pb) }, { label: 'Dados de golpe', value: cls ? `${ch.level}d${cls.die}` : '—' },
+      { label: 'Percepción pasiva', value: 10 + skillTotal(ch, 'percepcion', prof) }
+    ];
+    if (cls?.cast) combat.push({ label: 'CD de conjuros', value: 8 + pb + mod(ch, cls.cast) }, { label: 'Ataque de conjuro', value: signed(pb + mod(ch, cls.cast)) });
+    const slots = spellSlots(ch);
+    const improvements = improvementLevels(ch).map(l => {
+      const e = ch.levels[l] || {};
+      const name = k => AB[k]?.name || '';
+      if (l === BOON_LEVEL) return e.feat || e.a ? { name: e.feat || 'Don épico', tag: `Nivel ${l} · don épico`, text: e.a ? `+1 a ${name(e.a)}.` : '' } : null;
+      if (e.mode === 'asi2' && e.a) return { name: 'Mejora de característica', tag: `Nivel ${l}`, text: `+2 a ${name(e.a)}.` };
+      if (e.mode === 'asi11' && e.a) return { name: 'Mejora de característica', tag: `Nivel ${l}`, text: `+1 a ${name(e.a)}${e.b ? ` y +1 a ${name(e.b)}` : ''}.` };
+      if (e.mode === 'feat' && (e.feat || e.a)) return { name: e.feat || 'Dote', tag: `Nivel ${l} · dote`, text: e.a ? `+1 a ${name(e.a)}.` : '' };
+      return null;
+    });
+    const features = [
+      ...originFeats(ch).map(k => ({ name: FEATS[k][0], tag: 'Dote de origen', text: FEATS[k][1] })),
+      ...classFeatures(ch).filter(f => f.level <= ch.level && f.kind !== 'hito').map(f => ({ name: f.name, tag: `Nivel ${f.level}${f.kind === 'subclase' ? ' · ' + f.sub : ''}`, text: f.mech })),
+      ...improvements
+    ];
+    return {
+      system: 'Dungeons & Dragons · reglas de 2024', accent: '#8a5a0b', name: ch.name || 'Aventurero sin nombre',
+      subtitle: [describe(ch), sub?.name].filter(Boolean).join(' · '),
+      meta: [['Jugador', ch.player], ['Campaña', ch.campaign], ['Alineamiento', ch.alignment], ['Tamaño', ch.size]],
+      blocks: [
+        { title: 'Características', kind: 'stats', items: ABILITIES.map(([k, name]) => ({ label: name, value: score(ch, k) ?? '—', sub: score(ch, k) == null ? '' : signed(mod(ch, k)) })) },
+        { title: 'Combate', kind: 'stats', items: combat },
+        { title: 'Tiradas de salvación', kind: 'list', cols: 3, items: ABILITIES.map(([k, name]) => ({ name, value: signed(mod(ch, k) + (saveProf.includes(k) ? pb : 0)), mark: saveProf.includes(k) })) },
+        { title: 'Habilidades', kind: 'list', cols: 3, note: 'El punto marca las habilidades y salvaciones con competencia.', items: ALL_SKILLS.map(k => ({ name: `${SKILLS[k][0]} (${AB[SKILLS[k][1]].short})`, value: signed(skillTotal(ch, k, prof)), mark: prof.has(k) })) },
+        { title: 'Recursos de clase', kind: 'pairs', items: resources(ch) },
+        slots && { title: 'Espacios de conjuro', kind: 'tracks', items: slots.map((n, i) => ({ label: `Nivel ${i + 1}`, value: n, boxes: n })) },
+        { title: 'Competencias e idiomas', kind: 'pairs', items: [['Armaduras', cls?.armor], ['Armas', cls?.weapons], ['Herramienta', BACKGROUNDS[ch.bg]?.tool], ['Idiomas', ['Común', ...ch.langs].join(', ')], ['Visión en la oscuridad', sp ? (sp.dv ? sp.dv + ' pies' : 'No') : ''], ['Rasgos de especie', sp?.traits]] },
+        { title: 'Dotes y rasgos', kind: 'features', items: features },
+        { title: 'Equipo y notas', kind: 'text', text: ch.notes }
+      ]
+    };
   }
 
   const openFeats = new Set();
@@ -832,7 +928,7 @@
     document.head.append(fonts);
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/dnd/dnd.css?v=5';
+    stylesheet.href = './src/dnd/dnd.css?v=7';
     document.head.append(stylesheet);
     host = document.createElement('section');
     host.id = 'nexoDnd';
@@ -841,6 +937,7 @@
     host.setAttribute('aria-label', 'NEXO Dungeons & Dragons');
     document.body.append(host);
     ap?.mount(host);
+    kit?.mount(host);
     host.addEventListener('keydown', event => {
       if (event.key === 'Escape') host.querySelectorAll('.dnd-modal').forEach(modal => { modal.hidden = true; });
     });

@@ -1,5 +1,5 @@
 /* NEXO · Apartados (Personajes, Campañas, Manual). Cada sistema pone sus colores en las variables --ap-*. */
-.ap-tabs,.ap-view{--ap-text:#e8e2d6;--ap-muted:#a59d90;--ap-accent:#d8b46a;--ap-line:#4a4438;--ap-head:Georgia,serif;
+.ap-tabs,.ap-view,.ap-peek{--ap-text:#e8e2d6;--ap-muted:#a59d90;--ap-accent:#d8b46a;--ap-line:#4a4438;--ap-head:Georgia,serif;
   --ap-ink:inherit;--ap-ink-soft:var(--ap-muted);--ap-ink-accent:var(--ap-accent);--ap-ink-line:var(--ap-line);--ap-mark:#d8b46a55}
 .ap-pf{--ap-text:#d8cbe3;--ap-muted:#9c8bb0;--ap-accent:#e0b65a;--ap-line:#4f3566;--ap-head:var(--pf-display);--ap-ink:#2c1d33;--ap-ink-soft:#5e4a63;--ap-ink-accent:#2f7f86;--ap-ink-line:#b89c66;--ap-mark:#e0b65a66}
 .ap-vtm{--ap-text:#eadfd8;--ap-muted:#a8918c;--ap-accent:#e0213f;--ap-line:#3a1a22;--ap-head:var(--vtm-serif);--ap-ink:#eadfd8;--ap-ink-soft:#a8918c;--ap-ink-accent:#f07b8e;--ap-ink-line:#3a1a22;--ap-mark:#b3122e88}
@@ -106,6 +106,21 @@
 .ap-sheet-link{display:inline-flex;align-items:center;gap:5px;margin:4px 0;padding:4px 10px;border:1px solid currentColor;border-radius:999px;background:transparent;color:inherit;font:600 12px/1.4 inherit;letter-spacing:.06em;opacity:.8;cursor:pointer;vertical-align:middle}
 .ap-sheet-link:hover{opacity:1}
 
+/* Rasgos de la ficha que asoman su regla, y la ventanita donde se lee */
+.ap-term{display:inline;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;text-align:inherit;cursor:help;text-decoration:underline dotted;text-decoration-color:color-mix(in srgb,currentColor 50%,transparent);text-underline-offset:3px}
+.ap-term:hover,.ap-term:focus-visible{text-decoration-style:solid;text-decoration-color:currentColor}
+.ap-term:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.ap-peek{position:fixed;inset:0;z-index:45;display:grid;place-items:center;padding:16px;overflow:auto;background:#000b;overscroll-behavior:contain}
+.ap-peek-card{position:relative;box-sizing:border-box;color:var(--ap-ink);line-height:1.6;width:min(580px,100%);max-height:min(84vh,760px);margin:0!important;overflow:auto;box-shadow:0 24px 60px -10px #000d;animation:ap-peek-in .18s ease-out}
+.ap-peek-card .ap-title{padding-right:40px;font-size:clamp(22px,3.4vw,28px)}
+.ap-peek-card .ap-block{margin:14px 0}
+.ap-peek-kicker{margin:0 0 2px;padding-right:40px;color:var(--ap-ink-soft);font:600 12px var(--ap-head);letter-spacing:.14em;text-transform:uppercase}
+.ap-peek-x{position:absolute;top:10px;right:10px;z-index:1;display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid var(--ap-ink-line);border-radius:50%;background:transparent;color:var(--ap-ink)!important;font:400 20px/1 system-ui,sans-serif!important;cursor:pointer}
+.ap-peek-x:hover{border-color:var(--ap-ink-accent)}
+.ap-peek-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:16px}
+@keyframes ap-peek-in{from{opacity:0;transform:translateY(8px)}}
+@media (prefers-reduced-motion:reduce){.ap-peek-card{animation:none}}
+
 @media (max-width:820px){
   .ap-manual{grid-template-columns:minmax(0,1fr)}
   .ap-toc,.ap-page{min-width:0}
@@ -148,3 +163,82 @@
 /* El libro de D&D no vuelve a abrirse en cada vista de campañas o manual. */
 .dnd-book:has(.ap-view),.dnd-book:has(.ap-view) .dnd-page{animation:none!important}
 .game-selector .campaign-list[hidden],.game-selector .new-campaign[hidden]{display:none}
+
+/* ───── Movimiento común: entrada de vistas y pulsaciones. Se anula entero con movimiento reducido. ───── */
+@keyframes ap-rise{from{opacity:0;transform:translateY(14px)}}
+@keyframes ap-pop{from{opacity:0;transform:translateY(12px) scale(.95)}}
+@keyframes ap-mark{from{opacity:0;transform:scale(.6) rotate(-14deg)}}
+.ap-in{animation:ap-rise .42s cubic-bezier(.2,.8,.2,1) backwards}
+.ap-tab{transition:color .2s,background .25s,transform .15s cubic-bezier(.2,.8,.2,1)}
+.ap-tab:active{transform:scale(.95)}
+.ap-camp-card{transition:transform .2s cubic-bezier(.2,.8,.2,1),border-color .2s,box-shadow .2s}
+.ap-camp-card:active{transform:scale(.985)}
+
+/* ───── Inicio de campaña: portada y herramientas (el modelo de las partidas de Traveller) ───── */
+.ap-home .ap-head-row{margin-bottom:6px}
+.ap-hero{display:grid;justify-items:center;gap:4px;padding:18px 0 6px;text-align:center}
+.ap-hero-mark{display:grid;place-items:center;width:84px;height:84px;margin-bottom:12px;border:1px solid var(--ap-accent);border-radius:50%;color:var(--ap-accent);font:700 38px/1 var(--ap-head);background:radial-gradient(circle at 35% 28%,color-mix(in srgb,var(--ap-accent) 26%,transparent),transparent 70%);box-shadow:0 0 0 5px color-mix(in srgb,var(--ap-accent) 12%,transparent),0 14px 30px -16px #000c;animation:ap-mark .6s cubic-bezier(.2,.9,.25,1.2) backwards}
+.ap-view .ap-hero h1{margin:6px 0 0;max-width:100%;overflow-wrap:anywhere;font-size:clamp(30px,6vw,52px)}
+.ap-hero-premise{max-width:620px;margin:10px 0 0;color:var(--ap-muted);line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.ap-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:28px}
+.ap-tile{position:relative;display:grid;justify-items:center;align-content:start;gap:7px;min-width:0;padding:22px 10px 16px;border:1px solid var(--ap-line);border-radius:10px;background:color-mix(in srgb,var(--ap-line) 20%,transparent);color:var(--ap-text);font:inherit;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .2s cubic-bezier(.2,.8,.2,1),border-color .2s,box-shadow .25s,background .25s;animation:ap-pop .5s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0)*50ms + 90ms)}
+.ap-tile:hover{transform:translateY(-4px);border-color:var(--ap-accent);box-shadow:0 16px 28px -18px #000d}
+.ap-tile:active{transform:scale(.96);transition-duration:.08s}
+.ap-tile-icon{display:grid;place-items:center;width:52px;height:52px;color:var(--ap-accent);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.ap-tile-icon svg{width:38px;height:38px}
+.ap-tile:hover .ap-tile-icon{transform:scale(1.1) rotate(-4deg)}
+.ap-tile b{max-width:100%;font:700 14px var(--ap-head);letter-spacing:.12em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis}
+.ap-tile small{color:var(--ap-muted);font-size:12.5px}
+
+/* Herramienta abierta: barra con el botón de inicio, la herramienta y la campaña; pie con el guardado */
+.ap-appbar{display:flex;align-items:center;gap:12px;margin:0 0 18px;padding:8px 12px 8px 8px;border:1px solid var(--ap-line);border-radius:12px;background:color-mix(in srgb,var(--ap-line) 20%,transparent)}
+.ap-appbar-home{flex:none;display:grid;place-items:center;width:44px;height:44px;border:1px solid var(--ap-line);border-radius:9px;background:transparent;color:var(--ap-accent);cursor:pointer;transition:transform .15s,border-color .2s,background .2s}
+.ap-appbar-home:hover{border-color:var(--ap-accent);background:color-mix(in srgb,var(--ap-accent) 12%,transparent)}
+.ap-appbar-home:active{transform:scale(.92)}
+.ap-appbar-home svg{width:24px;height:24px}
+.ap-appbar-icon{flex:none;display:grid;place-items:center;width:30px;height:30px;color:var(--ap-accent)}
+.ap-appbar-icon svg{width:28px;height:28px}
+.ap-appbar-copy{display:grid;flex:1;min-width:0}
+.ap-appbar-copy small{color:var(--ap-muted);font:500 11px var(--ap-head);letter-spacing:.14em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ap-appbar-copy b{font:700 19px var(--ap-head);letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ap-danger-row{justify-content:flex-end}
+.ap-statusbar{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 14px;margin-top:20px;padding-top:12px;border-top:1px solid var(--ap-line);color:var(--ap-muted);font:500 11px var(--ap-head);letter-spacing:.13em;text-transform:uppercase}
+@media(max-width:520px){
+  .ap-tabs{width:100%}
+  .ap-tabs .ap-tab{flex:1 1 0;min-width:0;padding:9px 4px;font-size:13px;letter-spacing:.05em}
+  .ap-tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:22px}
+  .ap-tile{padding:18px 6px 14px}
+  .ap-hero-mark{width:70px;height:70px;font-size:32px}
+}
+@media(prefers-reduced-motion:reduce){
+  .ap-in,.ap-tile,.ap-hero-mark{animation:none!important}
+  .ap-tab,.ap-tile,.ap-tile-icon,.ap-camp-card,.ap-appbar-home{transition:none!important}
+  .ap-tile:hover,.ap-tile:active,.ap-tile:hover .ap-tile-icon,.ap-tab:active,.ap-camp-card:active,.ap-appbar-home:active{transform:none}
+}
+
+/* ───── Apertura de cada sistema y de las vistas de Traveller ───── */
+@keyframes ap-open{from{opacity:0}}
+.dnd:not([hidden]),.vtm:not([hidden]),.tor:not([hidden]),.cth:not([hidden]),.pf:not([hidden]),.nexo-profile:not([hidden]){animation:ap-open .38s ease-out}
+#gameSelector:not([hidden]) .selector-heading,#gameSelector:not([hidden]) .campaign-list,#gameSelector:not([hidden]) .new-campaign,#appWorkspace:not([hidden]){animation:ap-rise .42s cubic-bezier(.2,.8,.2,1) backwards}
+#gameSelector:not([hidden]) .campaign-list{animation-delay:.06s}
+#gameSelector:not([hidden]) .new-campaign{animation-delay:.12s}
+#appHome:not([hidden]) .app-tile{animation:ap-pop .5s cubic-bezier(.2,.8,.2,1) backwards}
+#appHome:not([hidden]) .app-tile:nth-child(2){animation-delay:.04s}#appHome:not([hidden]) .app-tile:nth-child(3){animation-delay:.08s}#appHome:not([hidden]) .app-tile:nth-child(4){animation-delay:.12s}#appHome:not([hidden]) .app-tile:nth-child(5){animation-delay:.16s}
+#appHome:not([hidden]) .app-tile:nth-child(6){animation-delay:.2s}#appHome:not([hidden]) .app-tile:nth-child(7){animation-delay:.24s}#appHome:not([hidden]) .app-tile:nth-child(8){animation-delay:.28s}#appHome:not([hidden]) .app-tile:nth-child(9){animation-delay:.32s}#appHome:not([hidden]) .app-tile:nth-child(n+10){animation-delay:.36s}
+#appHome:not([hidden]) .app-tile:active{transform:scale(.96)}
+.trv-list>.trv-card,.campaign-list>*{animation:ap-pop .45s cubic-bezier(.2,.8,.2,1) backwards}
+.trv-list>.trv-card:nth-child(2),.campaign-list>:nth-child(2){animation-delay:.05s}.trv-list>.trv-card:nth-child(3),.campaign-list>:nth-child(3){animation-delay:.1s}.trv-list>.trv-card:nth-child(n+4),.campaign-list>:nth-child(n+4){animation-delay:.15s}
+/* Traveller: trama de circuito tenue en paneles y tarjetas */
+.trv-card,.trv-panel{background-image:repeating-linear-gradient(0deg,#75e7df08 0 1px,transparent 1px 28px),repeating-linear-gradient(90deg,#75e7df06 0 1px,transparent 1px 28px),linear-gradient(150deg,#0e161a,#0b1114)}
+.trv-card{transition:transform .2s cubic-bezier(.2,.8,.2,1),border-color .2s,box-shadow .25s}
+.trv-card:hover{transform:translateY(-2px);box-shadow:0 14px 26px -16px #75e7df88}
+.trv-card:active{transform:scale(.985)}
+@media(prefers-reduced-motion:reduce){
+  .dnd,.vtm,.tor,.cth,.pf,.nexo-profile,#gameSelector *,#appWorkspace,#appHome .app-tile,.trv-list>.trv-card,.campaign-list>*{animation:none!important}
+  .trv-card{transition:none}
+  .trv-card:hover,.trv-card:active,#appHome:not([hidden]) .app-tile:active{transform:none}
+}
+/* La hoja de D&D no tiene fondo propio y la de Vampiro es translúcida: aquí la ventanita lleva el suyo. */
+.ap-dnd .ap-peek-card{padding:24px;border-radius:4px;background:linear-gradient(170deg,#f8efd8,#efe0bd);box-shadow:inset 0 0 0 1px #cbb07c,inset 0 0 0 5px #f3e8cc,inset 0 0 0 6px #c79a4a88,0 30px 50px -10px #000c}
+.ap-vtm .ap-peek-card{background-color:#14090d}
+.vtm-da .ap-vtm .ap-peek-card{background-color:#f3e6c4}

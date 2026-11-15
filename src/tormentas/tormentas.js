@@ -90,7 +90,7 @@
 
   // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y el manual de este sistema).
   const ap = window.NEXO_APARTADOS?.create({
-    prefix: 'tor', system: () => GAME, frame: body => frame(body),
+    prefix: 'tor', system: () => GAME, home: true, frame: body => frame(body),
     leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
     characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Héroe sin nombre', summary: describe(ch) })),
     openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
@@ -99,6 +99,16 @@
     words: { characters: 'héroes', character: 'héroe' }
   });
   const manualLink = (id, label) => ap?.link(id, label) || '';
+  // Nombre de un rasgo que, al tocarlo, asoma su regla del manual.
+  const term = (id, text) => ap?.term(id, text) || esc(text);
+
+  // Exportar, importar e imprimir la ficha (src/nexo/ficha.js).
+  const kit = window.NEXO_FICHA?.create({
+    prefix: 'tor', system: GAME, label: 'El Archivo de las Tormentas',
+    current: () => current, sheet: ch => sheetData(ch), template: newCharacter, before: () => flushSave(), flash: text => flash(text),
+    accept: ch => accept(ch), exists: id => store.characters.some(ch => ch.id === id),
+    put: ch => { store.characters = [ch, ...store.characters.filter(item => item.id !== ch.id)]; persist(); renderList(); }
+  });
 
   function load() {
     try {
@@ -179,6 +189,66 @@
     });
     if (!ORDERS[ch.order]) ch.order = '';
     ch.ideal = Math.max(0, Math.min(MAX_IDEAL, Math.trunc(ch.ideal) || 0));
+  }
+
+  // Ficha que llega de un archivo: se completa y se deja solo lo que el creador entiende.
+  function accept(raw) {
+    const ch = normalize(raw);
+    const int = (v, max) => Math.max(0, Math.min(max, Math.trunc(Number(v)) || 0));
+    const obj = v => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
+    ch.attrBonus = int(ch.attrBonus, 20);
+    ch.rankBonus = int(ch.rankBonus, 80);
+    ch.healthBonus = int(ch.healthBonus, 300);
+    ch.level = int(ch.level, MAX_LEVEL) || 1;
+    ch.attrs = Object.fromEntries(ATTRS.map(([k]) => [k, int(obj(ch.attrs)[k], 10)]));
+    ch.ranks = Object.fromEntries(Object.keys(SKILLS).map(k => [k, int(obj(ch.ranks)[k], 5)]).filter(([, n]) => n));
+    ch.cultures = ch.cultures.filter(k => typeof k === 'string');
+    ch.radiant = Boolean(ch.radiant);
+    sanitize(ch);
+    return ch;
+  }
+
+  // La ficha como datos para la hoja de solo lectura: lo que se imprime o se guarda como PDF.
+  function sheetData(ch) {
+    const a = ANCESTRIES[ch.ancestry];
+    const path = PATHS[ch.path];
+    const order = ch.radiant ? ORDERS[ch.order] : null;
+    const fue = band(attr(ch, 'fue'));
+    const inv = investiture(ch);
+    const expertises = [...ch.cultures.map(k => `Cultura ${CULTURES[k][0].toLowerCase()}`), ...extraExpertises(ch)];
+    return {
+      system: 'El Archivo de las Tormentas · Juego de rol del Cosmere', accent: '#1d4f7c',
+      name: ch.name || 'Héroe sin nombre', subtitle: describe(ch),
+      meta: [['Nivel', `${ch.level} · escalón ${tier(ch)}`], ['Jugador', ch.player], ['Campaña', ch.campaign]],
+      blocks: [
+        { title: 'Identidad', kind: 'pairs', items: [['Ascendencia', a?.name], ['Culturas', ch.cultures.map(k => CULTURES[k][0]).join(', ')], ['Camino heroico', path?.name], ['Especialidad', ch.spec], ['Propósito', ch.purpose], ['Obstáculo', ch.obstacle], ['Metas', ch.goals]] },
+        { title: 'Atributos', kind: 'stats', items: ATTRS.map(([k, name, short]) => ({ label: name, value: attr(ch, k), sub: short })) },
+        { title: 'Defensas y valores', kind: 'stats', items: [
+          { label: 'Defensa física', value: defense(ch, 'fisico') }, { label: 'Defensa cognitiva', value: defense(ch, 'cognitivo') }, { label: 'Defensa espiritual', value: defense(ch, 'espiritual') },
+          { label: 'Salud', value: health(ch) }, { label: 'Concentración', value: focus(ch) }, { label: 'Investidura', value: inv || '—' },
+          { label: 'Movimiento', value: MOVE[band(attr(ch, 'vel'))], sub: 'pies' }, { label: 'Recuperación', value: RECOVERY[band(attr(ch, 'vol'))], sub: 'dado' },
+          { label: 'Carga', value: LIFT[fue][1], sub: 'libras' }, { label: 'Levantar', value: LIFT[fue][0], sub: 'libras' }
+        ], note: `Sentidos: ${SENSES[band(attr(ch, 'cns'))].toLowerCase()}.` },
+        { title: 'Habilidades', kind: 'columns', note: 'El punto marca las habilidades con rango. El modificador es el atributo más el rango.', items: REALMS.map(([realm, name]) => ({
+          label: name,
+          items: Object.entries(SKILLS).filter(([, [, at]]) => AT[at].realm === realm).map(([k, [n, at]]) => ({ name: `${n} (${AT[at].short})${rank(ch, k) ? ` · rango ${rank(ch, k)}` : ''}`, value: signed(skillMod(ch, k)), mark: rank(ch, k) > 0 }))
+        })) },
+        { title: 'En partida', kind: 'tracks', items: [
+          { label: 'Salud', value: '', max: health(ch) }, { label: 'Concentración', value: '', max: focus(ch), boxes: focus(ch) }, inv ? { label: 'Investidura', value: '', max: inv, boxes: inv } : null
+        ] },
+        expertises.length ? { title: 'Pericias', kind: 'text', text: expertises.join(', ') } : null,
+        { title: 'Origen y camino', kind: 'features', items: [
+          a ? { name: a.name, tag: 'Ascendencia', text: a.traits } : null,
+          path ? { name: path.talent, tag: `Talento clave · ${path.name}`, text: path.talentText } : null
+        ] },
+        order ? { title: 'Camino radiante', kind: 'features', items: [
+          { name: order.name, tag: `Spren: ${ch.spren || order.spren}`, text: `${order.theme} Ideales pronunciados: ${ch.ideal} de ${MAX_IDEAL}.` },
+          ...order.surges.map(k => ({ name: SURGES[k][0], tag: 'Potencia', text: SURGES[k][1] }))
+        ] } : null,
+        { title: 'Talentos', kind: 'text', text: ch.talents },
+        { title: 'Equipo y notas', kind: 'text', text: ch.notes }
+      ]
+    };
   }
 
   function summary(ch) {
@@ -278,7 +348,7 @@
       const done = isComplete(ch);
       return `<button class="tor-card" data-open="${esc(ch.id)}"><span class="tor-card-gem">${esc((ch.name || '?').trim().charAt(0).toUpperCase() || '?')}</span><span class="tor-card-copy"><b>${esc(ch.name || 'Héroe sin nombre')}</b><small>${esc(describe(ch))}</small></span><span class="tor-badge ${done ? 'is-done' : ''}">${done ? 'LISTO' : 'EN CREACIÓN'}</span></button>`;
     }).join('') : '<div class="tor-empty"><span aria-hidden="true">✦</span><b>Las Llanuras están en calma</b><small>Pulsa «Despertar a un héroe» para crear tu primer personaje.</small></div>';
-    frame(`${ap?.tabs('personajes') || ''}<p class="tor-kicker">NEXO / JUEGO DE ROL DEL COSMERE · MANUAL DE STORMLIGHT</p><h1>Tus <em>héroes</em> de Roshar</h1><p class="tor-intro">Crea personajes de nivel 1: ascendencia, dos culturas, un camino heroico, 12 puntos de atributo y 4 rangos de habilidad. NEXO calcula defensas, salud, concentración, investidura, movimiento y sentidos, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="tor-actions"><button class="tor-button" data-new>✦ DESPERTAR A UN HÉROE</button><button class="tor-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="tor-list">${cards}</div>`);
+    frame(`${ap?.tabs('personajes') || ''}<p class="tor-kicker">NEXO / JUEGO DE ROL DEL COSMERE · MANUAL DE STORMLIGHT</p><h1>Tus <em>héroes</em> de Roshar</h1><p class="tor-intro">Crea personajes de nivel 1: ascendencia, dos culturas, un camino heroico, 12 puntos de atributo y 4 rangos de habilidad. NEXO calcula defensas, salud, concentración, investidura, movimiento y sentidos, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="tor-actions"><button class="tor-button" data-new>✦ DESPERTAR A UN HÉROE</button>${kit?.importButton() || ''}<button class="tor-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="tor-list">${cards}</div>`);
     host.querySelector('[data-new]').addEventListener('click', () => openEditor(newCharacter()));
     host.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
       const ch = store.characters.find(item => item.id === button.dataset.open);
@@ -303,7 +373,7 @@
   function openEditor(ch) {
     current = ch;
     const saved = store.characters.some(item => item.id === ch.id);
-    frame(`<div class="tor-editor-head"><button class="tor-button ghost" data-back>← TUS HÉROES</button><button class="tor-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
+    frame(`<div class="tor-editor-head"><button class="tor-button ghost" data-back>← TUS HÉROES</button>${kit?.tools() || ''}<button class="tor-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
       <section class="tor-panel">${heading(1, 'Identidad', 'concepto del personaje')}<div class="tor-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del personaje' })}${field('Jugador', 'player')}${field('Campaña', 'campaign')}
       </div><div class="tor-fields tor-fields-3">
@@ -363,9 +433,9 @@
     const left = attrBudget(ch) - attrSpent(ch);
     const cols = REALMS.map(([realm, name, def]) => {
       const rows = ATTRS.filter(a => a[3] === realm).map(([k, n]) => `<div class="tor-attr"><span class="tor-attr-name">${n}</span><span class="tor-stepper"><button data-attr="${k}" data-d="-1" aria-label="Bajar ${n}" ${attr(ch, k) <= 0 ? 'disabled' : ''}>−</button><b>${attr(ch, k)}</b><button data-attr="${k}" data-d="1" aria-label="Subir ${n}">+</button></span></div>`).join('');
-      return `<div class="tor-realm is-${realm}"><div class="tor-realm-head"><b>${name}</b><span class="tor-def"><small>${def}</small><b>${defense(ch, realm)}</b></span></div>${rows}</div>`;
+      return `<div class="tor-realm is-${realm}"><div class="tor-realm-head"><b>${name}</b><span class="tor-def"><small>${term('tor-defensas', def)}</small><b>${defense(ch, realm)}</b></span></div>${rows}</div>`;
     }).join('');
-    return `<section class="tor-panel">${heading(3, 'Atributos', `${attrBudget(ch)} puntos`)}<p class="tor-note">Reparte ${attrBudget(ch)} puntos entre los seis atributos (todos empiezan en 0${ch.level === 1 ? ', máximo 3 a nivel 1' : ''}). Cada pareja forma la defensa de su reino: 10 + los dos atributos. <span class="tor-left ${left === 0 ? 'is-done' : left < 0 ? 'is-over' : ''}">${left === 0 ? 'Todo repartido' : left > 0 ? `Te quedan ${left}` : `Te pasas en ${-left}`}</span></p><div class="tor-realms">${cols}</div></section>`;
+    return `<section class="tor-panel">${heading(3, term('tor-atributos', 'Atributos'), `${attrBudget(ch)} puntos`)}<p class="tor-note">Reparte ${attrBudget(ch)} puntos entre los seis atributos (todos empiezan en 0${ch.level === 1 ? ', máximo 3 a nivel 1' : ''}). Cada pareja forma la defensa de su reino: 10 + los dos atributos. <span class="tor-left ${left === 0 ? 'is-done' : left < 0 ? 'is-over' : ''}">${left === 0 ? 'Todo repartido' : left > 0 ? `Te quedan ${left}` : `Te pasas en ${-left}`}</span></p><div class="tor-realms">${cols}</div></section>`;
   }
 
   function skillsPanel(ch) {
@@ -376,7 +446,7 @@
         const r = rank(ch, k);
         const fromPath = pathSkill(ch) === k;
         const pips = Array.from({ length: cap }, (_, i) => `<i class="${i < r ? (fromPath && i === 0 ? 'is-path' : 'is-on') : ''}"></i>`).join('');
-        return `<li class="${r ? 'is-ranked' : ''}"><span class="tor-skill-name">${esc(n)} <small>${AT[a].short}</small></span><span class="tor-pips" aria-label="Rango ${r}">${pips}</span><span class="tor-mini"><button data-rank="${k}" data-d="-1" aria-label="Quitar rango a ${esc(n)}" ${(ch.ranks[k] || 0) <= 0 ? 'disabled' : ''}>−</button><button data-rank="${k}" data-d="1" aria-label="Añadir rango a ${esc(n)}">+</button></span><button class="nd-roll-btn tor-skill-mod" data-tor-roll="${k}" aria-label="Tirar ${esc(n)}"><b>${signed(skillMod(ch, k))}</b></button></li>`;
+        return `<li class="${r ? 'is-ranked' : ''}"><span class="tor-skill-name">${term(`tor-hab-${k}`, n)} <small>${AT[a].short}</small></span><span class="tor-pips" aria-label="Rango ${r}">${pips}</span><span class="tor-mini"><button data-rank="${k}" data-d="-1" aria-label="Quitar rango a ${esc(n)}" ${(ch.ranks[k] || 0) <= 0 ? 'disabled' : ''}>−</button><button data-rank="${k}" data-d="1" aria-label="Añadir rango a ${esc(n)}">+</button></span><button class="nd-roll-btn tor-skill-mod" data-tor-roll="${k}" aria-label="Tirar ${esc(n)}"><b>${signed(skillMod(ch, k))}</b></button></li>`;
       }).join('');
       return `<div class="tor-col"><h3>${name}</h3><ul class="tor-skills">${rows}</ul></div>`;
     }).join('');
@@ -393,6 +463,8 @@
       <label class="tor-field"><span>Pericias adicionales, separadas por comas ${need ? `<em class="tor-left ${left === 0 ? 'is-done' : left < 0 ? 'is-over' : ''}">${left === 0 ? 'Completo' : left > 0 ? `Faltan ${left}` : `Sobran ${-left}`}</em>` : ''}</span><input data-expertise value="${esc(ch.expertises)}" maxlength="300" placeholder="Ej.: Armadura ligera, Fabriales, Historia vorin"></label></section>`;
   }
 
+  // Casillas de la hoja calculada que asoman su regla al tocarlas.
+  const STAT_RULES = { 'Defensa física': 'tor-defensas', 'Defensa cognitiva': 'tor-defensas', 'Defensa espiritual': 'tor-defensas', 'Salud': 'tor-recursos', 'Concentración': 'tor-recursos', 'Investidura': 'tor-recursos', 'Dado de recuperación': 'tor-descanso' };
   function sheetPanel(ch) {
     const fue = band(attr(ch, 'fue'));
     const stats = [
@@ -402,13 +474,13 @@
       ['Capacidad de carga', `${LIFT[fue][1]} lb`], ['Levantar', `${LIFT[fue][0]} lb`], ['Nivel', `${ch.level} · escalón ${tier(ch)}`]
     ];
     return `<section class="tor-panel">${heading(6, 'Hoja calculada', esc(describe(ch)))}
-      <div class="tor-stats">${stats.map(([k, v]) => `<div><small>${k}</small><b>${esc(v)}</b></div>`).join('')}</div>
+      <div class="tor-stats">${stats.map(([k, v]) => `<div><small>${term(STAT_RULES[k], k)}</small><b>${esc(v)}</b></div>`).join('')}</div>
       <p class="tor-note">Salud: 10 + Fuerza${ch.healthBonus ? ' + lo ganado al subir de nivel' : ''}. Concentración: 2 + Voluntad. Investidura: 2 + el mayor entre Consciencia y Presencia, solo tras pronunciar el Primer Ideal. Movimiento, carga, sentidos y dado de recuperación salen de Velocidad, Fuerza, Consciencia y Voluntad.</p></section>`;
   }
 
   function radiantPanel(ch) {
     const order = ORDERS[ch.order];
-    const surges = order ? order.surges.map(k => `<div class="tor-surge"><b>${esc(SURGES[k][0])}</b><small>${esc(SURGES[k][1])}</small></div>`).join('') : '';
+    const surges = order ? order.surges.map(k => `<div class="tor-surge"><b>${term(`tor-pot-${k}`, SURGES[k][0])}</b><small>${esc(SURGES[k][1])}</small></div>`).join('') : '';
     const ideals = Array.from({ length: MAX_IDEAL }, (_, i) => `<button class="tor-ideal ${i < ch.ideal ? 'is-on' : ''}" data-ideal="${i + 1}" aria-pressed="${i < ch.ideal}" aria-label="${i + 1}º Ideal">${ROMAN[i]}</button>`).join('');
     return `<section class="tor-panel tor-radiant ${ch.radiant ? 'is-active' : ''}">${heading(7, 'Camino radiante', 'vínculo náhel')}
       <label class="tor-switch"><input type="checkbox" data-radiant ${ch.radiant ? 'checked' : ''}><span>Mi personaje sigue el camino radiante</span></label>
@@ -460,7 +532,7 @@
     fonts.href = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap';
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/tormentas/tormentas.css?v=1';
+    stylesheet.href = './src/tormentas/tormentas.css?v=2';
     document.head.append(fonts, stylesheet);
     host = document.createElement('section');
     host.id = 'nexoTormentas';
@@ -469,6 +541,7 @@
     host.setAttribute('aria-label', 'NEXO El Archivo de las Tormentas');
     document.body.append(host);
     ap?.mount(host);
+    kit?.mount(host);
     host.addEventListener('keydown', event => {
       if (event.key === 'Escape') host.querySelectorAll('.tor-modal').forEach(modal => { modal.hidden = true; });
     });

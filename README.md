@@ -74,6 +74,16 @@ Cada sistema tiene su lanzador de dados (`src/nexo/dice.js`), con el aspecto de 
 - La llamada de Cthulhu: d100 contra la habilidad con éxito normal, difícil (mitad), extremo (quinto) y crítico (01), dados de bonificación y penalización y pifias (100, o de 96 a 100 con menos de 50).
 - Pathfinder 2ª edición: d20 + modificador contra la CD con cuatro grados de éxito (±10 marca el crítico) y el 20 o el 1 naturales subiendo o bajando un grado; fortuna e infortunio y daño doble en el crítico.
 
+## Fichas: exportar, importar, imprimir y copia de seguridad
+
+Lo comparten las fichas de Vampiro, D&D, El Archivo de las Tormentas, La llamada de Cthulhu y Pathfinder (`src/nexo/ficha.js`, `src/nexo/ficha.css` y `src/nexo/copias.js`):
+
+- **Exportar e importar una ficha**: «Exportar», en la cabecera de la ficha, la guarda en un archivo JSON; «Importar ficha», en la lista de personajes, la añade desde un archivo. Si esa ficha ya existe se puede sustituir o importar como copia. Lo importado se revisa antes de guardarse: cada sistema completa la ficha y descarta lo que no entiende (su función `accept`).
+- **Imprimir o guardar como PDF**: «Imprimir» abre la ficha como hoja de solo lectura, con sus valores calculados y casillas para llevar en papel la vida, la sangre o la cordura. Cada sistema describe esa hoja como datos en su función `sheetData`, y `ficha.js` la pinta igual para todos.
+- **Copia de seguridad completa**: en el perfil, «Descargar copia completa» guarda en un archivo todas las fichas, las campañas y las partidas de Traveller de este dispositivo. «Restaurar desde un archivo» añade lo que falte y actualiza lo que en el archivo sea más reciente, sin borrar nada; con cuenta, lo restaurado se sube también a la nube.
+- **Regla al tocar un rasgo**: en la ficha, los nombres subrayados con puntos (habilidades, características, disciplinas, casillas de la hoja calculada) y los botones del manual abren una ventanita con la mecánica y la narrativa de esa regla, sin salir de la ficha, con un botón para abrirla en el manual. Un rasgo se enlaza con `term(id, texto)` y el id de su entrada del manual.
+- **Tiradas al diario**: tras tirar, la ventana de dados ofrece «Al diario», que apunta la tirada en la sesión de hoy de una campaña de ese sistema (la crea si no existe).
+
 ## Vista principal
 
 El selector de sistemas (`src/nexo/terminal-shell.js` y `mesa.css`) es una mesa de madera con un objeto por sistema: una PDA para Traveller, un cuaderno de cuero para D&D, un móvil para Vampiro, un manuscrito para Vampiro: Edad Oscura, una vinculacaña para El Archivo de las Tormentas y un expediente para La llamada de Cthulhu y una brújula de explorador sobre un mapa para Pathfinder. Los objetos llegan a la mesa con una animación, se levantan al pasar por encima (el cuaderno se entreabre, la PDA ilumina la pantalla, el móvil vibra, del expediente asoma una fotografía y la aguja de la brújula da la vuelta hasta el norte) y se acercan al elegirlos. Con «reducir movimiento» activado no hay animaciones. Los emblemas de cada sistema están en `src/nexo/icons.js`. La pantalla de carga, la de cuenta y el perfil comparten la misma madera, papel y cuero (`src/nexo/nexo.css`).

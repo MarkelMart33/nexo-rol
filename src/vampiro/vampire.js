@@ -94,7 +94,7 @@
   // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y src/vampiro/vampiro-manual.js).
   // Noches modernas y Edad Oscura tienen cada una sus campañas y su manual.
   const ap = window.NEXO_APARTADOS?.create({
-    prefix: 'vtm', system: () => (side === 'da' ? 'vampiro-da' : 'vampiro-v20'), frame: body => frame(body),
+    prefix: 'vtm', system: () => (side === 'da' ? 'vampiro-da' : 'vampiro-v20'), home: true, frame: body => frame(body),
     leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
     characters: () => store.characters.filter(ch => ch.era === side).map(ch => ({ id: ch.id, name: ch.name || (side === 'da' ? 'Cainita sin nombre' : 'Vástago sin nombre'), summary: `${clanOf(ch).name} · ${generation(ch)}ª generación` })),
     openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
@@ -103,6 +103,22 @@
     words: { characters: 'vástagos', character: 'vástago' }
   });
   const manualLink = (id, label) => ap?.link(id, label) || '';
+  // Nombre de un rasgo que, al tocarlo, asoma su regla del manual.
+  const term = (id, text) => ap?.term(id, text) || esc(text);
+
+  // Exportar, importar e imprimir la ficha (src/nexo/ficha.js).
+  const kit = window.NEXO_FICHA?.create({
+    prefix: 'vtm', system: 'vampiro', label: 'Vampiro',
+    current: () => current, sheet: ch => sheetData(ch), template: () => newCharacter(side), before: () => flushSave(), flash: text => flash(text),
+    accept: ch => accept(ch), exists: id => store.characters.some(ch => ch.id === id),
+    put: ch => {
+      store.characters = [ch, ...store.characters.filter(item => item.id !== ch.id)];
+      persist();
+      renderList();
+      // Cada ambientación es su apartado: si la ficha es de la otra, se avisa de dónde queda.
+      return ch.era === side ? '' : `«${ch.name || 'Sin nombre'}» importada. Es de ${ERAS[ch.era].name}: la encontrarás en ese apartado.`;
+    }
+  });
 
   function load() {
     try {
@@ -128,6 +144,86 @@
     if (!PHASES[ch.phase]) ch.phase = 'base';
     return ch;
   }
+  // Ficha que llega de un archivo: se completa y se deja solo lo que el creador entiende.
+  function accept(ch) {
+    const int = (v, min, max) => Math.max(min, Math.min(max, Math.trunc(Number(v)) || 0));
+    const text = (v, max = 80) => String(v ?? '').slice(0, max);
+    const date = v => { const d = new Date(v); return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString(); };
+    const rows = v => (Array.isArray(v) ? v : []).filter(item => item && typeof item === 'object');
+    normalize(ch);
+    if (!era(ch).clans[ch.clan]) ch.clan = 'caitiff';
+    if (!era(ch).roads.includes(ch.road)) ch.road = 'humanidad';
+    ch.freebies = int(ch.freebies, 0, 99);
+    ch.xpStart = int(ch.xpStart, 0, 9999);
+    ['humF', 'wpF', 'humX', 'wpX'].forEach(k => { ch[k] = int(ch[k], 0, 10); });
+    ['attrs', 'abil', 'disc', 'bg', 'virt'].forEach(kind => {
+      const out = {};
+      Object.entries(ch[kind] && typeof ch[kind] === 'object' ? ch[kind] : {}).forEach(([key, t]) => {
+        if (/^[a-z0-9_]+$/.test(key) && t && typeof t === 'object') out[key] = { b: int(t.b, 0, 10), f: int(t.f, 0, 10), x: int(t.x, 0, 10) };
+      });
+      ch[kind] = out;
+    });
+    const prio = (value, ids) => {
+      const picked = ids.map(id => int(value?.[id], 0, 2));
+      return Object.fromEntries(ids.map((id, i) => [id, new Set(picked).size === 3 ? picked[i] : i]));
+    };
+    ch.attrPrio = prio(ch.attrPrio, ['fisicos', 'sociales', 'mentales']);
+    ch.abilPrio = prio(ch.abilPrio, ['talentos', 'tecnicas', 'conocimientos']);
+    ch.extraDisc = [...new Set(ch.extraDisc.filter(key => typeof key === 'string' && DISC_NAMES[key]))];
+    ch.merits = rows(ch.merits).slice(0, 60).map(m => ({ type: m.type === 'defecto' ? 'defecto' : 'merito', name: text(m.name, 60), points: int(m.points, 1, 7) }));
+    ch.xpLog = rows(ch.xpLog).slice(0, 500).map(e => ({ amount: int(e.amount, 0, 999), note: text(e.note), at: date(e.at) }));
+    ch.diablerie = rows(ch.diablerie).slice(0, 60).map(e => ({
+      id: text(e.id, 40) || crypto.randomUUID(), at: date(e.at), victim: text(e.victim, 60), victimGen: int(e.victimGen, 3, 15), victimWP: int(e.victimWP, 1, 10),
+      genBefore: int(e.genBefore, 4, 15), genSteps: int(e.genSteps, 0, 9), humLoss: Boolean(e.humLoss), discGift: DISC_NAMES[e.discGift] ? e.discGift : '', notes: text(e.notes, 120),
+      rolled: e.rolled && typeof e.rolled === 'object' ? { turns: int(e.rolled.turns, 0, 999), successes: int(e.rolled.successes, 0, 999) } : null
+    }));
+    return ch;
+  }
+
+  // La ficha como datos para la hoja de solo lectura: lo que se imprime o se guarda como PDF.
+  function sheetData(ch) {
+    const e = era(ch);
+    const clan = clanOf(ch);
+    const gen = generation(ch);
+    const [blood, perTurn] = GENERATIONS[gen] || GENERATIONS[13];
+    const top = Math.max(5, TRAIT_MAX[gen] || 5);
+    const dots = (kind, entries, max) => entries.map(([key, label]) => ({ name: label, value: value(ch, kind, key), max }));
+    const groups = (kind, list) => list.map(g => ({ label: g.label, dots: true, items: dots(kind, g.traits, top) }));
+    const bgs = e.backgrounds.filter(([key]) => value(ch, 'bg', key) > 0);
+    const xpLeft = xpBudget(ch) - xpSpent(ch);
+    const crime = ch.era === 'da' ? 'Amaranto' : 'Diablerie';
+    return {
+      system: ch.era === 'da' ? 'Vampiro: Edad Oscura · 20º aniversario' : 'Vampiro: La Mascarada · 20º aniversario', accent: '#8e1414',
+      name: ch.name || (ch.era === 'da' ? 'Cainita sin nombre' : 'Vástago sin nombre'), subtitle: ch.concept,
+      meta: [['Clan', clan.name], ['Generación', `${gen}ª`], ['Jugador', ch.player], ['Crónica', ch.chronicle]],
+      blocks: [
+        { title: 'Concepto', kind: 'pairs', items: [['Naturaleza', ch.nature], ['Conducta', ch.demeanor], ['Sire', ch.sire], [ch.era === 'da' ? 'Facción' : 'Secta', ch.sect], ['Senda', e.roads.length > 1 ? road(ch).name : ''], ['Ambientación', e.name]] },
+        { title: 'Atributos', kind: 'columns', items: groups('attrs', ATTRS) },
+        { title: 'Habilidades', kind: 'columns', items: groups('abil', abilityGroups(ch)) },
+        { title: 'Ventajas', kind: 'columns', items: [
+          { label: 'Disciplinas', dots: true, items: dots('disc', shownDisciplines(ch), top) },
+          { label: 'Trasfondos', dots: true, items: dots('bg', bgs, 5) },
+          { label: 'Virtudes', dots: true, items: dots('virt', virtues(ch), 5) }
+        ] },
+        { title: 'La sangre', kind: 'stats', items: [
+          { label: road(ch).name, value: humanity(ch) }, { label: 'Fuerza de Voluntad', value: willpower(ch) }, { label: 'Generación', value: `${gen}ª` },
+          { label: 'Reserva de sangre', value: blood, sub: 'máxima' }, { label: 'Sangre por turno', value: perTurn }, { label: 'Máximo de rasgos', value: top }
+        ] },
+        { title: 'En partida', kind: 'tracks', note: 'Salud: Magullado · Lastimado −1 · Lesionado −1 · Herido −2 · Malherido −2 · Tullido −5 · Incapacitado.', items: [
+          { label: 'Reserva de sangre', value: '', max: blood, boxes: blood }, { label: 'Fuerza de Voluntad', value: '', max: willpower(ch), boxes: willpower(ch) }, { label: 'Niveles de salud', value: '', max: 7, boxes: 7 }
+        ] },
+        { title: `Debilidad del clan ${clan.name}`, kind: 'text', text: clan.weak },
+        ch.merits.length ? { title: 'Méritos y defectos', kind: 'list', cols: 2, items: ch.merits.map(m => ({ name: `${m.name || 'Sin nombre'} (${m.type === 'defecto' ? 'defecto' : 'mérito'})`, value: `${m.points} pt` })) } : null,
+        { title: 'Experiencia', kind: 'pairs', items: [['PX ganados', xpBudget(ch)], ['PX gastados', xpSpent(ch)], ['PX disponibles', xpLeft]] },
+        ch.diablerie.length ? { title: `${crime}: almas devoradas`, kind: 'features', items: ch.diablerie.map(d => ({
+          name: d.victim || 'Víctima sin nombre', tag: `${d.victimGen}ª generación`,
+          text: [d.genSteps ? `De ${d.genBefore}ª a ${d.genBefore - d.genSteps}ª generación` : 'Sin cambio de generación', d.humLoss ? `−1 ${road(ch).name}` : '', d.discGift ? `+1 ${DISC_NAMES[d.discGift] || d.discGift}` : '', d.notes].filter(Boolean).join(' · ')
+        })) } : null,
+        { title: 'Notas', kind: 'text', text: ch.notes }
+      ]
+    };
+  }
+
   function persist() {
     try { localStorage.setItem(KEY, JSON.stringify(store)); } catch { return false; }
     window.NEXO_CLOUD?.save('vampiro', KEY, store).then(ok => {
@@ -420,8 +516,8 @@
       return `<button class="vtm-card" data-open="${esc(ch.id)}"><span class="vtm-card-sigil">${esc((ch.name || '?').trim().charAt(0).toUpperCase() || '?')}</span><span class="vtm-card-copy"><b>${esc(ch.name || 'Vástago sin nombre')}</b><small>${esc(clanOf(ch).name)} · ${generation(ch)}ª generación${ch.concept ? ' · ' + esc(ch.concept) : ''}</small></span><span class="vtm-badge ${done ? 'is-done' : ''}">${done ? 'COMPLETO' : 'EN CREACIÓN'}</span></button>`;
     }).join('') : (side === 'da' ? '<div class="vtm-empty"><span>✠</span><b>El códice aún está en blanco</b><small>Escribe en él el nombre de tu primer Cainita.</small></div>' : '<div class="vtm-empty"><span>☩</span><b>La noche aún está vacía</b><small>Abraza a tu primer vástago de las noches modernas.</small></div>');
     const intro = side === 'da'
-      ? `<p class="vtm-kicker">NEXO / VAMPIRO: EDAD OSCURA · 20º ANIVERSARIO</p><h1>Crónicas de los <em>Cainitas</em></h1><p class="vtm-intro">Anno Domini MCCXLII. Crea a tus Cainitas con las reglas de Edad Oscura V20: sus clanes, sus sendas, sus habilidades y trasfondos, puntos gratuitos y experiencia.</p><div class="vtm-actions"><button class="vtm-button" data-new="da">✚ ESCRIBIR UN NUEVO CAINITA</button><button class="vtm-button ghost" data-exit>← VOLVER A LA MESA</button></div>`
-      : `<p class="vtm-kicker">NEXO / VAMPIRO: LA MASCARADA · 20º ANIVERSARIO</p><h1>Tus <em>vástagos</em></h1><p class="vtm-intro">Crea personajes de las noches modernas con las reglas de V20: prioridades de atributos y habilidades, disciplinas, trasfondos, virtudes, puntos gratuitos y experiencia.</p><div class="vtm-actions"><button class="vtm-button" data-new="v20">✚ ABRAZAR UN NUEVO VÁSTAGO</button><button class="vtm-button ghost" data-exit>← VOLVER A LA MESA</button></div>`;
+      ? `<p class="vtm-kicker">NEXO / VAMPIRO: EDAD OSCURA · 20º ANIVERSARIO</p><h1>Crónicas de los <em>Cainitas</em></h1><p class="vtm-intro">Anno Domini MCCXLII. Crea a tus Cainitas con las reglas de Edad Oscura V20: sus clanes, sus sendas, sus habilidades y trasfondos, puntos gratuitos y experiencia.</p><div class="vtm-actions"><button class="vtm-button" data-new="da">✚ ESCRIBIR UN NUEVO CAINITA</button>${kit?.importButton() || ''}<button class="vtm-button ghost" data-exit>← VOLVER A LA MESA</button></div>`
+      : `<p class="vtm-kicker">NEXO / VAMPIRO: LA MASCARADA · 20º ANIVERSARIO</p><h1>Tus <em>vástagos</em></h1><p class="vtm-intro">Crea personajes de las noches modernas con las reglas de V20: prioridades de atributos y habilidades, disciplinas, trasfondos, virtudes, puntos gratuitos y experiencia.</p><div class="vtm-actions"><button class="vtm-button" data-new="v20">✚ ABRAZAR UN NUEVO VÁSTAGO</button>${kit?.importButton() || ''}<button class="vtm-button ghost" data-exit>← VOLVER A LA MESA</button></div>`;
     frame(`${ap?.tabs('personajes') || ''}${intro}<div class="vtm-list">${cards}</div>`);
     host.querySelectorAll('[data-new]').forEach(button => button.addEventListener('click', () => openEditor(newCharacter(button.dataset.new))));
     host.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
@@ -452,7 +548,7 @@
     const options = (entries, selected) => entries.map(([key, label]) => `<option value="${key}" ${key === selected ? 'selected' : ''}>${esc(label)}</option>`).join('');
     const clanOptions = options(Object.entries(e.clans).map(([key, clan]) => [key, clan.name]), ch.clan);
     const roadOptions = options(e.roads.map(key => [key, ROADS[key].name]), ch.road);
-    frame(`<div class="vtm-editor-head"><button class="vtm-button ghost" data-back>← ${side === 'da' ? 'TUS CAINITAS' : 'TUS VÁSTAGOS'}</button><span class="vtm-era-tag">${esc(e.name)}</span><button class="vtm-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
+    frame(`<div class="vtm-editor-head"><button class="vtm-button ghost" data-back>← ${side === 'da' ? 'TUS CAINITAS' : 'TUS VÁSTAGOS'}</button><span class="vtm-era-tag">${esc(e.name)}</span>${kit?.tools() || ''}<button class="vtm-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
       <section class="vtm-panel"><h2><span>I</span> Concepto</h2><div class="vtm-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del vástago' })}${field('Jugador', 'player')}${field('Crónica', 'chronicle')}
         ${field('Concepto', 'concept', { placeholder: ch.era === 'da' ? 'Ej.: Caballero desheredado' : 'Ej.: Detective caído en desgracia' })}${field('Naturaleza', 'nature', { list: 'vtmArchetypes' })}${field('Conducta', 'demeanor', { list: 'vtmArchetypes' })}
@@ -505,7 +601,7 @@
       const cls = i <= min ? 'inn' : i <= min + g ? 'dia' : i <= min + g + t.b ? 'base' : i <= min + g + t.b + t.f ? 'free' : i <= min + g + t.b + t.f + t.x ? 'xp' : '';
       html += `<button class="vtm-dot ${cls}" data-dot="${kind}" data-key="${key}" data-n="${i}" ${i > max ? 'disabled' : ''} aria-label="${esc(label)} ${i}"></button>`;
     }
-    return `<div class="vtm-trait"><span>${esc(label)}${extra}</span><span class="vtm-dots">${html}</span></div>`;
+    return `<div class="vtm-trait"><span>${kind === 'disc' ? term(`vtm-dis-${key}`, label) : esc(label)}${extra}</span><span class="vtm-dots">${html}</span></div>`;
   }
   function track(kind, label, base, free, xp, lost = 0) {
     const total = Math.min(10, base + free + xp);
@@ -514,7 +610,8 @@
       const cls = i > total - lost && i <= total ? 'lost' : i <= base ? 'base' : i <= base + free ? 'free' : i <= base + free + xp ? 'xp' : '';
       html += `<button class="vtm-dot ${cls}" data-track="${kind}" data-n="${i}" aria-label="${esc(label)} ${i}"></button>`;
     }
-    return `<div class="vtm-track"><span>${esc(label)} <b>${Math.max(0, total - lost)}</b>${lost ? ` <small class="vtm-out">−${lost} por ${current?.era === 'da' ? 'Amaranto' : 'diablerie'}</small>` : ''}</span><span class="vtm-dots">${html}</span></div>`;
+    const rule = kind === 'wp' ? 'vtm-voluntad' : current?.road && current.road !== 'humanidad' ? `vtm-senda-${current.road}` : 'vtm-humanidad';
+    return `<div class="vtm-track"><span>${term(rule, label)} <b>${Math.max(0, total - lost)}</b>${lost ? ` <small class="vtm-out">−${lost} por ${current?.era === 'da' ? 'Amaranto' : 'diablerie'}</small>` : ''}</span><span class="vtm-dots">${html}</span></div>`;
   }
   function left(kind, key) {
     const p = pool(current, kind, key);
@@ -562,13 +659,13 @@
         <ul class="vtm-pools">${rows.map(r => `<li class="${r.left === 0 ? 'is-done' : r.left < 0 ? 'is-over' : ''}${r.kind ? ' is-free' : ''}"><span>${r.label}</span><b>${r.left < 0 ? '+' + (-r.left) : r.left}</b><small>/ ${r.budget}</small></li>`).join('')}<li class="is-xp ${xpLeft < 0 ? 'is-over' : ''}"><span>PX disponibles</span><b>${xpLeft}</b><small>/ ${xpBudget(ch)}</small></li></ul>
         <p class="vtm-legend"><i class="vtm-dot inn"></i> Base <i class="vtm-dot base"></i> Reparto inicial <i class="vtm-dot free"></i> Puntos gratuitos <i class="vtm-dot xp"></i> Experiencia</p>
       </section>
-      <section class="vtm-panel"><h2><span>III</span> Atributos <small>7 / 5 / 3</small></h2><div class="vtm-cols">${ATTRS.map(g => `<div class="vtm-col"><div class="vtm-col-head"><h3>${g.label}</h3>${prioSelect('attrs', g)}${left('attrs', g.traits[0][0])}</div>${g.traits.map(([k, l]) => dots('attrs', k, l)).join('')}</div>`).join('')}</div></section>
-      <section class="vtm-panel"><h2><span>IV</span> Habilidades <small>13 / 9 / 5</small></h2><div class="vtm-cols">${abilityGroups(ch).map(g => `<div class="vtm-col"><div class="vtm-col-head"><h3>${g.label}</h3>${prioSelect('abil', g)}${left('abil', g.traits[0][0])}</div>${g.traits.map(([k, l]) => dots('abil', k, l)).join('')}</div>`).join('')}</div></section>
+      <section class="vtm-panel"><h2><span>III</span> Atributos <small>7 / 5 / 3</small></h2><div class="vtm-cols">${ATTRS.map(g => `<div class="vtm-col"><div class="vtm-col-head"><h3>${term(`vtm-atr-${g.id}`, g.label)}</h3>${prioSelect('attrs', g)}${left('attrs', g.traits[0][0])}</div>${g.traits.map(([k, l]) => dots('attrs', k, l)).join('')}</div>`).join('')}</div></section>
+      <section class="vtm-panel"><h2><span>IV</span> Habilidades <small>13 / 9 / 5</small></h2><div class="vtm-cols">${abilityGroups(ch).map(g => `<div class="vtm-col"><div class="vtm-col-head"><h3>${term(`vtm-hab-${g.id}`, g.label)}</h3>${prioSelect('abil', g)}${left('abil', g.traits[0][0])}</div>${g.traits.map(([k, l]) => dots('abil', k, l)).join('')}</div>`).join('')}</div></section>
       <section class="vtm-panel"><h2><span>V</span> Ventajas</h2><div class="vtm-cols">
         <div class="vtm-col"><div class="vtm-col-head"><h3>Disciplinas</h3><span class="vtm-note">3 puntos${ch.clan === 'caitiff' ? ' · libres' : ' · de clan'}</span>${left('disc')}</div>${discRows || '<p class="vtm-note">Añade las disciplinas de tu vástago.</p>'}
           <div class="vtm-add"><select data-disc-add aria-label="Disciplina para añadir"><option value="">${ch.clan === 'caitiff' ? 'Añadir disciplina…' : 'Añadir de otro clan…'}</option>${addable.map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('')}</select></div></div>
-        <div class="vtm-col"><div class="vtm-col-head"><h3>Trasfondos</h3><span class="vtm-note">5 puntos</span>${left('bg')}</div>${era(ch).backgrounds.map(([k, l]) => dots('bg', k, l)).join('')}</div>
-        <div class="vtm-col"><div class="vtm-col-head"><h3>Virtudes</h3><span class="vtm-note">7 puntos</span>${left('virt')}</div>${virt.map(([k, l]) => dots('virt', k, l)).join('')}
+        <div class="vtm-col"><div class="vtm-col-head"><h3>${term('vtm-trasfondos', 'Trasfondos')}</h3><span class="vtm-note">5 puntos</span>${left('bg')}</div>${era(ch).backgrounds.map(([k, l]) => dots('bg', k, l)).join('')}</div>
+        <div class="vtm-col"><div class="vtm-col-head"><h3>${term('vtm-virtudes', 'Virtudes')}</h3><span class="vtm-note">7 puntos</span>${left('virt')}</div>${virt.map(([k, l]) => dots('virt', k, l)).join('')}
           <div class="vtm-derived">${track('hum', road(ch).name, humanityBase(ch), ch.humF, ch.humX, humLoss(ch))}${track('wp', 'Fuerza de Voluntad', willpowerBase(ch), ch.wpF, ch.wpX)}</div></div>
       </div></section>
       <section class="vtm-panel"><h2><span>VI</span> Méritos y defectos</h2><p class="vtm-note">Los méritos se pagan con puntos gratuitos. Los defectos dan puntos extra, hasta un máximo de ${FLAW_CAP} (llevas ${Math.min(flaws, FLAW_CAP)}${flaws > FLAW_CAP ? ', el resto no cuenta' : ''}).</p><div class="vtm-merits">${meritRows}</div><button class="vtm-button ghost" data-merit-add>✚ AÑADIR MÉRITO O DEFECTO</button></section>
@@ -577,7 +674,7 @@
       </div><form class="vtm-xp-form" data-xp-form><label class="vtm-field"><span>PX a añadir</span><input type="number" inputmode="numeric" min="1" max="999" step="1" name="amount" required placeholder="Ej.: 5"></label><label class="vtm-field"><span>Motivo</span><input name="note" maxlength="80" placeholder="Ej.: Fin de la sesión 3"></label><button class="vtm-button" type="submit">✚ AÑADIR PX</button></form>
       ${logRows ? `<ul class="vtm-xp-log">${logRows}</ul>` : '<p class="vtm-note">Aún no has añadido experiencia después de la creación. Gasta los PX en la pestaña «3 · Experiencia».</p>'}</section>
       <section class="vtm-panel"><h2><span>VIII</span> La sangre</h2><div class="vtm-stats">
-        <div><small>Generación</small><b>${gen}ª</b></div><div><small>Reserva de sangre máx.</small><b>${blood}</b></div><div><small>Sangre por turno</small><b>${perTurn}</b></div><div><small>${esc(road(ch).name)}</small><b>${humanity(ch)}</b></div><div><small>Fuerza de Voluntad</small><b>${willpower(ch)}</b></div>
+        <div><small>${term('vtm-generacion', 'Generación')}</small><b>${gen}ª</b></div><div><small>${term('vtm-sangre', 'Reserva de sangre máx.')}</small><b>${blood}</b></div><div><small>Sangre por turno</small><b>${perTurn}</b></div><div><small>${esc(road(ch).name)}</small><b>${humanity(ch)}</b></div><div><small>Fuerza de Voluntad</small><b>${willpower(ch)}</b></div>
       </div><div class="vtm-blood" aria-label="Reserva de sangre máxima: ${blood}">${'<i></i>'.repeat(blood)}</div><p class="vtm-note">La reserva inicial se determina tirando un dado de diez caras. Sube el trasfondo Generación para bajar de la ${ch.baseGen}ª${TRAIT_MAX[gen] ? `; en la ${gen}ª generación los rasgos pueden llegar a ${TRAIT_MAX[gen]}` : ''}.</p></section>
       ${diablerieSection(ch)}`;
 
@@ -769,7 +866,7 @@
     document.head.append(fonts);
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/vampiro/vampire.css?v=5';
+    stylesheet.href = './src/vampiro/vampire.css?v=6';
     document.head.append(stylesheet);
     host = document.createElement('section');
     host.id = 'nexoVampire';
@@ -778,6 +875,7 @@
     host.setAttribute('aria-label', 'NEXO Vampiro: La Mascarada');
     document.body.append(host);
     ap?.mount(host);
+    kit?.mount(host);
     host.addEventListener('keydown', event => {
       const modal = host.querySelector('[data-modal]');
       if (event.key === 'Escape' && modal && !modal.hidden) modal.hidden = true;

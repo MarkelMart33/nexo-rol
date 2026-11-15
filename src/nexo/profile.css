@@ -22,6 +22,8 @@
 .prf-button{width:100%;margin-top:6px;min-height:42px;padding:8px 14px;border:0;border-radius:6px;background:radial-gradient(circle at 60% 30%,#8f4c29,#6b351b 70%);color:#f8e4c6;font:400 15px var(--nexo-fell);letter-spacing:.04em;cursor:pointer;box-shadow:inset 0 0 0 1px #3c1b0b,inset 0 0 0 4px #6b351b,inset 0 0 0 5px #e8c39a66,0 6px 10px -4px #000a;transition:transform .2s}
 .prf-button:hover{transform:translateY(-1px)}
 .prf-button.ghost{margin-top:18px;border:1.5px dashed #8a6b45;background:transparent;color:var(--nexo-ink-soft);box-shadow:none}
+.prf-pair{display:grid;gap:4px 10px}.prf-pair .prf-button.ghost{margin-top:6px}.prf-button:disabled{opacity:.5;cursor:default;transform:none}
+.prf-side .prf-panel{transform:none!important}.prf-side .prf-account{transform:rotate(-1deg)!important}.prf-backup{animation-delay:.12s}
 .prf-message{min-height:20px;margin:12px 0 0;font:400 16px var(--nexo-hand);color:#3f6b2a}.prf-message.error{color:#a3192b}
 .prf-row{width:100%;display:flex;align-items:center;gap:14px;margin-top:6px;padding:10px 4px;border:0;border-bottom:1px dashed #b39a74;background:none;color:inherit;text-align:left;cursor:pointer;font:inherit;transition:background .2s,transform .2s}
 .prf-row:hover,.prf-row:focus-visible{background:#7d16200d;transform:translateX(3px)}

@@ -177,3 +177,25 @@ li.is-trained .pf-skill-total{color:var(--pf-sea)}
 }
 @media(max-width:420px){.pf-skill-src{display:none}.pf-skills li{grid-template-columns:34px minmax(0,1fr) 44px}}
 @media(prefers-reduced-motion:reduce){.pf *,.pf-stars{animation:none!important;transition:none!important}}
+
+/* ───── Inicio de campaña y texturas: cuarterones de carta náutica, latón, piedra eón turquesa y lacre bermellón ───── */
+.pf{--pf-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' seed='13'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .18 0 0 0 0 .3 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.3'/%3E%3C/svg%3E")}
+@keyframes pf-aeon{50%{box-shadow:0 0 0 4px #140b1e,0 0 0 5px var(--pf-gold),0 0 40px #5fd6c6aa,inset 0 0 20px #d8fff8aa}}
+@keyframes pf-orbit{to{transform:rotate(360deg)}}
+.pf-card{background-image:var(--pf-grain),linear-gradient(150deg,#2c1a3a,#1d1029);background-blend-mode:overlay,normal;transition:transform .2s cubic-bezier(.2,.8,.2,1),border-color .2s,box-shadow .25s}
+.pf-card:active{transform:scale(.985)}
+.pf-list>.pf-card{animation:ap-pop .45s cubic-bezier(.2,.8,.2,1) backwards}
+.pf-list>.pf-card:nth-child(2){animation-delay:.05s}.pf-list>.pf-card:nth-child(3){animation-delay:.1s}.pf-list>.pf-card:nth-child(4){animation-delay:.15s}.pf-list>.pf-card:nth-child(n+5){animation-delay:.2s}
+.ap-pf .ap-hero-mark{position:relative;border:0;color:#12303a;background:radial-gradient(circle at 35% 28%,#fff,#d8fff8 16%,var(--pf-aeon) 50%,var(--pf-aeon-dim) 80%,#1f5f64);box-shadow:0 0 0 4px #140b1e,0 0 0 5px var(--pf-gold-dim),0 0 26px #5fd6c666,inset 0 0 16px #d8fff888;animation:ap-mark .6s cubic-bezier(.2,.9,.25,1.2) backwards,pf-aeon 5s ease-in-out 1s infinite}
+.ap-pf .ap-hero-mark::after{content:'';position:absolute;inset:-13px;border:1px dashed #e0b65a88;border-radius:50%;animation:pf-orbit 40s linear infinite}
+.ap-pf .ap-hero h1{text-shadow:0 0 34px #6a3c8a}
+.ap-pf .ap-tile{border:1px solid #a9853f;border-radius:6px;color:var(--pf-ink);background:var(--pf-grain),radial-gradient(ellipse at 20% 0,#fbf2da,transparent 60%),linear-gradient(165deg,var(--pf-chart),var(--pf-chart-dark));background-blend-mode:multiply,normal,normal;box-shadow:inset 0 0 0 3px #f2e6c8,inset 0 0 0 4px #2f7f8655,0 12px 22px -12px #000}
+.ap-pf .ap-tile::before{content:'';position:absolute;right:8px;top:8px;width:14px;height:14px;border:1px solid #2f7f8688;border-radius:50%;background:linear-gradient(#2f7f8688,#2f7f8688) 50% 50%/1px 100% no-repeat,linear-gradient(#2f7f8688,#2f7f8688) 50% 50%/100% 1px no-repeat;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.ap-pf .ap-tile:hover{border-color:var(--pf-gold);box-shadow:inset 0 0 0 3px #f2e6c8,inset 0 0 0 4px var(--pf-sea),0 20px 30px -14px #000,0 0 26px -6px #5fd6c688}
+.ap-pf .ap-tile:hover::before{transform:rotate(135deg)}
+.ap-pf .ap-tile-icon{color:var(--pf-red)}
+.ap-pf .ap-tile b{color:var(--pf-ink)}
+.ap-pf .ap-tile small{color:var(--pf-sea);font-style:italic;font-size:15px}
+.ap-pf .ap-appbar{border-radius:6px;background:linear-gradient(150deg,#2c1a3a,#1d1029)}
+.ap-pf .ap-appbar-home{border-radius:6px;border-color:var(--pf-gold-dim);color:var(--pf-gold)}
+.ap-pf .ap-appbar-home:hover{border-color:var(--pf-gold);background:#e0b65a1f}

@@ -97,7 +97,7 @@
 
   // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y el manual de este sistema).
   const ap = window.NEXO_APARTADOS?.create({
-    prefix: 'cth', system: () => GAME, frame: body => frame(body),
+    prefix: 'cth', system: () => GAME, home: true, frame: body => frame(body),
     leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
     characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Investigador sin nombre', summary: describe(ch) })),
     openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
@@ -106,6 +106,16 @@
     words: { characters: 'investigadores', character: 'investigador' }
   });
   const manualLink = (id, label) => ap?.link(id, label) || '';
+  // Nombre de un rasgo que, al tocarlo, asoma su regla del manual.
+  const term = (id, text) => ap?.term(id, text) || esc(text);
+
+  // Exportar, importar e imprimir la ficha (src/nexo/ficha.js).
+  const kit = window.NEXO_FICHA?.create({
+    prefix: 'cth', system: GAME, label: 'La llamada de Cthulhu',
+    current: () => current, sheet: ch => sheetData(ch), template: newCharacter, before: () => flushSave(), flash: text => flash(text),
+    accept: ch => accept(ch), exists: id => store.characters.some(ch => ch.id === id),
+    put: ch => { store.characters = [ch, ...store.characters.filter(item => item.id !== ch.id)]; persist(); renderList(); }
+  });
 
   function load() {
     try {
@@ -249,6 +259,56 @@
       a.p = NO_PERSONAL.includes(k) || k === 'credito' ? 0 : Math.max(0, Math.trunc(a.p) || 0);
       if (!a.o && !a.p) delete ch.alloc[k];
     });
+  }
+
+  // Ficha que llega de un archivo: se completa y se deja solo lo que el creador entiende.
+  function accept(raw) {
+    const ch = normalize(raw);
+    const int = (v, max) => Math.max(0, Math.min(max, Math.trunc(Number(v)) || 0));
+    const obj = v => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
+    ch.chars = Object.fromEntries(CHARS.map(([k]) => [k, int(obj(ch.chars)[k], 99)]));
+    ch.ageLoss = Object.fromEntries(CHARS.map(([k]) => [k, int(obj(ch.ageLoss)[k], 99)]).filter(([, n]) => n));
+    ch.alloc = Object.fromEntries(Object.keys(SKILLS).map(k => [k, { o: int(obj(obj(ch.alloc)[k]).o, MAX_SKILL), p: int(obj(obj(ch.alloc)[k]).p, MAX_SKILL) }]).filter(([, a]) => a.o || a.p));
+    ch.specs = Object.fromEntries(Object.keys(SKILLS).filter(k => SKILLS[k][2] && typeof obj(ch.specs)[k] === 'string' && ch.specs[k].trim()).map(k => [k, ch.specs[k].slice(0, 30)]));
+    ch.occSocial = ch.occSocial.filter(k => typeof k === 'string');
+    ch.occAny = ch.occAny.filter(k => typeof k === 'string');
+    ch.eduLog = String(ch.eduLog ?? '').slice(0, 2000);
+    sanitize(ch);
+    return ch;
+  }
+
+  // La ficha como datos para la hoja de solo lectura: lo que se imprime o se guarda como PDF.
+  function sheetData(ch) {
+    const o = occ(ch);
+    const [bd, corp] = build(ch);
+    const credit = skill(ch, 'credito');
+    const allowed = occSkills(ch);
+    const split = n => `${n} · ${Math.floor(n / 2)} · ${Math.floor(n / 5)}`;
+    const names = Object.keys(SKILLS).sort((a, b) => SKILLS[a][0].localeCompare(SKILLS[b][0], 'es'));
+    return {
+      system: 'La llamada de Cthulhu · 7ª edición', accent: '#6b2a1c',
+      name: ch.name || 'Investigador sin nombre', subtitle: describe(ch),
+      meta: [['Ocupación', o?.name], ['Edad', ch.age], ['Jugador', ch.player], ['Campaña', ch.campaign]],
+      blocks: [
+        { title: 'Expediente', kind: 'pairs', items: [['Residencia', ch.residence], ['Lugar de nacimiento', ch.birthplace], ['Nivel de vida', `${living(credit)} (Crédito ${credit})`]] },
+        { title: 'Características', kind: 'stats', note: 'Bajo cada valor, la mitad (difícil) y la quinta parte (extremo).', items: CHARS.map(([k, name]) => ({ label: name, value: stat(ch, k) || '—', sub: stat(ch, k) ? `${Math.floor(stat(ch, k) / 2)} · ${Math.floor(stat(ch, k) / 5)}` : '' })) },
+        { title: 'Valores derivados', kind: 'stats', items: [
+          { label: 'Puntos de vida', value: hp(ch) || '—' }, { label: 'Cordura', value: stat(ch, 'pod') || '—', sub: `máx. ${99 - skill(ch, 'mitos')}` }, { label: 'Puntos de magia', value: mp(ch) || '—' },
+          { label: 'Suerte', value: ch.luck || '—' }, { label: 'Movimiento', value: move(ch) }, { label: 'Bonif. al daño', value: bd }, { label: 'Corpulencia', value: corp }, { label: 'Esquivar', value: skill(ch, 'esquivar'), sub: `${Math.floor(skill(ch, 'esquivar') / 2)} · ${Math.floor(skill(ch, 'esquivar') / 5)}` }
+        ] },
+        { title: 'En partida', kind: 'tracks', note: 'Heridas, locuras y estados: apúntalos junto a los contadores.', items: [
+          { label: 'Puntos de vida', value: '', max: hp(ch) || '' }, { label: 'Cordura', value: '', max: stat(ch, 'pod') || '' }, { label: 'Puntos de magia', value: '', max: mp(ch) || '' }, { label: 'Suerte', value: '', max: ch.luck || '' }
+        ] },
+        { title: 'Habilidades', kind: 'list', cols: 2, note: 'Valor normal · difícil · extremo. El punto marca las habilidades de la ocupación.', items: names.map(k => ({ name: skillName(ch, k), value: split(skill(ch, k)), mark: allowed.has(k) })) },
+        { title: 'Combate', kind: 'list', cols: 1, items: [
+          { name: `Desarmado · daño ${bd === 'Ninguna' ? '1D3' : `1D3 ${bd.startsWith('−') ? '−' : '+'} ${bd.replace(/^[−+]/, '')}`}`, value: split(skill(ch, 'pelea')) },
+          { name: 'Arma corta · daño según el arma', value: split(skill(ch, 'armaCorta')) }, { name: 'Fusil o escopeta · daño según el arma', value: split(skill(ch, 'fusil')) }
+        ] },
+        { title: 'Trasfondo', kind: 'features', items: BACKGROUND.filter(([k]) => String(ch[k] || '').trim()).map(([k, label]) => ({ name: label, text: ch[k] })) },
+        { title: 'Equipo y posesiones', kind: 'text', text: ch.gear },
+        { title: 'Notas', kind: 'text', text: ch.notes }
+      ]
+    };
   }
 
   function summary(ch) {
@@ -396,7 +456,7 @@
       const done = isComplete(ch);
       return `<button class="cth-card" data-open="${esc(ch.id)}"><span class="cth-card-tab">EXP. ${esc(ch.id.slice(0, 4).toUpperCase())}</span><span class="cth-card-copy"><b>${esc(ch.name || 'Investigador sin nombre')}</b><small>${esc(describe(ch))}</small></span><span class="cth-stamp ${done ? 'is-done' : ''}">${done ? 'COMPLETO' : 'EN CURSO'}</span></button>`;
     }).join('') : `<div class="cth-empty"><span aria-hidden="true">${window.NEXO_ICONS?.cthulhu || ''}</span><b>El archivo está vacío</b><small>Pulsa «Abrir un expediente» para crear tu primer investigador.</small></div>`;
-    frame(`${ap?.tabs('personajes') || ''}<p class="cth-kicker">NEXO / LA LLAMADA DE CTHULHU · 7ª EDICIÓN</p><h1>Tus <em>investigadores</em></h1><p class="cth-intro">Crea investigadores de los años veinte: características, edad, Suerte, ocupación, puntos de habilidad y trasfondo. NEXO calcula puntos de vida, Cordura, puntos de magia, movimiento, bonificación al daño y corpulencia, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="cth-actions"><button class="cth-button" data-new>ABRIR UN EXPEDIENTE</button><button class="cth-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="cth-list">${cards}</div><p class="cth-quote">«Ph'nglui mglw'nafh Cthulhu R'lyeh wgah'nagl fhtagn.»</p>`);
+    frame(`${ap?.tabs('personajes') || ''}<p class="cth-kicker">NEXO / LA LLAMADA DE CTHULHU · 7ª EDICIÓN</p><h1>Tus <em>investigadores</em></h1><p class="cth-intro">Crea investigadores de los años veinte: características, edad, Suerte, ocupación, puntos de habilidad y trasfondo. NEXO calcula puntos de vida, Cordura, puntos de magia, movimiento, bonificación al daño y corpulencia, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="cth-actions"><button class="cth-button" data-new>ABRIR UN EXPEDIENTE</button>${kit?.importButton() || ''}<button class="cth-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="cth-list">${cards}</div><p class="cth-quote">«Ph'nglui mglw'nafh Cthulhu R'lyeh wgah'nagl fhtagn.»</p>`);
     host.querySelector('[data-new]').addEventListener('click', () => openEditor(newCharacter()));
     host.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
       const ch = store.characters.find(item => item.id === button.dataset.open);
@@ -419,7 +479,7 @@
   function openEditor(ch) {
     current = ch;
     const saved = store.characters.some(item => item.id === ch.id);
-    frame(`<div class="cth-editor-head"><button class="cth-button ghost" data-back>← TUS INVESTIGADORES</button><button class="cth-button danger" data-delete ${saved ? '' : 'hidden'}>DESTRUIR EXPEDIENTE</button></div>
+    frame(`<div class="cth-editor-head"><button class="cth-button ghost" data-back>← TUS INVESTIGADORES</button>${kit?.tools() || ''}<button class="cth-button danger" data-delete ${saved ? '' : 'hidden'}>DESTRUIR EXPEDIENTE</button></div>
       <section class="cth-panel">${heading(1, 'Investigador', 'datos del expediente')}<div class="cth-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del investigador' })}${field('Jugador', 'player')}${field('Campaña', 'campaign')}
         ${field('Residencia', 'residence', { placeholder: 'Arkham, Boston…' })}${field('Lugar de nacimiento', 'birthplace')}
@@ -462,7 +522,7 @@
       const input = ch.method === 'rapida'
         ? `<select data-char="${k}" aria-label="${name}">${options(QUICK.filter((v, i, a) => a.indexOf(v) === i).map(v => [v, v]), ch.chars[k] || '', '—')}</select>`
         : `<input type="number" min="0" max="99" data-char="${k}" value="${ch.chars[k] || ''}" placeholder="—" aria-label="${name}">`;
-      return `<div class="cth-char"><span class="cth-char-head"><b>${short}</b><small>${name}</small></span>${input}
+      return `<div class="cth-char"><span class="cth-char-head"><b>${short}</b><small>${term(`cth-car-${k}`, name)}</small></span>${input}
         <span class="cth-char-final ${changedByAge ? 'is-aged' : ''}" title="${changedByAge ? 'Valor tras aplicar la edad' : ''}">${final ? `<button class="nd-roll-btn" data-cth-roll="ch:${k}" aria-label="Tirar ${name}"><b>${final}</b></button>` : '<b>—</b>'}<small>${final ? `${Math.floor(final / 2)} · ${Math.floor(final / 5)}` : 'mitad · quinto'}</small></span></div>`;
     }).join('');
     const lossRows = band.loss ? band.from.map(k => `<div class="cth-loss"><span>${CH[k].name}</span><span class="cth-stepper"><button data-loss="${k}" data-d="-1" aria-label="Devolver punto a ${CH[k].name}" ${(ch.ageLoss[k] || 0) <= 0 ? 'disabled' : ''}>−</button><b>−${ch.ageLoss[k] || 0}</b><button data-loss="${k}" data-d="1" aria-label="Restar punto a ${CH[k].name}">+</button></span></div>`).join('') : '';
@@ -512,7 +572,7 @@
       const spec = SKILLS[k][2] ? `<input class="cth-spec" data-spec="${k}" value="${esc(ch.specs[k] || '')}" maxlength="30" placeholder="${esc(SKILLS[k][2])}" aria-label="Especialidad de ${esc(SKILLS[k][0])}">` : '';
       const pDisabled = NO_PERSONAL.includes(k) || k === 'credito';
       return `<li class="${isOcc ? 'is-occ' : ''} ${total > base(ch, k) ? 'is-raised' : ''}" data-row="${k}">
-        <span class="cth-skill-name">${isOcc ? '<i class="cth-occ-mark" title="Habilidad de ocupación">◆</i>' : ''}${esc(SKILLS[k][0])}${spec}</span>
+        <span class="cth-skill-name">${isOcc ? '<i class="cth-occ-mark" title="Habilidad de ocupación">◆</i>' : ''}${term(`cth-hab-${k}`, SKILLS[k][0])}${spec}</span>
         <span class="cth-skill-base">${base(ch, k)}</span>
         <input type="number" min="0" max="99" data-alloc="${k}" data-kind="o" value="${alloc(ch, k, 'o') || ''}" placeholder="${isOcc ? '0' : ''}" ${isOcc ? '' : 'disabled'} aria-label="Puntos de ocupación en ${esc(SKILLS[k][0])}">
         <input type="number" min="0" max="99" data-alloc="${k}" data-kind="p" value="${alloc(ch, k, 'p') || ''}" placeholder="${pDisabled ? '' : '0'}" ${pDisabled ? 'disabled' : ''} aria-label="Puntos de interés personal en ${esc(SKILLS[k][0])}">
@@ -525,6 +585,8 @@
       <ul class="cth-skills">${rows}</ul></section>`;
   }
 
+  // Casillas de la hoja calculada que asoman su regla al tocarlas.
+  const STAT_RULES = { 'Puntos de vida': 'cth-vida', 'Cordura': 'cth-cordura', 'Cordura máxima': 'cth-cordura', 'Suerte': 'cth-suerte', 'Bonificación al daño': 'cth-dano', 'Edad': 'cth-edad' };
   function sheetPanel(ch) {
     const [bd, corp] = build(ch);
     const credit = skill(ch, 'credito');
@@ -534,7 +596,7 @@
       ['Esquivar', skill(ch, 'esquivar')], ['Crédito', credit], ['Nivel de vida', living(credit)], ['Edad', ch.age]
     ];
     return `<section class="cth-panel cth-sheet">${heading(5, 'Hoja calculada', esc(describe(ch)))}
-      <div class="cth-stats">${stats.map(([k, v]) => `<div><small>${k}</small><b>${esc(v)}</b></div>`).join('')}</div>
+      <div class="cth-stats">${stats.map(([k, v]) => `<div><small>${term(STAT_RULES[k], k)}</small><b>${esc(v)}</b></div>`).join('')}</div>
       <p class="cth-note">Puntos de vida: (CON + TAM) / 10. Cordura inicial: POD; la máxima es 99 menos Mitos de Cthulhu. Puntos de magia: POD / 5. Movimiento: 7 si FUE y DES son menores que TAM, 9 si ambas son mayores y 8 en otro caso, menos lo que reste la edad. Bonificación al daño y corpulencia salen de FUE + TAM.</p><p class="cth-note">${manualLink('cth-cordura', 'Cordura')} ${manualLink('cth-vida', 'Puntos de vida')} ${manualLink('cth-suerte', 'Suerte')} ${manualLink('cth-grados', 'Niveles de éxito')}</p></section>`;
   }
 
@@ -611,7 +673,7 @@
     fonts.href = 'https://fonts.googleapis.com/css2?family=Special+Elite&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&display=swap';
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/cthulhu/cthulhu.css?v=1';
+    stylesheet.href = './src/cthulhu/cthulhu.css?v=2';
     document.head.append(fonts, stylesheet);
     host = document.createElement('section');
     host.id = 'nexoCthulhu';
@@ -620,6 +682,7 @@
     host.setAttribute('aria-label', 'NEXO La llamada de Cthulhu');
     document.body.append(host);
     ap?.mount(host);
+    kit?.mount(host);
     host.addEventListener('keydown', event => {
       if (event.key === 'Escape') host.querySelectorAll('.cth-modal').forEach(modal => { modal.hidden = true; });
     });

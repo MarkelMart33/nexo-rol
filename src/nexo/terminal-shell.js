@@ -27,7 +27,9 @@
     const sub = back => { stack.push(back); if (top !== 'sub') { history.pushState({ nexo: 'sub' }, ''); top = 'sub'; } };
     const drop = () => { stack.pop(); if (!stack.length && top === 'sub') { skipPop = true; history.back(); } };
     const reset = () => { stack = []; };
-    window.NEXO_NAV = { away, sub, drop, reset };
+    // Cambia el último paso de «atrás» por otro sin tocar el historial del navegador.
+    const swap = back => { if (stack.length) stack[stack.length - 1] = back; else sub(back); };
+    window.NEXO_NAV = { away, sub, drop, reset, swap };
     window.addEventListener('popstate', event => {
       const left = top;
       top = event.state?.nexo || null;
