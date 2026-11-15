@@ -99,7 +99,7 @@
   const ap = window.NEXO_APARTADOS?.create({
     prefix: 'cth', system: () => GAME, home: true, frame: body => frame(body),
     leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
-    characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Investigador sin nombre', summary: describe(ch) })),
+    characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Investigador sin nombre', summary: describe(ch), init: stat(ch, 'des') })),
     openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
     currentId: () => current?.id,
     manual: () => manualBook || (manualBook = window.NEXO_MANUALS?.cthulhu?.({ CHARS, CH, SKILLS, OCCUPATIONS, AGES }) || null),

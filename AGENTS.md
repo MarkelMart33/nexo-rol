@@ -39,6 +39,7 @@ Sistemas y edición de referencia (no mezcles ediciones):
   - `ficha.js` / `ficha.css`: lo común de las fichas (`window.NEXO_FICHA`): exportar, importar, hoja para imprimir y la ventanita de regla de `term(id, texto)`.
   - `copias.js`: archivos de ficha y copia de seguridad completa (`window.NEXO_COPIAS`).
   - `juego.js` / `juego.css`: panel «En juego» de las fichas (`window.NEXO_JUEGO`): contadores, estados y descansos.
+  - `master.js` / `master.css`: herramientas de máster de las campañas (`window.NEXO_MASTER`): combate con iniciativa, PNJ y generadores. `master-datos.js` (`window.NEXO_MASTER_DATOS`) lleva las tablas de los generadores, una por ambientación, y el generador de mundos de Traveller.
   - `icons.js`: emblemas SVG de cada sistema (`window.NEXO_ICONS`).
 - `src/<sistema>/`: `<sistema>.js` (creador y fichas), `<sistema>.css`, `<sistema>-mesa.css` (su objeto en la mesa), `<sistema>-manual.js` y `<sistema>-manual-reglas.js` (manual de consulta). Traveller es distinto: `app.js` es la aplicación de partidas (comercio, cartera, inventario, notas, mapa, hangar…) y gestiona también el inicio de sesión de toda NEXO.
 - `assets/iconos/`, `assets/fondos/`: iconos de la app e imágenes.
@@ -49,6 +50,8 @@ Sistemas y edición de referencia (no mezcles ediciones):
 - Cada archivo es una IIFE que publica una API en `window`. Los módulos se hablan solo a través de esas APIs y de eventos del `document`, nunca leyendo variables internas de otro.
   - Cada sistema de fichas expone `window.NEXO_<SISTEMA> = { open, close, list }` (`NEXO_VAMPIRE`, `NEXO_DND`, `NEXO_TORMENTAS`, `NEXO_CTHULHU`, `NEXO_PATHFINDER`). `open({ onExit, characterId, era })` abre el apartado; `list()` resume las fichas para el perfil.
   - Traveller expone `window.NEXO_TRAVELLER` (`campaigns`, `openCampaign`, `showCampaigns`, `signIn`).
+  - Las herramientas de máster no saben dónde se guardan: `NEXO_MASTER.mount(herramienta, nodo, ctx)` recibe en `ctx` el sistema, el objeto donde viven `npcs` y `combat`, y las funciones `save()`, `party()` y `note(título, texto)`. En las campañas se lo da `apartados.js`; en Traveller, `app.js` a través de `window.NEXO_MASTER_API`, y `NEXO_MASTER_UI.open()` pinta la aplicación «MÁSTER». Cada sistema tiene su entrada en `SYSTEMS` de `master.js` (nombres de sus puntos de golpe y su defensa, cómo va su iniciativa y qué tablas usa): un sistema nuevo necesita la suya, y su tabla en `master-datos.js` si no le vale ninguna.
+  - La función `characters()` que cada sistema pasa a `NEXO_APARTADOS` devuelve, además de `id`, `name` y `summary`, el modificador de iniciativa del personaje en `init`, que usa el combate.
   - Los manuales se registran en `window.NEXO_MANUALS.<sistema>`.
   - Cada sistema de fichas describe con datos lo que el código común pinta: `sheetData(ch)` para la hoja de imprimir, `accept(raw)` para revisar una ficha importada y `playModel(ch)` para el panel «En juego» (contadores, medidores, estados y descansos). Un estado que cambia las tiradas se aplica en el `rollFromSheet` del sistema, que pasa a los dados el modificador y una nota (`opts.note`).
 - Eventos:
@@ -75,6 +78,7 @@ Sistemas y edición de referencia (no mezcles ediciones):
 - La copia local es la de trabajo. Al guardar se sube el almacén entero, y al abrir un sistema se mezcla con la nube. Gana el `updatedAt` más reciente si hay cambios sin subir; si no, manda la nube.
 - Al cerrar sesión se borra la copia local de esa cuenta. No hay edición colaborativa ni partidas compartidas entre cuentas.
 - Lo que cambia durante la partida vive en la propia ficha, en `ch.play` (`v` contadores, `mx` máximos editados, `c` estados, `m` marcas, `t` medidores, `custom` contadores propios). Solo se lee a través de `NEXO_JUEGO`, que lo rehace con tipos sanos la primera vez que toca una ficha (`clean`), venga de donde venga; no lo leas directamente desde un sistema. Los contadores guardan la diferencia con su valor por defecto, así que un personaje que cambia de nivel conserva lo gastado.
+- Las herramientas de máster guardan en la propia campaña (`npcs`, `combat` y el enlace `vtt`) y, en Traveller, en `data.master` de la partida. `NEXO_MASTER.clean` las rehace con tipos y límites sanos cada vez que se carga la campaña. Los resultados de los generadores no se guardan: viven en memoria hasta que se mandan a los PNJ o a las notas.
 - Si cambias la forma de los datos, añade la normalización en el `normalize`/`load` del módulo para que las fichas antiguas sigan abriendo. No cambies el nombre de una clave sin migrar los datos.
 
 ## Reglas del repositorio

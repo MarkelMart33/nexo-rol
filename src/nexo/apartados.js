@@ -24,10 +24,14 @@
   // ───────────── Campañas ─────────────
   let store = load();
   let saveTimer = 0;
+  // Solo enlaces web: lo que no empiece por http(s) no se abre.
+  const webLink = value => { try { const url = new URL(String(value || '').trim()); return /^https?:$/.test(url.protocol) ? url.href : ''; } catch { return ''; } };
   function normalizeCampaign(c) {
+    // PNJ y combate (src/nexo/master.js); si el módulo no está, se conservan tal cual.
+    const master = window.NEXO_MASTER?.clean(c) || { npcs: Array.isArray(c.npcs) ? c.npcs : [], combat: c.combat && typeof c.combat === 'object' && !Array.isArray(c.combat) ? c.combat : {} };
     return {
       id: typeof c.id === 'string' && c.id ? c.id : uid(), system: String(c.system || ''), name: String(c.name || ''), master: String(c.master || ''),
-      premise: String(c.premise || ''), notes: String(c.notes || ''),
+      premise: String(c.premise || ''), notes: String(c.notes || ''), vtt: String(c.vtt || '').slice(0, 300), npcs: master.npcs, combat: master.combat,
       characterIds: Array.isArray(c.characterIds) ? c.characterIds.map(String) : [],
       sessions: Array.isArray(c.sessions) ? c.sessions.filter(s => s && typeof s === 'object').map(s => ({ id: s.id || uid(), date: String(s.date || ''), title: String(s.title || ''), text: String(s.text || '') })) : [],
       createdAt: String(c.createdAt || new Date().toISOString()), updatedAt: String(c.updatedAt || new Date().toISOString())
@@ -160,6 +164,10 @@
     dados: svg('<path d="M12 2.8 20 7.4v9.2l-8 4.6-8-4.6V7.4Z"/><path d="M12 7.6 16.6 15H7.4Z"/><path d="M12 2.8v4.8M4 7.4l3.4 7.6M20 7.4 16.6 15M7.4 15 12 21.2 16.6 15"/>'),
     manual: svg('<path d="M5.5 4.5A1.5 1.5 0 0 1 7 3h11.5v15H7a1.5 1.5 0 0 0-1.5 1.5Z"/><path d="M5.5 19.5A1.5 1.5 0 0 0 7 21h11.5v-3"/><path d="M13 3v7l-2-1.5L9 10V3"/>'),
     ficha: svg('<path d="M7 4.5h11.5v12a3 3 0 0 1-3 3H6a2.5 2.5 0 0 1-2.5-2.5V16H13v1a2.5 2.5 0 0 0 2.5 2.5"/><path d="M7 4.5V16"/><path d="M10 8.5h5.5M10 11.5h5.5"/>'),
+    combate: svg('<path d="M5 4.5 15.5 15M5 4.5V8M5 4.5h3.5"/><path d="M19 4.5 8.5 15M19 4.5V8M19 4.5h-3.5"/><path d="m6 17.5 3-3M18 17.5l-3-3M4.5 19.5l2-2M19.5 19.5l-2-2"/>'),
+    pnj: svg('<path d="M4.5 6.5c2.4 1 5 1.5 7.5 1.5s5.1-.5 7.5-1.5c.3 6.5-2.2 11.5-7.5 13-5.3-1.5-7.8-6.5-7.5-13Z"/><path d="M8 11.5c.9-.7 1.9-.7 2.8 0M13.2 11.5c.9-.7 1.9-.7 2.8 0M9.5 15.2c1.6 1 3.4 1 5 0"/>'),
+    generador: svg('<path d="M12 3.5 13.8 9l5.7 1.8-5.7 1.8L12 18.2l-1.8-5.6-5.7-1.8L10.2 9Z"/><path d="M18.5 3.5v3M17 5h3M5.5 16.5v3M4 18h3"/>'),
+    mesa: svg('<path d="m3.5 6.5 5.5-2 6 2 5.5-2v13l-5.5 2-6-2-5.5 2Z"/><path d="M9 4.5v13M15 6.5v13"/>'),
     inicio: svg('<path d="M4 11.5 12 4.5l8 7"/><path d="M6.5 10v9.5h11V10"/><path d="M10 19.5v-5h4v5"/>')
   };
 
@@ -315,7 +323,7 @@
       const known = new Set(all.map(ch => ch.id));
       const field = (label, prop, opts = {}) => opts.area
         ? `<label class="${p}-field ap-wide"><span>${label}</span><textarea data-ap-prop="${prop}" rows="${opts.rows || 4}" maxlength="${opts.max || 4000}" placeholder="${esc(opts.placeholder || '')}">${esc(c[prop])}</textarea></label>`
-        : `<label class="${p}-field"><span>${label}</span><input data-ap-prop="${prop}" value="${esc(c[prop])}" maxlength="60" autocomplete="off" placeholder="${esc(opts.placeholder || '')}"></label>`;
+        : `<label class="${p}-field ${opts.wide ? 'ap-wide' : ''}"><span>${label}</span><input data-ap-prop="${prop}" value="${esc(c[prop])}" maxlength="${opts.max || 60}" ${opts.url ? 'type="url" inputmode="url"' : ''} autocomplete="off" placeholder="${esc(opts.placeholder || '')}"></label>`;
       const roster = all.length ? `<ul class="ap-roster">${all.map(ch => `<li><label class="ap-check"><input type="checkbox" data-ap-member="${esc(ch.id)}" ${c.characterIds.includes(ch.id) ? 'checked' : ''}><span><b>${esc(ch.name || 'Sin nombre')}</b><small>${esc(ch.summary || '')}</small></span></label><button type="button" class="${p}-button ghost ap-mini" data-ap-sheet="${esc(ch.id)}">VER FICHA</button></li>`).join('')}</ul>`
         : `<p class="${p}-note">Todavía no hay ${words.characters} en este sistema. Créalos en la pestaña «Personajes» y márcalos aquí.</p>`;
       const lost = c.characterIds.filter(cid => !known.has(cid)).length;
@@ -327,20 +335,28 @@
         : `<p class="${p}-note">Apunta aquí lo que pasa en cada sesión: lo que descubrió el grupo, a quién conocisteis y qué quedó pendiente.</p>`;
       const linked = c.characterIds.filter(cid => known.has(cid)).length;
       const title = words.characters.charAt(0).toUpperCase() + words.characters.slice(1);
+      // Herramientas de máster (src/nexo/master.js): combate, PNJ y generadores de esta campaña.
+      const masterTools = window.NEXO_MASTER?.tools(c) || null;
       const panels = {
-        ficha: `<section class="${p}-panel ap-panel"><h2>Campaña</h2><div class="${p}-fields">${field('Nombre', 'name', { placeholder: 'Nombre de la campaña' })}${field('Narrador', 'master', { placeholder: 'Quién dirige' })}${field('Premisa', 'premise', { area: true, rows: 3, max: 1200, placeholder: 'De qué va la campaña, dónde empieza, qué busca el grupo…' })}</div></section>`,
+        ficha: `<section class="${p}-panel ap-panel"><h2>Campaña</h2><div class="${p}-fields">${field('Nombre', 'name', { placeholder: 'Nombre de la campaña' })}${field('Narrador', 'master', { placeholder: 'Quién dirige' })}${field('Premisa', 'premise', { area: true, rows: 3, max: 1200, placeholder: 'De qué va la campaña, dónde empieza, qué busca el grupo…' })}${field('Mesa virtual o mapa (enlace)', 'vtt', { wide: true, url: true, max: 300, placeholder: 'https://… el enlace de vuestra mesa virtual, mapa o llamada' })}</div><p class="${p}-note" data-ap-vtt-note>${c.vtt.trim() && !webLink(c.vtt) ? 'El enlace tiene que empezar por https://' : 'NEXO no lleva mapa táctico: pega aquí el enlace de la mesa que uséis y lo tendrás a un toque en el inicio de la campaña.'}</p></section>`,
         personajes: `<section class="${p}-panel ap-panel"><h2>${esc(title)} de la campaña <small data-ap-count>${linked} de ${all.length}</small></h2>${roster}${lost ? `<p class="${p}-note">${lost === 1 ? 'Una ficha vinculada ya no existe' : `${lost} fichas vinculadas ya no existen`} en este dispositivo.</p>` : ''}</section>`,
         diario: `<section class="${p}-panel ap-panel"><h2>Diario de sesiones <small>${c.sessions.length}</small></h2><div class="${p}-actions"><button type="button" class="${p}-button" data-ap-add-session>＋ AÑADIR SESIÓN</button></div><div class="ap-log">${log}</div></section>`,
+        combate: masterTools ? '<div data-ap-master="combate"></div>' : '',
+        pnj: masterTools ? '<div data-ap-master="pnj"></div>' : '',
+        generador: masterTools ? '<div data-ap-master="generador"></div>' : '',
         notas: `<section class="${p}-panel ap-panel"><h2>Notas de la campaña</h2><div class="${p}-fields">${field('Notas', 'notes', { area: true, rows: cfg.home ? 14 : 7, max: 12000, placeholder: 'Personajes no jugadores, lugares, pistas, deudas, ganchos…' })}</div></section>`
       };
       const confirmBox = `<div class="${p}-modal" data-ap-modal hidden><div class="${p}-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="apDelTitle"><h3 id="apDelTitle">¿Borrar esta campaña?</h3><p>Se borrarán su diario y sus notas de este dispositivo y de tu cuenta. Las fichas de los ${words.characters} no se tocan.</p><div class="${p}-actions"><button class="${p}-button ghost" data-ap-cancel>CANCELAR</button><button class="${p}-button danger" data-ap-confirm>BORRAR CAMPAÑA</button></div></div></div>`;
       // Herramientas del inicio de campaña: [id, nombre, detalle].
+      const link = webLink(c.vtt);
       const tools = [
         ['personajes', title, `${linked} de ${all.length}`],
         ['diario', 'Diario', `${c.sessions.length} ${c.sessions.length === 1 ? 'sesión' : 'sesiones'}`],
         ['notas', 'Notas', c.notes.trim() ? 'Con apuntes' : 'En blanco'],
+        ...(masterTools || []),
         ['dados', 'Dados', 'Tirar ahora'],
         ['manual', 'Manual', 'Reglas y consulta'],
+        ...(link ? [['mesa', 'Mesa virtual', 'Abrir el enlace']] : []),
         ['ficha', 'Campaña', 'Nombre y premisa']
       ];
       const name = c.name || 'Campaña sin nombre';
@@ -360,6 +376,7 @@
       view.querySelectorAll('[data-ap-tool]').forEach(button => button.addEventListener('click', () => {
         const tid = button.dataset.apTool;
         if (tid === 'dados') host.querySelector('[data-dice]')?.click();
+        else if (tid === 'mesa') window.open(link, '_blank', 'noopener,noreferrer');
         else if (tid === 'manual') go({ tab: 'manual' });
         else go({ tab: 'campanas', campaignId: id, tool: tid, fromHome: true });
       }));
@@ -369,8 +386,22 @@
         apply({ tab: 'campanas', campaignId: id });
       });
       view.querySelector('[data-ap-back]')?.addEventListener('click', () => go({ tab: 'campanas' }));
+      const masterNode = view.querySelector('[data-ap-master]');
+      if (masterNode) window.NEXO_MASTER.mount(masterNode.dataset.apMaster, masterNode, {
+        system: cfg.system(), prefix: p, id: c.id, data: c, save: () => scheduleSave(c, status),
+        party: () => cfg.characters().filter(ch => c.characterIds.includes(ch.id)),
+        note(heading, body) {
+          const add = `${heading}\n${body}`.trim();
+          const next = `${c.notes.replace(/\s+$/, '')}${c.notes.trim() ? '\n\n' : ''}${add}`;
+          if (next.length > 12000) return { ok: false, text: 'Las notas de la campaña están llenas: haz sitio antes de apuntar más.' };
+          c.notes = next;
+          scheduleSave(c, status);
+          return { ok: true, text: 'Apuntado en las notas de la campaña.' };
+        }
+      });
       view.querySelectorAll('[data-ap-prop]').forEach(input => input.addEventListener('input', () => {
         c[input.dataset.apProp] = input.value;
+        if (input.dataset.apProp === 'vtt') { const note = view.querySelector('[data-ap-vtt-note]'); if (note) note.textContent = input.value.trim() && !webLink(input.value) ? 'El enlace tiene que empezar por https://' : 'NEXO no lleva mapa táctico: pega aquí el enlace de la mesa que uséis y lo tendrás a un toque en el inicio de la campaña.'; }
         if (input.dataset.apProp === 'name') view.querySelectorAll('[data-ap-camp-name]').forEach(node => { node.textContent = input.value || 'Campaña sin nombre'; });
         scheduleSave(c, status);
       }));

@@ -105,7 +105,7 @@
   const ap = window.NEXO_APARTADOS?.create({
     prefix: 'dnd', system: () => 'dnd', home: true, frame: body => frame(body),
     leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
-    characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Aventurero sin nombre', summary: describe(ch) })),
+    characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Aventurero sin nombre', summary: describe(ch), init: mod(ch, 'des') + (hasFeat(ch, 'alerta') ? profBonus(ch) : 0) })),
     openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
     currentId: () => current?.id,
     manual: () => manualBook || (manualBook = window.NEXO_MANUALS?.dnd?.({ AB, SKILLS, CLASSES, FEATS, BACKGROUNDS, SPECIES, P }) || null),
