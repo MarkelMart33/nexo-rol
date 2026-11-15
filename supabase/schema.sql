@@ -98,52 +98,10 @@ declare
   wanted text := nullif(trim(new.raw_user_meta_data ->> 'display_name'), '');
 begin
   -- Names outside the app's format (for example, users created from the dashboard) are not reserved.
-  if wanted is null or wanted !~ '^[[:alnum:]_.-]{3,24}
+  if wanted is null or wanted !~ '^[[:alnum:]_.-]{3,24}$' then
     delete from public.usernames where owner_id = new.id;
   elsif exists (select 1 from public.usernames u where lower(u.username) = lower(wanted) and u.owner_id <> new.id) then
     raise exception using errcode = '23505', message = 'username_taken';
-  else
-    insert into public.usernames (owner_id, username) values (new.id, wanted)
-    on conflict (owner_id) do update set username = excluded.username;
-  end if;
-  return new;
-end;
-$$;
-
-drop trigger if exists usernames_on_signup on auth.users;
-create trigger usernames_on_signup after insert on auth.users for each row execute function public.sync_username();
-drop trigger if exists usernames_on_update on auth.users;
-create trigger usernames_on_update after update of raw_user_meta_data on auth.users for each row
-  when (old.raw_user_meta_data ->> 'display_name' is distinct from new.raw_user_meta_data ->> 'display_name')
-  execute function public.sync_username();
-
--- Existing accounts: the first account to have used a name keeps it.
-insert into public.usernames (owner_id, username)
-select distinct on (lower(trim(raw_user_meta_data ->> 'display_name'))) id, trim(raw_user_meta_data ->> 'display_name')
-from auth.users
-where trim(raw_user_meta_data ->> 'display_name') ~ '^[[:alnum:]_.-]{3,24}$'
-order by lower(trim(raw_user_meta_data ->> 'display_name')), created_at
-on conflict do nothing;
-
--- Lets the sign-up form and the profile check a name before using it.
-create or replace function public.username_available(name text)
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select not exists (
-    select 1 from public.usernames u
-    where lower(u.username) = lower(trim(name)) and u.owner_id is distinct from (select auth.uid())
-  );
-$$;
-revoke all on function public.username_available(text) from public;
-grant execute on function public.username_available(text) to anon, authenticated;
- then
-    delete from public.usernames where owner_id = new.id;
-  elsif exists (select 1 from public.usernames u where lower(u.username) = lower(wanted) and u.owner_id <> new.id) then
-    raise exception 'username_taken' using errcode = '23505', message = 'username_taken';
   else
     insert into public.usernames (owner_id, username) values (new.id, wanted)
     on conflict (owner_id) do update set username = excluded.username;
