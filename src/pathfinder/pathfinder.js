@@ -105,7 +105,7 @@
 
   // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y src/pathfinder/pathfinder-manual.js).
   const ap = window.NEXO_APARTADOS?.create({
-    prefix: 'pf', system: () => GAME, frame: body => frame(body),
+    prefix: 'pf', system: () => GAME, home: true, frame: body => frame(body),
     leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
     characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Aventurero sin nombre', summary: describe(ch) })),
     openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
@@ -596,7 +596,7 @@
     fonts.href = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Alegreya:ital,wght@0,400;0,700;1,400&display=swap';
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/pathfinder/pathfinder.css?v=1';
+    stylesheet.href = './src/pathfinder/pathfinder.css?v=2';
     document.head.append(fonts, stylesheet);
     host = document.createElement('section');
     host.id = 'nexoPathfinder';
