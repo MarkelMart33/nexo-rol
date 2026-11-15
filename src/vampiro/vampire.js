@@ -96,7 +96,7 @@
   const ap = window.NEXO_APARTADOS?.create({
     prefix: 'vtm', system: () => (side === 'da' ? 'vampiro-da' : 'vampiro-v20'), home: true, frame: body => frame(body),
     leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
-    characters: () => store.characters.filter(ch => ch.era === side).map(ch => ({ id: ch.id, name: ch.name || (side === 'da' ? 'Cainita sin nombre' : 'Vástago sin nombre'), summary: `${clanOf(ch).name} · ${generation(ch)}ª generación` })),
+    characters: () => store.characters.filter(ch => ch.era === side).map(ch => ({ id: ch.id, name: ch.name || (side === 'da' ? 'Cainita sin nombre' : 'Vástago sin nombre'), summary: `${clanOf(ch).name} · ${generation(ch)}ª generación`, init: value(ch, 'attrs', 'destreza') + value(ch, 'attrs', 'astucia') })),
     openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
     currentId: () => current?.id,
     manual: () => manualBooks[side] || (manualBooks[side] = window.NEXO_MANUALS?.vampiro?.({ side, slug, ERAS, ROADS, DISCIPLINES, ATTRS, GENERATIONS, TRAIT_MAX, LORE }) || null),

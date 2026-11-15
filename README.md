@@ -13,7 +13,7 @@ Terminal multiverso para NEXO, con el módulo Traveller como sistema disponible.
 ## Estructura del proyecto
 
 - `index.html`, `sw.js` y `manifest.webmanifest` quedan en la raíz: son la página de entrada, el servicio offline y el manifiesto de instalación, y necesitan estar ahí para que la app funcione e instale bien.
-- `src/nexo/`: terminal multisistema (selector de sistemas de rol), perfil, sincronización en la nube, el lanzador de dados común a todos los sistemas (`dice.js` y `dice.css`) y los apartados de cada sistema (`apartados.js` y `apartados.css`: pestañas, campañas y lector del manual).
+- `src/nexo/`: terminal multisistema (selector de sistemas de rol), perfil, sincronización en la nube, el lanzador de dados común a todos los sistemas (`dice.js` y `dice.css`), los apartados de cada sistema (`apartados.js` y `apartados.css`: pestañas, campañas y lector del manual) y las herramientas de máster de las campañas (`master.js`, `master-datos.js` y `master.css`: combate, PNJ y generadores).
 - `src/traveller/`: apartado Traveller (aplicación principal, índice del manual, visor PDF, hangar, personajes, manual de consulta, pestañas del selector de partidas y estilos generales).
 - `src/vampiro/`: apartado Vampiro: La Mascarada.
 - `src/dnd/`: apartado Dungeons & Dragons 5.5 y sus datos de progresión.
@@ -38,7 +38,7 @@ La aplicación Traveller conserva un índice temático conciso del manual con re
 Dentro de cada sistema hay tres pestañas con el estilo de ese sistema:
 
 - **Personajes**: las fichas y el creador de siempre.
-- **Campañas**: campañas propias del sistema (Vampiro y Edad Oscura van por separado) con nombre, narrador, premisa, los personajes que juegan en ella (marcados de entre las fichas del sistema, que se abren desde ahí), un diario de sesiones con fecha, título y resumen, y notas. Se guardan en este dispositivo (`localStorage`, clave `nexo-campanas-v1`) y, con cuenta, en la nube. En Traveller, Campañas son las partidas de siempre, y Personajes reúne los viajeros de todas las partidas.
+- **Campañas**: campañas propias del sistema (Vampiro y Edad Oscura van por separado) con nombre, narrador, premisa, los personajes que juegan en ella (marcados de entre las fichas del sistema, que se abren desde ahí), un diario de sesiones con fecha, título y resumen, notas, las herramientas de máster (combate, PNJ y generadores, explicadas más abajo) y un enlace opcional a la mesa virtual o al mapa que use el grupo. Se guardan en este dispositivo (`localStorage`, clave `nexo-campanas-v1`) y, con cuenta, en la nube. En Traveller, Campañas son las partidas de siempre, y Personajes reúne los viajeros de todas las partidas.
 - **Manual**: guía de consulta del reglamento por capítulos, con índice lateral (fila de capítulos en el móvil), buscador que ignora tildes y mayúsculas, ruta de navegación, entradas anterior y siguiente, y enlaces entre entradas y a las relacionadas. Cada entrada explica la idea en la historia (Narrativa) y cómo se juega (Mecánica). Las clases, clanes, ascendencias, ocupaciones y demás se construyen con los datos de cada creador, así que no se repiten; las reglas básicas se escriben en cada archivo de manual. Las fichas enlazan a su entrada (clase, clan, ascendencia, ocupación, camino, orden…). Los textos son resúmenes propios.
 
 En los textos del manual, `[[id]]` o `[[id|texto]]` enlaza con otra entrada o capítulo, `**negrita**` resalta y las líneas que empiezan por «- » forman listas. Si un enlace no lleva a ninguna entrada, la consola del navegador lo avisa. El botón «atrás» del navegador recorre las vistas (entrada, capítulo, pestaña, ficha) antes de volver a la mesa.
@@ -96,6 +96,17 @@ Cada ficha de Vampiro, D&D, El Archivo de las Tormentas, La llamada de Cthulhu y
 - **Fase de mejora de Cthulhu**: una tirada superada desde la ficha marca la casilla de esa habilidad (también se marca a mano en la lista). «Tirar la fase de mejora» lanza 1D100 por cada habilidad marcada: si sale más que su valor, o más de 95, sube 1D10; al llegar a 90 se ganan 2D6 de Cordura. La tirada de Suerte de fin de aventura está al lado. Cordura y Suerte se tiran con su valor actual.
 
 Lo plegado o desplegado del panel se recuerda en cada dispositivo (clave `nexo-juego-plegado`) y no cuenta como cambio de la ficha.
+
+## Máster: combate, PNJ y generadores
+
+Cada campaña tiene tres herramientas para quien dirige (`src/nexo/master.js`, `master-datos.js` y `master.css`), con el aspecto de su sistema. En Traveller están en la aplicación «MÁSTER» de cada partida. Lo que se apunta en ellas se guarda con la campaña o la partida, en el dispositivo y, con cuenta, en la nube.
+
+- **Combate**: una lista de combatientes con los personajes de la campaña (se añaden todos con un botón), los PNJ guardados y enemigos sueltos, que se pueden añadir de varios en varios («Bandido 1», «Bandido 2»…). Al empezar, NEXO tira la iniciativa de los enemigos y espera la que digan los jugadores, o la tira también con «Tirar las que faltan». Después lleva el turno y la ronda, con «Siguiente turno» y «Anterior», y salta a quien ha caído. En cada fila se apuntan los puntos de golpe (los botones restan o suman de uno en uno, y vale escribir «-7» o «+5»), una nota corta para estados y si ha caído.
+- **Iniciativa de cada sistema**: D&D tira d20 más la iniciativa del personaje; Pathfinder, d20 más Percepción, y en los empates van antes los enemigos; Vampiro, 1d10 más Destreza y Astucia; Cthulhu ordena por DES, sin tirar; Traveller, 2D más el MD. En El Archivo de las Tormentas no hay iniciativa: cada uno elige turno rápido o lento y el orden es héroes rápidos, enemigos rápidos, héroes lentos y enemigos lentos.
+- **PNJ**: aliados y enemigos de la campaña con nombre, papel, puntos de golpe, defensa, iniciativa y notas. Cada uno se manda al combate con un botón, se duplica o se borra.
+- **Generadores**: nombres por pueblo o cultura, PNJ al vuelo, ganchos de aventura, lugares y una tabla propia de cada ambientación (botín menudo, rumores del Elíseo, presagios, sucesos inquietantes, lo que deja la alta tormenta). Un resultado se guarda como PNJ o se manda a las notas de la campaña. Los textos de las tablas son propios de NEXO.
+- **Mundos de Traveller**: el generador «Mundo» tira un mundo completo con su perfil (puerto, tamaño, atmósfera, hidrografía, población, gobierno, ley y tecnología), los códigos comerciales, las bases y si hay gigante gaseoso, cada dato con su explicación. «Encuentro en el espacio» da qué se cruza con la nave.
+- **Mesa virtual**: NEXO no trae mapa táctico. En «Campaña» se puede pegar el enlace de la mesa virtual o del mapa que use el grupo (Owlbear Rodeo, Roll20, Foundry, una imagen compartida…) y aparece una baldosa «Mesa virtual» que lo abre en otra pestaña.
 
 ## Vista principal
 

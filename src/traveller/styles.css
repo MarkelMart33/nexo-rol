@@ -221,3 +221,10 @@ body:has(#gameApp:not([hidden]) #appHome:not([hidden])) .app-tile.app-tile-pulse
 .character-char-roll{display:block;margin-top:7px;padding:4px 7px;border:1px solid #294149;border-radius:3px;background:#10212b;color:#75e7df;font:9px var(--mono);letter-spacing:.06em;cursor:pointer}
 .dice-tray-button{display:flex;margin:14px auto 0;width:min(100%,400px);justify-content:center}
 @media(max-width:650px){.character-skill-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 56px 88px 28px 22px}.character-skill-roll{width:28px;height:28px}}
+/* App Máster: combate, PNJ y generadores (src/nexo/master.js) */
+.glyph-master{color:var(--nexo-cyan);background:#141f2b}
+body:has(#gameApp:not([hidden]) #appHome:not([hidden])) .app-glyph.glyph-master{color:#8deaff}
+.master-panel{display:none;max-width:860px;margin:0 auto;padding:20px}
+#appWorkspace[data-view=master] .hero,#appWorkspace[data-view=master] .summary-grid,#appWorkspace[data-view=master] .content-grid,#appWorkspace[data-view=master] .notes-panel,#appWorkspace[data-view=master] .map-panel,#appWorkspace[data-view=master] .traveller-panel,#appWorkspace[data-view=master] .hangar-panel,#appWorkspace[data-view=master] .characters-panel{display:none}
+#appWorkspace[data-view=master] .master-panel{display:block}
+@media(max-width:520px){.master-panel{padding:14px}}

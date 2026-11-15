@@ -107,7 +107,7 @@
   const ap = window.NEXO_APARTADOS?.create({
     prefix: 'pf', system: () => GAME, home: true, frame: body => frame(body),
     leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
-    characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Aventurero sin nombre', summary: describe(ch) })),
+    characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Aventurero sin nombre', summary: describe(ch), init: cls(ch) ? mod(ch, 'sab') + prof(cls(ch).perc) : 0 })),
     openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
     currentId: () => current?.id,
     manual: () => manualBook || (manualBook = window.NEXO_MANUALS?.pathfinder?.({ ATTR, RANKS, SKILLS, ANCESTRIES, BACKGROUNDS, CLASSES }) || null),
