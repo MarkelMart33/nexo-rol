@@ -372,6 +372,7 @@
       <div class="nd-result-body"><div class="nd-dice-row">${r.dice.map(d => shapeHtml(d)).join('')}</div><div class="nd-total"><strong>${esc(r.total)}</strong>${r.unit ? `<small>${esc(r.unit)}</small>` : ''}</div></div>
       <p class="nd-verdict">${esc(r.verdict)}${r.badge ? ` <span>${esc(r.badge)}</span>` : ''}</p>
       ${r.detail ? `<p class="nd-detail">${esc(r.detail)}</p>` : ''}
+      ${r.note ? `<p class="nd-note">${esc(r.note)}</p>` : ''}
     </div>`;
   }
 
@@ -405,7 +406,7 @@
     const v = values();
     const modes = Object.entries(rules.modes);
     const sources = state.mode === 'test' ? sourceList() : [];
-    const picks = sources.map((s, i) => `<label class="nd-field"><span>${esc(s.label)}</span><select data-nd-source="${i}"><option value="">${s.none || '—'}</option>${s.items.map(([k, l, val]) => `<option value="${esc(k)}" ${state.picks[i] === k ? 'selected' : ''}>${esc(l)} (${esc(s.show ? s.show(val) : val)})</option>`).join('')}</select></label>`).join('');
+    const picks = sources.map((s, i) => s.fixed ? `<p class="nd-fixed"><b>${esc(s.label)}</b> ${s.items.map(([, l, val]) => `${esc(l)} (${esc(s.show ? s.show(val) : val)})`).join(' · ')}</p>` : `<label class="nd-field"><span>${esc(s.label)}</span><select data-nd-source="${i}"><option value="">${s.none || '—'}</option>${s.items.map(([k, l, val]) => `<option value="${esc(k)}" ${state.picks[i] === k ? 'selected' : ''}>${esc(l)} (${esc(s.show ? s.show(val) : val)})</option>`).join('')}</select></label>`).join('');
     const history = state.history.slice(1, 5).map(r => `<li><span>${esc(r.title)}</span><b>${esc(r.total)}</b><small>${esc(r.verdict)}</small></li>`).join('');
     win.dataset.ndTheme = state.theme;
     win.innerHTML = `<header class="nd-head"><span class="nd-logo" aria-hidden="true">⚄</span><b>Dados · ${esc(rules.name)}</b><button type="button" class="nd-icon" data-nd-toggle aria-expanded="${state.formOpen}" aria-label="${state.formOpen ? 'Ocultar opciones' : 'Mostrar opciones'}">${state.formOpen ? '▾' : '▸'} Opciones</button><button type="button" class="nd-icon nd-close" data-nd-close aria-label="Cerrar dados">×</button></header>
@@ -452,15 +453,18 @@
   }
 
   // Las listas de la ficha rellenan el primer campo (MD, reserva, modificador o valor) con la suma de lo elegido.
+  // Una lista «fixed» no se elige: sus valores se suman siempre a lo elegido (penalización por heridas, por ejemplo).
   function applySources(list) {
-    const chosen = list.map((s, i) => s.items.find(([k]) => k === state.picks[i])).filter(Boolean);
+    const chosen = list.map((s, i) => (s.fixed ? null : s.items.find(([k]) => k === state.picks[i]))).filter(Boolean);
     if (!chosen.length) { state.label = ''; return; }
-    values()[modeOf().fields[0].key] = chosen.reduce((t, [, , val]) => t + Number(val), 0);
+    const fixed = list.filter(s => s.fixed).flatMap(s => s.items);
+    values()[modeOf().fields[0].key] = [...chosen, ...fixed].reduce((t, [, , val]) => t + Number(val), 0);
     state.label = chosen.map(([, l]) => l).join(' + ');
   }
+  const fixedNote = () => (state.label && state.mode === 'test' ? sourceList().filter(s => s.fixed).map(s => `${s.label}: ${s.items.map(([, l, val]) => `${l} (${s.show ? s.show(val) : val})`).join(', ')}.`).join(' ') : '');
 
   function rollFromForm() {
-    const result = execute({ ...values(), label: state.label || '' });
+    const result = execute({ ...values(), label: state.label || '', note: fixedNote() });
     if (result && !result.error) state.formOpen = false;
     render();
     show(!result.error);
@@ -470,6 +474,7 @@
     const result = modeOf().roll(opts);
     state.last = result;
     if (!result.error) {
+      if (opts.note) result.note = String(opts.note);
       state.lastOpts = { ...opts, mode: state.mode };
       state.history.unshift(result);
       state.history.length = Math.min(state.history.length, 8);
@@ -769,7 +774,7 @@
   // Estilos del lanzador: se cargan una vez para todos los apartados.
   const css = document.createElement('link');
   css.rel = 'stylesheet';
-  css.href = './src/nexo/dice.css?v=3';
+  css.href = './src/nexo/dice.css?v=4';
   document.head.append(css);
 
   window.NEXO_DICE = { tray, roll, close, die, rules: RULES };

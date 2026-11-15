@@ -131,3 +131,7 @@ html.nd-is-open .nd-fab{opacity:0;pointer-events:none}
 .nd-diary>button:hover:not(:disabled){background:color-mix(in srgb,var(--nd-accent) 16%,transparent)}
 .nd-diary>button:disabled{border-color:var(--nd-line);color:var(--nd-muted)!important;cursor:default}
 .nd-diary-hint{margin:0;color:var(--nd-muted);font-size:13px;line-height:1.35}
+/* Nota de la ficha en una tirada (estados que la cambian) y modificador fijo en las opciones */
+.nd-note{margin:0;padding:6px 9px;border-left:3px solid var(--nd-accent);background:color-mix(in srgb,var(--nd-accent) 10%,transparent);font-size:14px;line-height:1.4}
+.nd-fixed{grid-column:1/-1;margin:0;color:var(--nd-muted);font-size:14px}
+.nd-fixed b{color:inherit;font-weight:700}

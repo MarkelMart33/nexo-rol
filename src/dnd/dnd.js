@@ -123,6 +123,15 @@
     put: ch => { store.characters = [ch, ...store.characters.filter(item => item.id !== ch.id)]; persist(); renderList(); }
   });
 
+  // En juego: puntos de golpe, dados de golpe, espacios, recursos de clase, estados y descansos (src/nexo/juego.js).
+  const juego = window.NEXO_JUEGO?.create({
+    prefix: 'dnd', title: '<span>⚔</span> En juego <small>lo que cambia durante la partida</small>',
+    current: () => current, model: ch => playModel(ch), save: () => scheduleSave(), term, ready: ch => isComplete(ch),
+    act: (id, a, done, before) => playAction(id, a, done, before),
+    // Al volver a tener puntos de golpe, las salvaciones contra muerte se borran.
+    onChange: () => { const a = current && juego.api(current); if (a?.model && a.get('hp') > 0 && (a.get('ds') || a.get('df'))) juego.change(current, x => { x.set('ds', 0); x.set('df', 0); }); }
+  });
+
   function load() {
     try {
       const parsed = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -328,6 +337,121 @@
     else if (hasSub(ch, 'bardo', 'valor') && L >= 6) attacks = 2;
     if (attacks > 1) out.push(['Ataques por acción', attacks]);
     return out;
+  }
+
+  // ── En juego
+  // Estados del manual (dnd-estado-…) con lo que hacen a tus propias tiradas.
+  const PLAY_CONDITIONS = [
+    ['agarrado', 'Agarrado', 'Velocidad 0. Desventaja en ataques contra quien no sea el que te agarra (aplícala tú: depende del objetivo).'],
+    ['apresado', 'Apresado', 'Velocidad 0. Desventaja en tus ataques y en salvaciones de Destreza.'],
+    ['asustado', 'Asustado', 'Desventaja en pruebas y ataques mientras veas la fuente del miedo.'],
+    ['aturdido', 'Aturdido', 'Incapacitado: no actúas. Fallas las salvaciones de Fuerza y Destreza.'],
+    ['cegado', 'Cegado', 'Desventaja en tus ataques. Fallas las pruebas que dependan de la vista.'],
+    ['derribado', 'Derribado', 'Desventaja en tus ataques. Levantarte cuesta la mitad de la velocidad.'],
+    ['ensordecido', 'Ensordecido', 'Fallas las pruebas que dependan del oído.'],
+    ['envenenado', 'Envenenado', 'Desventaja en tiradas de ataque y pruebas de característica.'],
+    ['hechizado', 'Hechizado', 'No puedes atacar ni dañar a quien te hechiza.'],
+    ['incapacitado', 'Incapacitado', 'Sin acciones, acciones adicionales ni reacciones. Desventaja en la iniciativa.'],
+    ['inconsciente', 'Inconsciente', 'Incapacitado y derribado. Fallas las salvaciones de Fuerza y Destreza.'],
+    ['invisible', 'Invisible', 'Ventaja en tus ataques y en la iniciativa.'],
+    ['paralizado', 'Paralizado', 'Incapacitado, velocidad 0. Fallas las salvaciones de Fuerza y Destreza.'],
+    ['petrificado', 'Petrificado', 'Incapacitado. Fallas las salvaciones de Fuerza y Destreza. Resistencia a todo el daño.']
+  ];
+  const CONDITION_NAME = Object.fromEntries(PLAY_CONDITIONS.map(([k, name]) => [k, name]));
+  function playModel(ch) {
+    const cls = CLASSES[ch.cls];
+    if (!cls) return null;
+    const L = ch.level;
+    const con = mod(ch, 'con');
+    const LONG = { long: 'all' }, SHORT = { short: 'all' }, ONE = { short: 1, long: 'all' };
+    const use = (id, label, max, rest, hint = '') => ({ id, label, max, rest, hint, group: 'Recursos de clase' });
+    const res = [];
+    switch (ch.cls) {
+      case 'barbaro': res.push(use('furia', 'Usos de furia', step(L, [[1, 2], [3, 3], [6, 4], [12, 5], [17, 6]]), ONE)); break;
+      case 'bardo': res.push(use('inspiracion', 'Inspiración bárdica', Math.max(1, mod(ch, 'car')), L >= 5 ? SHORT : LONG, `d${step(L, [[1, 6], [5, 8], [10, 10], [15, 12]])}`)); break;
+      case 'brujo': res.push({ ...use('pacto', 'Espacios de pacto', step(L, [[1, 1], [2, 2], [11, 3], [17, 4]]), SHORT, `nivel ${step(L, [[1, 1], [3, 2], [5, 3], [7, 4], [9, 5]])}`), term: 'dnd-espacios' }); break;
+      case 'clerigo': if (L >= 2) res.push(use('canalizar', 'Canalizar divinidad', step(L, [[2, 2], [6, 3], [18, 4]]), ONE)); break;
+      case 'druida': if (L >= 2) res.push(use('forma', 'Forma salvaje', step(L, [[2, 2], [6, 3], [17, 4]]), ONE)); break;
+      case 'explorador': res.push(use('marca', 'Marca del cazador gratis', step(L, [[1, 2], [5, 3], [9, 4], [13, 5], [17, 6]]), LONG)); break;
+      case 'guerrero':
+        res.push(use('aliento', 'Tomar aliento', step(L, [[1, 2], [4, 3], [10, 4]]), ONE));
+        if (L >= 2) res.push(use('oleada', 'Oleada de acción', L >= 17 ? 2 : 1, SHORT));
+        if (L >= 9) res.push(use('indomable', 'Indomable', step(L, [[9, 1], [13, 2], [17, 3]]), LONG));
+        break;
+      case 'hechicero': res.push(use('innata', 'Hechicería innata', 2, LONG)); if (L >= 2) res.push(use('hechiceria', 'Puntos de hechicería', L, LONG)); break;
+      case 'mago': res.push(use('recuperacion', 'Recuperación arcana', 1, LONG)); break;
+      case 'monje': if (L >= 2) res.push(use('concentracion', 'Puntos de concentración', L, SHORT)); break;
+      case 'paladin': res.push(use('manos', 'Imposición de manos', 5 * L, LONG, 'PG')); if (L >= 3) res.push(use('canalizar', 'Canalizar divinidad', L >= 11 ? 3 : 2, ONE)); break;
+      default: break;
+    }
+    if (hasFeat(ch, 'afortunado')) res.push(use('suerte', 'Puntos de suerte', profBonus(ch), LONG));
+    const slots = (spellSlots(ch) || []).map((n, i) => ({ id: `slot${i + 1}`, label: `Nivel ${i + 1}`, name: `Espacios de nivel ${i + 1}`, max: n, rest: LONG, group: 'Espacios de conjuro' }));
+    const dead = { kind: 'value', start: 0, cap: 3, showAt: { id: 'hp', is: 0 }, group: 'Salvaciones contra muerte', rest: { long: { set: 0 } } };
+    return {
+      counters: [
+        { id: 'hp', label: 'Puntos de golpe', max: hitPoints(ch), big: true, temp: 'thp', verbs: ['Daño', 'Curar'], rest: LONG, zero: 'A 0 puntos de golpe caes inconsciente y tiras una salvación contra muerte al empezar cada turno.' },
+        { id: 'thp', label: 'PG temporales', kind: 'value', start: 0, cap: 999, inside: 'hp', term: 'dnd-pg-temporales', rest: { long: { set: 0 } } },
+        { ...dead, id: 'ds', label: 'Éxitos', actions: [{ id: 'death', label: 'Tirar salvación' }] },
+        { ...dead, id: 'df', label: 'Fallos' },
+        { id: 'hd', label: 'Dados de golpe', hint: `d${cls.die}`, max: L, rest: LONG, term: 'dnd-descansos', group: 'General', actions: [{ id: 'hd', label: `Gastar uno: d${cls.die}${con ? signed(con) : ''}` }] },
+        { id: 'insp', label: 'Inspiración heroica', kind: 'value', start: 0, cap: 1, term: 'dnd-inspiracion', group: 'General' },
+        ...slots, ...res
+      ],
+      groupTerms: { 'Espacios de conjuro': 'dnd-espacios', 'Salvaciones contra muerte': 'dnd-salvaciones-muerte' },
+      conditions: [
+        ...PLAY_CONDITIONS.map(([k, label, effect]) => ({ id: k, label, effect, term: `dnd-estado-${k}` })),
+        { id: 'agotamiento', label: 'Agotamiento', max: 6, term: 'dnd-estado-agotamiento', rest: { long: -1 }, effect: n => (n >= 6 ? 'Con 6 niveles, tu personaje muere.' : `−${2 * n} a todas tus pruebas d20 y −${5 * n} pies de velocidad.`) }
+      ],
+      rests: [
+        { id: 'short', label: 'Descanso corto', hint: '1 hora · gasta dados de golpe para curarte' },
+        { id: 'long', label: 'Descanso largo', hint: '8 horas · recuperas puntos de golpe, dados y espacios', covers: ['short'] }
+      ]
+    };
+  }
+  function playAction(id, a, done, before) {
+    const ch = a.ch;
+    const dice = window.NEXO_DICE;
+    if (id === 'hd') {
+      if (!a.get('hd')) { done('No te quedan dados de golpe.'); return; }
+      const die = CLASSES[ch.cls].die;
+      const con = mod(ch, 'con');
+      const rolled = dice?.roll('dnd', { mode: 'damage', expr: `1d${die}${con ? (con > 0 ? '+' : '-') + Math.abs(con) : ''}`, label: 'Dado de golpe' });
+      const healed = Math.max(1, Number.isFinite(Number(rolled?.total)) ? Number(rolled.total) : 1 + Math.floor(Math.random() * die) + con);
+      a.add('hd', -1);
+      a.add('hp', healed);
+      done(`Dado de golpe: recuperas ${healed} ${healed === 1 ? 'punto' : 'puntos'} de golpe.`, before);
+    } else if (id === 'death') {
+      const rolled = dice?.roll('dnd', { label: 'Salvación contra muerte', dc: 10 });
+      const d20 = Number(rolled?.total) || 1 + Math.floor(Math.random() * 20);
+      let text;
+      if (d20 === 20) { a.set('hp', 1); a.set('ds', 0); a.set('df', 0); text = '20 natural: recuperas 1 punto de golpe y vuelves en ti.'; }
+      else if (d20 >= 10) { a.add('ds', 1); text = a.get('ds') >= 3 ? `Un ${d20}: tercer éxito. Quedas estable.` : `Un ${d20}: éxito.`; }
+      else { a.add('df', d20 === 1 ? 2 : 1); text = a.get('df') >= 3 ? `Un ${d20}: tercer fallo. Tu personaje muere.` : d20 === 1 ? 'Un 1 natural: dos fallos.' : `Un ${d20}: fallo.`; }
+      done(`Salvación contra muerte. ${text}`, before);
+    }
+  }
+  // Cómo cambian los estados activos una tirada de la ficha: modificador, ventaja o desventaja y la nota que lo explica.
+  function rollEffects(ch, key) {
+    const has = id => juego?.cond(ch, id) || 0;
+    const kind = key === 'spell' ? 'attack' : key.startsWith('sv:') ? 'save' : 'check';
+    const adv = [], dis = [], notes = [];
+    let bonus = 0;
+    const tired = has('agotamiento');
+    if (tired) { bonus -= 2 * tired; notes.push(`Agotamiento ${tired}: −${2 * tired}`); }
+    const push = (list, ids) => ids.forEach(id => { if (has(id)) list.push(CONDITION_NAME[id]); });
+    if (kind === 'attack') { push(dis, ['apresado', 'asustado', 'cegado', 'derribado', 'envenenado']); push(adv, ['invisible']); }
+    else if (kind === 'check') {
+      push(dis, ['asustado', 'envenenado']);
+      if (key === 'init') { push(adv, ['invisible']); push(dis, ['incapacitado']); }
+    } else {
+      const ability = key.slice(3);
+      if (ability === 'des') push(dis, ['apresado']);
+      if (ability === 'fue' || ability === 'des') ['aturdido', 'inconsciente', 'paralizado', 'petrificado'].forEach(id => { if (has(id)) notes.push(`${CONDITION_NAME[id]}: fallas esta salvación sin tirar`); });
+    }
+    if (adv.length && dis.length) notes.push(`La ventaja (${adv.join(', ')}) y la desventaja (${dis.join(', ')}) se anulan`);
+    else if (adv.length) notes.push(`Ventaja por ${adv.join(', ')}`);
+    else if (dis.length) notes.push(`Desventaja por ${dis.join(', ')}`);
+    return { bonus, adv: adv.length && !dis.length ? 'adv' : dis.length && !adv.length ? 'dis' : 'normal', note: notes.length ? notes.join('. ') + '.' : '' };
   }
 
   // Rasgos de clase y subclase con su nivel, más los hitos de elección.
@@ -540,7 +664,9 @@
   function diceSources() { return current ? [{ label: 'Tirada de la ficha', items: diceItems(current), show: signed }] : []; }
   function rollFromSheet(key) {
     const item = diceItems(current).find(([k]) => k === key);
-    if (item) window.NEXO_DICE?.roll('dnd', { mod: item[2], label: item[1], kind: key === 'spell' ? 'attack' : 'check' });
+    if (!item) return;
+    const fx = rollEffects(current, key);
+    window.NEXO_DICE?.roll('dnd', { mod: item[2] + fx.bonus, adv: fx.adv, note: fx.note, label: item[1], kind: key === 'spell' ? 'attack' : 'check' });
   }
 
   function describe(ch) {
@@ -577,6 +703,7 @@
     current = ch;
     const saved = store.characters.some(item => item.id === ch.id);
     frame(`<div class="dnd-editor-head"><button class="dnd-button ghost" data-back>← TUS AVENTUREROS</button>${kit?.tools() || ''}<button class="dnd-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
+      <div data-play></div>
       <section class="dnd-panel"><h2><span>I</span> Identidad</h2><div class="dnd-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del personaje' })}${field('Jugador', 'player')}${field('Campaña', 'campaign')}${field('Alineamiento', 'alignment', { list: 'dndAlignments' })}
       </div><datalist id="dndAlignments">${ALIGNMENTS.map(a => `<option value="${esc(a)}">`).join('')}</datalist></section>
@@ -918,6 +1045,7 @@
       input.addEventListener('change', () => changed());
     });
     if (store.characters.some(item => item.id === ch.id)) host.querySelector('[data-delete]').hidden = false;
+    juego?.render(host.querySelector('[data-play]'));
   }
 
   function ensureHost() {

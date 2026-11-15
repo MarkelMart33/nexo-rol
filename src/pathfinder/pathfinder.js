@@ -125,6 +125,73 @@
     put: ch => { store.characters = [ch, ...store.characters.filter(item => item.id !== ch.id)]; persist(); renderList(); }
   });
 
+  // En juego: puntos de golpe, puntos de héroe, foco, conjuros, estados y descansos (src/nexo/juego.js).
+  const juego = window.NEXO_JUEGO?.create({
+    prefix: 'pf', title: '<span>✧</span> En juego <small>lo que cambia durante la aventura</small>',
+    current: () => current, model: ch => playModel(ch), save: () => scheduleSave(), term, ready: ch => isComplete(ch)
+  });
+  // Estados: [id, nombre, grado máximo (0 = sin grado), entrada del manual, efecto].
+  const PLAY_CONDITIONS = [
+    ['asustado', 'Asustado', 4, 'pf-asustado', n => `−${n} a todas tus pruebas y CD. Baja 1 al final de cada uno de tus turnos.`],
+    ['indispuesto', 'Indispuesto', 4, 'pf-estado-indispuesto', n => `−${n} a todas tus pruebas y CD.`],
+    ['torpe', 'Torpe', 4, 'pf-estado-torpe', n => `−${n} a lo que use Destreza: CA, Reflejos, ataques a distancia y sus habilidades.`],
+    ['debilitado', 'Debilitado', 4, 'pf-estado-debilitado', n => `−${n} a lo que use Fuerza: ataques cuerpo a cuerpo, daño y Atletismo.`],
+    ['drenado', 'Drenado', 4, '', n => `−${n} a Fortaleza y a lo que use Constitución, y ${n} × nivel menos de puntos de golpe máximos.`],
+    ['estupefacto', 'Estupefacto', 4, '', n => `−${n} a lo que use Inteligencia, Sabiduría o Carisma: Voluntad, Percepción, conjuros y sus habilidades.`],
+    ['fatigado', 'Fatigado', 0, 'pf-estado-fatigado', '−1 a la CA y a las salvaciones. Se quita con un descanso nocturno.'],
+    ['desprevenido', 'Desprevenido', 0, 'pf-desprevenido', '−2 a tu CA.'],
+    ['derribado', 'Derribado', 0, 'pf-estado-derribado', 'Desprevenido y −2 a tus ataques.'],
+    ['agarrado', 'Agarrado', 0, 'pf-estado-agarrado', 'Desprevenido e inmovilizado.'],
+    ['inmovilizado', 'Inmovilizado', 0, 'pf-estado-inmovilizado', 'No puedes desplazarte.'],
+    ['lento', 'Lento', 3, 'pf-estado-lento', n => `Pierdes ${n} ${n === 1 ? 'acción' : 'acciones'} al empezar cada turno.`],
+    ['aturdido', 'Aturdido', 4, 'pf-estado-aturdido', n => `Pierdes ${n} ${n === 1 ? 'acción' : 'acciones'} en total y, mientras, no puedes actuar.`],
+    ['acelerado', 'Acelerado', 0, 'pf-estado-acelerado', 'Una acción extra cada turno, para lo que indique el efecto.'],
+    ['moribundo', 'Moribundo', 4, 'pf-moribundo', n => `Inconsciente. Prueba de recuperación: prueba plana CD ${10 + n}. Con moribundo 4 mueres.`],
+    ['herido', 'Herido', 4, 'pf-moribundo', n => `Si vuelves a quedar moribundo, súmale ${n}.`],
+    ['condenado', 'Condenado', 3, '', n => `Mueres con moribundo ${4 - n} en vez de 4.`],
+    ['inconsciente', 'Inconsciente', 0, 'pf-estado-inconsciente', 'No actúas. Desprevenido y −4 a la CA, la Percepción y los Reflejos.']
+  ];
+  const CONDITION_REST = { fatigado: { noche: 'clear' }, drenado: { noche: -1 }, condenado: { noche: -1 } };
+  function playModel(ch) {
+    const c = cls(ch);
+    if (!c || !anc(ch)) return null;
+    const drained = juego?.cond(ch, 'drenado') || 0;
+    const magic = [{ id: 'foco', label: 'Puntos de foco', max: 1, editMax: true, term: 'pf-foco', group: 'Magia', rest: { reenfocar: 1, noche: 'all' } }];
+    if (c.spells) magic.push({ id: 'rango1', label: 'Espacios de rango 1', max: ['hechicero', 'oraculo'].includes(ch.cls) ? 3 : 2, editMax: true, term: 'pf-rangos-conjuro', group: 'Magia', rest: { noche: 'all' } });
+    if (ch.cls === 'clerigo') magic.push({ id: 'fuente', label: 'Fuente divina', hint: 'curar o dañar', max: 4, editMax: true, group: 'Magia', rest: { noche: 'all' } });
+    return {
+      counters: [
+        { id: 'pg', label: 'Puntos de golpe', max: Math.max(1, hp(ch) - drained * LEVEL), big: true, temp: 'pgt', verbs: ['Daño', 'Curar'], zero: 'A 0 PG caes inconsciente y quedas moribundo 1 (2 si fue un crítico), más tu valor de herido.' },
+        { id: 'pgt', label: 'PG temporales', kind: 'value', start: 0, cap: 999, inside: 'pg', rest: { noche: { set: 0 } } },
+        { id: 'heroe', label: 'Puntos de héroe', kind: 'value', start: 1, cap: 3, term: 'pf-puntos-heroe', group: 'General', rest: { sesion: { set: 1 } } },
+        ...magic
+      ],
+      conditions: PLAY_CONDITIONS.map(([id, label, max, entry, effect]) => ({ id, label, max, term: entry, effect, rest: CONDITION_REST[id] })),
+      rests: [
+        { id: 'reenfocar', label: 'Reenfocar', hint: '10 minutos · recuperas 1 punto de foco' },
+        { id: 'noche', label: 'Descanso nocturno', hint: '8 horas · puntos de golpe, foco y conjuros', run: a => { a.add('pg', Math.max(1, mod(ch, 'con')) * LEVEL); if (a.get('pg') >= a.max('pg')) a.setCond('herido', 0); } },
+        { id: 'sesion', label: 'Nueva sesión', hint: 'los puntos de héroe vuelven a 1' }
+      ]
+    };
+  }
+  // Cómo cambian los estados una tirada de la ficha. De los penalizadores de estado solo cuenta el mayor.
+  function rollEffects(ch, key) {
+    const v = id => juego?.cond(ch, id) || 0;
+    const attr = key === 'perc' || key === 'vol' ? 'sab' : key === 'fort' ? 'con' : key === 'ref' || key === 'ranged' ? 'des' : key === 'melee' ? 'fue' : key === 'spell' ? keyAttr(ch) : key.startsWith('sk:') ? SKILLS[key.slice(3)][1] : 'int';
+    const status = [['Asustado', v('asustado'), true], ['Indispuesto', v('indispuesto'), true]];
+    if (attr === 'des') status.push(['Torpe', v('torpe'), true]);
+    if (attr === 'fue') status.push(['Debilitado', v('debilitado'), true]);
+    if (attr === 'con') status.push(['Drenado', v('drenado'), true]);
+    if (['int', 'sab', 'car'].includes(attr)) status.push(['Estupefacto', v('estupefacto'), true]);
+    if (['fort', 'ref', 'vol'].includes(key)) status.push(['Fatigado', v('fatigado'), false]);
+    const worst = status.filter(([, n]) => n).sort((a, b) => b[1] - a[1])[0];
+    const notes = [];
+    let bonus = 0;
+    if (worst) { bonus -= worst[1]; notes.push(`${worst[0]}${worst[2] ? ' ' + worst[1] : ''}: −${worst[1]} de estado`); }
+    if (['melee', 'ranged', 'spell'].includes(key) && v('derribado')) { bonus -= 2; notes.push('Derribado: −2 de circunstancia'); }
+    return { bonus, note: notes.length ? notes.join('. ') + '.' : '' };
+  }
+
   function load() {
     try {
       const parsed = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -429,7 +496,9 @@
   function diceSources() { return current ? [{ label: 'Tirada de la ficha', items: diceItems(current), show: signed }] : []; }
   function rollFromSheet(key) {
     const item = diceItems(current).find(([k]) => k === key);
-    if (item) window.NEXO_DICE?.roll('pathfinder', { mod: item[2], label: item[1] });
+    if (!item) return;
+    const fx = rollEffects(current, key);
+    window.NEXO_DICE?.roll('pathfinder', { mod: item[2] + fx.bonus, label: item[1], note: fx.note });
   }
 
   function renderList() {
@@ -464,6 +533,7 @@
     current = ch;
     const saved = store.characters.some(item => item.id === ch.id);
     frame(`<div class="pf-editor-head"><button class="pf-button ghost" data-back>← TUS AVENTUREROS</button>${kit?.tools() || ''}<button class="pf-button danger" data-delete ${saved ? '' : 'hidden'}>BORRAR FICHA</button></div>
+      <div data-play></div>
       <section class="pf-panel">${heading(1, 'Aventurero', 'datos básicos')}<div class="pf-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del personaje' })}${field('Jugador', 'player')}${field('Campaña', 'campaign')}
         ${field('Dios o filosofía', 'deity', { placeholder: 'Iomedae, Desna, ninguno…' })}${field('Edad', 'age')}${field('Edictos y anatemas', 'edicts', { placeholder: 'Lo que defiendes y lo que nunca harías' })}
@@ -657,6 +727,7 @@
     const loreInput = sheet.querySelector('[data-lore-name]');
     sheet.querySelector('[data-lore-add]')?.addEventListener('click', () => addLore(loreInput.value));
     loreInput?.addEventListener('keydown', event => { if (event.key === 'Enter') addLore(loreInput.value); });
+    juego?.render(host.querySelector('[data-play]'));
   }
 
   function ensureHost() {

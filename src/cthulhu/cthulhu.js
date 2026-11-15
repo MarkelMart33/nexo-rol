@@ -117,6 +117,76 @@
     put: ch => { store.characters = [ch, ...store.characters.filter(item => item.id !== ch.id)]; persist(); renderList(); }
   });
 
+  // En juego: puntos de vida, Cordura, magia, Suerte, estados y la fase de mejora (src/nexo/juego.js).
+  const NO_TICK = ['credito', 'mitos'];
+  let improveLog = null;      // { id de ficha, rows } con el resultado de la última fase de mejora
+  const juego = window.NEXO_JUEGO?.create({
+    prefix: 'cth', title: '<span>✶</span> En juego <small>lo que cambia durante la investigación</small>',
+    current: () => current, model: ch => playModel(ch), save: () => scheduleSave(), term, ready: ch => isComplete(ch),
+    bindExtra: (node, a, done) => {
+      node.querySelector('[data-improve]')?.addEventListener('click', () => improve(a, done));
+      node.querySelector('[data-luck-check]')?.addEventListener('click', () => luckCheck(a, done));
+    }
+  });
+  function playModel(ch) {
+    if (!hp(ch) || !stat(ch, 'pod')) return null;
+    const maxSan = 99 - skill(ch, 'mitos');
+    return {
+      counters: [
+        { id: 'pv', label: 'Puntos de vida', max: hp(ch), big: true, verbs: ['Daño', 'Curar'], term: 'cth-vida', zero: 'A 0 puntos de vida caes inconsciente; con una herida grave quedas moribundo.' },
+        { id: 'san', label: 'Cordura', kind: 'value', start: Math.min(stat(ch, 'pod'), maxSan), cap: maxSan, big: true, verbs: ['Perder', 'Recuperar'], term: 'cth-cordura' },
+        { id: 'pm', label: 'Puntos de magia', max: mp(ch), rest: { dia: 'all' }, term: 'cth-conjuros', group: 'Reservas' },
+        { id: 'suerte', label: 'Suerte', kind: 'value', start: ch.luck || 0, cap: 99, term: 'cth-suerte', group: 'Reservas' }
+      ],
+      conditions: [
+        { id: 'grave', label: 'Herida grave', term: 'cth-vida', effect: 'Perdiste de un golpe la mitad o más de tus puntos de vida. Curas con una tirada de CON por semana, no cada día.' },
+        { id: 'inconsciente', label: 'Inconsciente', term: 'cth-vida', effect: 'No actúas hasta recuperar al menos 1 punto de vida.' },
+        { id: 'moribundo', label: 'Moribundo', term: 'cth-vida', effect: 'Tira CON cada asalto: si fallas, mueres. Primeros auxilios te estabiliza.' },
+        { id: 'temporal', label: 'Locura temporal', term: 'cth-ataque-locura', effect: 'Perdiste 5 o más de Cordura de una vez y fallaste la tirada de INT: sufres un ataque de locura.' },
+        { id: 'indefinida', label: 'Locura indefinida', term: 'cth-cordura', effect: 'Perdiste un quinto de tu Cordura en un día: dura hasta que te traten.' }
+      ],
+      summary: a => `PV ${a.get('pv')}/${a.max('pv')} · Cordura ${a.get('san')} · Suerte ${a.get('suerte')}`,
+      rests: [{ id: 'dia', label: 'Un día de descanso', hint: 'recuperas 1 punto de vida (sin herida grave) y los puntos de magia', run: a => { if (!a.cond('grave')) a.add('pv', 1); } }],
+      extra: a => {
+        const marked = a.marks().filter(k => SKILLS[k]).sort((x, y) => SKILLS[x][0].localeCompare(SKILLS[y][0], 'es'));
+        const log = improveLog && improveLog.id === ch.id ? `<ul class="nj-list">${improveLog.rows.map(r => `<li class="${r.up ? 'is-up' : ''}"><span>${esc(r.name)}</span><b>${esc(r.text)}</b></li>`).join('')}</ul>` : '';
+        return `<h3>${term('cth-mejora', 'Fase de mejora')}</h3>
+          <p>${marked.length ? `${marked.length === 1 ? 'Una habilidad marcada' : `${marked.length} habilidades marcadas`}: ${marked.map(k => esc(skillName(ch, k))).join(', ')}.` : 'Ninguna habilidad marcada. Al superar una tirada desde la ficha se marca sola su casilla; también puedes marcarla a mano en la lista de habilidades.'}</p>
+          <p class="nj-zero">Al acabar la aventura se tira 1D100 por cada habilidad marcada: si sale más que su valor, o más de 95, sube 1D10. Si llega a 90 ganas 2D6 de Cordura.</p>
+          <div class="nj-acts"><button type="button" class="nj-btn" data-improve data-nj-key="improve" ${marked.length ? '' : 'disabled'}>Hacer las tiradas de mejora</button><button type="button" class="nj-btn" data-luck-check data-nj-key="luck">Recuperar Suerte (opcional)</button></div>${log}`;
+      }
+    };
+  }
+  const d100 = () => 1 + Math.floor(Math.random() * 100);
+  function improve(a, done) {
+    const ch = a.ch;
+    const rows = [];
+    let sanity = 0;
+    a.marks().filter(k => SKILLS[k]).sort((x, y) => SKILLS[x][0].localeCompare(SKILLS[y][0], 'es')).forEach(k => {
+      const value = skill(ch, k);
+      const roll = d100();
+      const up = (roll > value || roll > 95) && value < MAX_SKILL;
+      if (up) {
+        const next = Math.min(MAX_SKILL, value + d(10));
+        ch.gain[k] = gained(ch, k) + next - value;
+        if (value < 90 && next >= 90) sanity += d(6) + d(6);
+        rows.push({ name: skillName(ch, k), up: true, text: `${roll} supera ${value}: sube a ${next}` });
+      } else rows.push({ name: skillName(ch, k), up: false, text: `${roll} no supera ${value}` });
+      a.setMark(k, false);
+    });
+    if (sanity) { a.add('san', sanity); rows.push({ name: 'Cordura', up: true, text: `+${sanity} por dominar una habilidad` }); }
+    improveLog = { id: ch.id, rows };
+    const ups = rows.filter(r => r.up && r.name !== 'Cordura').length;
+    done(`Fase de mejora: ${ups ? (ups === 1 ? 'sube una habilidad' : `suben ${ups} habilidades`) : 'no sube ninguna habilidad'}. El detalle queda abajo.`);
+    renderSheet();
+  }
+  function luckCheck(a, done) {
+    const before = a.get('suerte');
+    const roll = d100();
+    if (roll > before) { a.add('suerte', d(10)); done(`Suerte: un ${roll} supera ${before}. Sube a ${a.get('suerte')}.`); }
+    else done(`Suerte: un ${roll} no supera ${before}. Se queda igual.`);
+  }
+
   function load() {
     try {
       const parsed = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -130,6 +200,7 @@
     out.ageLoss = { ...(ch.ageLoss || {}) };
     out.alloc = { ...(ch.alloc || {}) };
     out.specs = { ...(ch.specs || {}) };
+    out.gain = ch.gain && typeof ch.gain === 'object' && !Array.isArray(ch.gain) ? { ...ch.gain } : {};
     out.occSocial = Array.isArray(ch.occSocial) ? ch.occSocial : [];
     out.occAny = Array.isArray(ch.occAny) ? ch.occAny : [];
     return out;
@@ -164,7 +235,7 @@
       id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
       name: '', player: '', campaign: '', residence: '', birthplace: '', age: 25,
       method: 'tiradas', chars: Object.fromEntries(CHARS.map(([k]) => [k, 0])), luck: 0, ageLoss: {}, eduGain: 0, eduLog: '',
-      occupation: '', occSocial: [], occAny: [], alloc: {}, specs: {},
+      occupation: '', occSocial: [], occAny: [], alloc: {}, specs: {}, gain: {},
       descripcion: '', ideologia: '', allegados: '', lugares: '', posesiones: '', rasgos: '', gear: '', notes: ''
     };
   }
@@ -196,7 +267,9 @@
     return SKILLS[key][1];
   }
   const alloc = (ch, key, kind) => ch.alloc[key]?.[kind] || 0;
-  const skill = (ch, key) => base(ch, key) + alloc(ch, key, 'o') + alloc(ch, key, 'p');
+  // gain: lo ganado en las fases de mejora, aparte de los puntos de la creación.
+  const gained = (ch, key) => ch.gain?.[key] || 0;
+  const skill = (ch, key) => Math.min(MAX_SKILL, base(ch, key) + alloc(ch, key, 'o') + alloc(ch, key, 'p') + gained(ch, key));
   const spent = (ch, kind) => Object.keys(ch.alloc).reduce((t, k) => t + alloc(ch, k, kind), 0);
   const hp = ch => Math.floor((stat(ch, 'con') + stat(ch, 'tam')) / 10);
   const mp = ch => Math.floor(stat(ch, 'pod') / 5);
@@ -259,6 +332,11 @@
       a.p = NO_PERSONAL.includes(k) || k === 'credito' ? 0 : Math.max(0, Math.trunc(a.p) || 0);
       if (!a.o && !a.p) delete ch.alloc[k];
     });
+    ch.gain ||= {};
+    Object.keys(ch.gain).forEach(k => {
+      const n = Math.max(0, Math.min(MAX_SKILL, Math.trunc(Number(ch.gain[k])) || 0));
+      if (!SKILLS[k] || !n) delete ch.gain[k]; else ch.gain[k] = n;
+    });
   }
 
   // Ficha que llega de un archivo: se completa y se deja solo lo que el creador entiende.
@@ -270,6 +348,7 @@
     ch.ageLoss = Object.fromEntries(CHARS.map(([k]) => [k, int(obj(ch.ageLoss)[k], 99)]).filter(([, n]) => n));
     ch.alloc = Object.fromEntries(Object.keys(SKILLS).map(k => [k, { o: int(obj(obj(ch.alloc)[k]).o, MAX_SKILL), p: int(obj(obj(ch.alloc)[k]).p, MAX_SKILL) }]).filter(([, a]) => a.o || a.p));
     ch.specs = Object.fromEntries(Object.keys(SKILLS).filter(k => SKILLS[k][2] && typeof obj(ch.specs)[k] === 'string' && ch.specs[k].trim()).map(k => [k, ch.specs[k].slice(0, 30)]));
+    ch.gain = Object.fromEntries(Object.keys(SKILLS).map(k => [k, int(obj(ch.gain)[k], MAX_SKILL)]).filter(([, n]) => n));
     ch.occSocial = ch.occSocial.filter(k => typeof k === 'string');
     ch.occAny = ch.occAny.filter(k => typeof k === 'string');
     ch.eduLog = String(ch.eduLog ?? '').slice(0, 2000);
@@ -439,13 +518,22 @@
   function diceItems(ch) {
     const skills = Object.keys(SKILLS).map(k => ['sk:' + k, SKILLS[k][0] + (ch.specs[k] ? ` (${ch.specs[k]})` : ''), skill(ch, k)]).sort((a, b) => a[1].localeCompare(b[1], 'es'));
     const chars = CHARS.map(([k, name]) => ['ch:' + k, name, stat(ch, k)]);
-    const extra = [['luck', 'Suerte', ch.luck || 0], ['san', 'Cordura', stat(ch, 'pod')]];
+    const live = juego?.api(ch);
+    const extra = [['luck', 'Suerte', live?.model ? live.get('suerte') : ch.luck || 0], ['san', 'Cordura', live?.model ? live.get('san') : stat(ch, 'pod')]];
     return [...skills, ...chars, ...extra].filter(([, , v]) => v > 0);
   }
   function diceSources() { return current ? [{ label: 'Desde la ficha', items: diceItems(current) }] : []; }
   function rollFromSheet(key) {
     const item = diceItems(current).find(([k]) => k === key);
-    if (item) window.NEXO_DICE?.roll('cthulhu', { skill: Math.min(99, item[2]), label: item[1] });
+    if (!item) return;
+    const ch = current;
+    const k = key.startsWith('sk:') ? key.slice(3) : '';
+    window.NEXO_DICE?.roll('cthulhu', { skill: Math.min(99, item[2]), label: item[1], onResult: r => {
+      // Una tirada de habilidad superada marca su casilla para la fase de mejora.
+      if (!k || NO_TICK.includes(k) || !juego || current !== ch || !['good', 'crit'].includes(r.tone) || juego.mark(ch, k)) return;
+      juego.change(ch, a => a.setMark(k, true));
+      host.querySelector(`[data-tick="${k}"]`)?.setAttribute('aria-pressed', 'true');
+    } });
   }
 
   function renderList() {
@@ -480,6 +568,7 @@
     current = ch;
     const saved = store.characters.some(item => item.id === ch.id);
     frame(`<div class="cth-editor-head"><button class="cth-button ghost" data-back>← TUS INVESTIGADORES</button>${kit?.tools() || ''}<button class="cth-button danger" data-delete ${saved ? '' : 'hidden'}>DESTRUIR EXPEDIENTE</button></div>
+      <div data-play></div>
       <section class="cth-panel">${heading(1, 'Investigador', 'datos del expediente')}<div class="cth-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del investigador' })}${field('Jugador', 'player')}${field('Campaña', 'campaign')}
         ${field('Residencia', 'residence', { placeholder: 'Arkham, Boston…' })}${field('Lugar de nacimiento', 'birthplace')}
@@ -572,13 +661,14 @@
       const spec = SKILLS[k][2] ? `<input class="cth-spec" data-spec="${k}" value="${esc(ch.specs[k] || '')}" maxlength="30" placeholder="${esc(SKILLS[k][2])}" aria-label="Especialidad de ${esc(SKILLS[k][0])}">` : '';
       const pDisabled = NO_PERSONAL.includes(k) || k === 'credito';
       return `<li class="${isOcc ? 'is-occ' : ''} ${total > base(ch, k) ? 'is-raised' : ''}" data-row="${k}">
-        <span class="cth-skill-name">${isOcc ? '<i class="cth-occ-mark" title="Habilidad de ocupación">◆</i>' : ''}${term(`cth-hab-${k}`, SKILLS[k][0])}${spec}</span>
+        <span class="cth-skill-name">${NO_TICK.includes(k) || !juego ? '<i class="cth-tick is-none" aria-hidden="true"></i>' : `<button type="button" class="cth-tick" data-tick="${k}" aria-pressed="${juego.mark(ch, k)}" aria-label="Casilla de mejora de ${esc(SKILLS[k][0])}" title="Casilla de mejora"></button>`}${isOcc ? '<i class="cth-occ-mark" title="Habilidad de ocupación">◆</i>' : ''}${term(`cth-hab-${k}`, SKILLS[k][0])}${spec}${gained(ch, k) ? ` <small class="cth-gain" title="Ganado en fases de mejora">+${gained(ch, k)}</small>` : ''}</span>
         <span class="cth-skill-base">${base(ch, k)}</span>
         <input type="number" min="0" max="99" data-alloc="${k}" data-kind="o" value="${alloc(ch, k, 'o') || ''}" placeholder="${isOcc ? '0' : ''}" ${isOcc ? '' : 'disabled'} aria-label="Puntos de ocupación en ${esc(SKILLS[k][0])}">
         <input type="number" min="0" max="99" data-alloc="${k}" data-kind="p" value="${alloc(ch, k, 'p') || ''}" placeholder="${pDisabled ? '' : '0'}" ${pDisabled ? 'disabled' : ''} aria-label="Puntos de interés personal en ${esc(SKILLS[k][0])}">
         <button class="nd-roll-btn cth-skill-roll" data-cth-roll="sk:${k}" aria-label="Tirar ${esc(SKILLS[k][0])}"><b class="cth-skill-total" data-total>${total}</b></button><small class="cth-skill-split" data-split>${Math.floor(total / 2)} · ${Math.floor(total / 5)}</small></li>`;
     }).join('');
     return `<section class="cth-panel">${heading(4, 'Habilidades', 'ocupación e interés personal')}
+      <p class="cth-note">La casilla junto a cada habilidad es su marca de mejora: se pone sola al superar una tirada desde la ficha y se resuelve en «Fase de mejora», arriba, en el panel «En juego».</p>
       <p class="cth-note">Reparte los puntos de ocupación (${occPoints(ch)}) entre las habilidades marcadas con ◆, Crédito incluido, y los de interés personal (INT×2 = ${personalPoints(ch)}) en cualquiera salvo Mitos de Cthulhu. Ninguna habilidad pasa de ${MAX_SKILL}.
         <span class="cth-pool">Ocupación <span data-left="o">${leftBadge(oLeft, 'Todo repartido')}</span></span> <span class="cth-pool">Interés <span data-left="p">${leftBadge(pLeft, 'Todo repartido')}</span></span></p>
       <div class="cth-skill-head" aria-hidden="true"><span>Habilidad</span><span>Base</span><span>Ocup.</span><span>Interés</span><span>Total</span><span>½ · ⅕</span></div>
@@ -634,6 +724,11 @@
     sheet.querySelectorAll('[data-char]').forEach(input => input.addEventListener('change', () => { current.chars[input.dataset.char] = Number(input.value) || 0; changed(); }));
     sheet.querySelectorAll('[data-num]').forEach(input => input.addEventListener('change', () => { current[input.dataset.num] = Number(input.value) || 0; changed(); }));
     sheet.querySelectorAll('[data-cth-roll]').forEach(button => button.addEventListener('click', () => rollFromSheet(button.dataset.cthRoll)));
+    sheet.querySelectorAll('[data-tick]').forEach(button => button.addEventListener('click', () => {
+      const on = button.getAttribute('aria-pressed') !== 'true';
+      button.setAttribute('aria-pressed', String(on));
+      juego.change(current, a => a.setMark(button.dataset.tick, on));
+    }));
     sheet.querySelector('[data-roll-all]')?.addEventListener('click', rollAll);
     sheet.querySelector('[data-luck]').addEventListener('click', luck);
     sheet.querySelector('[data-edu]')?.addEventListener('click', eduChecks);
@@ -648,7 +743,7 @@
         const k = input.dataset.alloc;
         const kind = input.dataset.kind;
         const other = kind === 'o' ? 'p' : 'o';
-        const room = MAX_SKILL - base(current, k) - alloc(current, k, other);
+        const room = MAX_SKILL - base(current, k) - alloc(current, k, other) - gained(current, k);
         let value = Math.max(0, Math.trunc(Number(input.value)) || 0);
         if (value > room) { value = room; input.value = room; flash(`${SKILLS[k][0]} no puede pasar de ${MAX_SKILL}.`); }
         current.alloc[k] = { ...(current.alloc[k] || {}), [kind]: value };
@@ -664,6 +759,7 @@
       });
       input.addEventListener('change', () => changed());
     });
+    juego?.render(host.querySelector('[data-play]'));
   }
 
   function ensureHost() {
@@ -673,7 +769,7 @@
     fonts.href = 'https://fonts.googleapis.com/css2?family=Special+Elite&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&display=swap';
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/cthulhu/cthulhu.css?v=2';
+    stylesheet.href = './src/cthulhu/cthulhu.css?v=3';
     document.head.append(fonts, stylesheet);
     host = document.createElement('section');
     host.id = 'nexoCthulhu';

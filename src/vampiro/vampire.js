@@ -120,6 +120,52 @@
     }
   });
 
+  // En juego: sangre, Fuerza de Voluntad, niveles de salud y estados (src/nexo/juego.js).
+  const juego = window.NEXO_JUEGO?.create({
+    prefix: 'vtm', title: '<span>✠</span> En juego <small>lo que cambia cada noche</small>',
+    current: () => current, model: ch => playModel(ch), save: () => scheduleSave(), term, ready: ch => isComplete(ch)
+  });
+  const HEALTH = [['Magullado', 0], ['Lastimado', -1], ['Lesionado', -1], ['Herido', -2], ['Malherido', -2], ['Tullido', -5], ['Incapacitado', null]];
+  // Nivel de salud más bajo marcado: [nombre, penalización a las reservas] (null = no puede actuar).
+  function wound(ch) {
+    const total = Math.min(HEALTH.length, juego?.trackTotal(ch, 'salud') || 0);
+    return total ? HEALTH[total - 1] : ['Ileso', 0];
+  }
+  function playModel(ch) {
+    const [blood, perTurn] = GENERATIONS[generation(ch)] || GENERATIONS[13];
+    const da = ch.era === 'da';
+    return {
+      counters: [
+        { id: 'sangre', label: 'Reserva de sangre', max: blood, big: true, verbs: ['Gastar', 'Beber'], term: 'vtm-sangre', rest: { noche: { add: -1 } }, zero: 'Sin sangre: el hambre manda. Tira para no entrar en frenesí ante cualquier fuente de vitae.' },
+        { id: 'voluntad', label: 'Fuerza de Voluntad', max: willpower(ch), term: 'vtm-voluntad', rest: { noche: 1, historia: 'all' }, group: 'Reservas' }
+      ],
+      tracks: [{
+        id: 'salud', label: 'Niveles de salud', term: 'vtm-salud',
+        levels: HEALTH.map(([name, pen]) => (pen ? `${name} ${pen < 0 ? '−' + -pen : pen}` : name)),
+        marks: [{ id: 'a', sign: '✱', label: 'Agravado' }, { id: 'l', sign: '✕', label: 'Letal' }, { id: 'c', sign: '／', label: 'Contundente' }],
+        note: total => (total >= HEALTH.length ? 'Incapacitado: no puedes actuar. Un nivel más de daño y caes en letargo, o en la muerte definitiva si es agravado.' : `Gastas como mucho ${perTurn} ${perTurn === 1 ? 'punto' : 'puntos'} de sangre por turno. Curar un nivel contundente o letal cuesta 1 punto; uno agravado, 5 puntos y un día de descanso. Toca una casilla marcada para curarla.`)
+      }],
+      conditions: [
+        { id: 'frenesi', label: 'Frenesí', term: 'vtm-frenesi', effect: 'La Bestia manda: ignoras las penalizaciones por heridas mientras dure.' },
+        { id: 'rotschreck', label: 'Rötschreck', term: 'vtm-frenesi', effect: 'Terror rojo: huyes del fuego o del sol por cualquier medio.' },
+        { id: 'estaca', label: da ? 'Estacado' : 'Con estaca', term: 'vtm-estaca', effect: 'Una estaca en el corazón te paraliza por completo hasta que te la quiten.' },
+        { id: 'letargo', label: 'Letargo', term: 'vtm-salud', effect: 'Sueño de muerte: no actúas hasta despertar, según tu Humanidad o Senda.' },
+        { id: 'vinculo', label: 'Vínculo de sangre', max: 3, term: 'vtm-vinculo', effect: n => (n >= 3 ? 'Tercer trago: vínculo completo con tu regente.' : `${n === 1 ? 'Primer trago' : 'Segundo trago'}: sientes un apego creciente hacia tu regente.`) }
+      ],
+      effects: a => {
+        const [name, pen] = wound(ch);
+        if (pen === 0) return [];
+        if (pen == null) return ['Heridas. Incapacitado: no puedes actuar.'];
+        return [a.cond('frenesi') ? `Heridas. ${name}: el frenesí ignora la penalización de −${-pen}.` : `Heridas. ${name}: −${-pen} ${pen === -1 ? 'dado' : 'dados'} en tus reservas. Los dados de la ficha ya lo restan.`];
+      },
+      summary: a => [`Sangre ${a.get('sangre')}/${a.max('sangre')}`, `Voluntad ${a.get('voluntad')}/${a.max('voluntad')}`, wound(ch)[0]].join(' · '),
+      rests: [
+        { id: 'noche', label: 'Nuevo anochecer', hint: 'despertar cuesta 1 punto de sangre y devuelve 1 de Voluntad' },
+        { id: 'historia', label: 'Fin de la historia', hint: 'recuperas toda la Fuerza de Voluntad' }
+      ]
+    };
+  }
+
   function load() {
     try {
       const parsed = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -503,7 +549,11 @@
     const abil = abilityGroups(ch).flatMap(g => g.traits).map(([k, n]) => ['abil:' + k, n, value(ch, 'abil', k)]);
     const disc = shownDisciplines(ch).map(([k, n]) => ['disc:' + k, n, value(ch, 'disc', k)]);
     const more = [...virtues(ch).map(([k, n]) => ['virt:' + k, n, value(ch, 'virt', k)]), ['wp', 'Fuerza de Voluntad', willpower(ch)]];
-    return [{ label: 'Atributo', items: attrs }, { label: 'Habilidad, disciplina o virtud', none: 'Ninguna', items: [...abil, ...disc, ...more] }];
+    const sources = [{ label: 'Atributo', items: attrs }, { label: 'Habilidad, disciplina o virtud', none: 'Ninguna', items: [...abil, ...disc, ...more] }];
+    // Las heridas restan dados a la reserva (salvo en frenesí).
+    const [name, pen] = wound(ch);
+    if (pen && !juego?.cond(ch, 'frenesi')) sources.push({ label: 'Heridas', fixed: true, items: [['herida', name, pen]], show: n => `−${-n}` });
+    return sources;
   }
   function openDice() { window.NEXO_DICE?.tray('vampiro', { theme: diceTheme(), sources: diceSources }); }
 
@@ -549,6 +599,7 @@
     const clanOptions = options(Object.entries(e.clans).map(([key, clan]) => [key, clan.name]), ch.clan);
     const roadOptions = options(e.roads.map(key => [key, ROADS[key].name]), ch.road);
     frame(`<div class="vtm-editor-head"><button class="vtm-button ghost" data-back>← ${side === 'da' ? 'TUS CAINITAS' : 'TUS VÁSTAGOS'}</button><span class="vtm-era-tag">${esc(e.name)}</span>${kit?.tools() || ''}<button class="vtm-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
+      <div data-play></div>
       <section class="vtm-panel"><h2><span>I</span> Concepto</h2><div class="vtm-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del vástago' })}${field('Jugador', 'player')}${field('Crónica', 'chronicle')}
         ${field('Concepto', 'concept', { placeholder: ch.era === 'da' ? 'Ej.: Caballero desheredado' : 'Ej.: Detective caído en desgracia' })}${field('Naturaleza', 'nature', { list: 'vtmArchetypes' })}${field('Conducta', 'demeanor', { list: 'vtmArchetypes' })}
@@ -716,6 +767,7 @@
       changed();
     }));
     bindDiablerie(sheet, ch);
+    juego?.render(host.querySelector('[data-play]'));
   }
 
   // Diablerie (Amaranto en Edad Oscura)

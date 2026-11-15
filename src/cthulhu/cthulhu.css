@@ -213,3 +213,11 @@ html.nexo-cthulhu-open,html.nexo-cthulhu-open body{overflow:hidden}
 .ap-cth .ap-appbar-home{border-radius:3px;border-color:var(--cth-glow-dim);color:var(--cth-glow)}
 .ap-cth .ap-appbar-copy b{font-family:var(--cth-type);font-weight:400}
 @media(prefers-reduced-motion:reduce){.cth-list>.cth-card,.ap-cth .ap-hero-mark{animation:none!important}.cth-card{transition:none}.cth-card:hover,.cth-card:active{transform:none}.ap-cth .ap-tile:hover{transform:none}}
+/* Casilla de mejora de cada habilidad y puntos ganados con la experiencia */
+.cth-tick{flex:none;display:inline-grid;place-items:center;width:18px;height:18px;margin:0;padding:0;border:1.5px solid var(--cth-ink-soft);border-radius:2px;background:transparent;color:var(--cth-rust);font:700 14px/1 system-ui,sans-serif;cursor:pointer}
+.cth-tick[aria-pressed=true]:after{content:'✓'}
+.cth-tick[aria-pressed=true]{border-color:var(--cth-rust)}
+.cth-tick:focus-visible{outline:2px solid var(--cth-rust);outline-offset:2px}
+.cth-tick.is-none{border-color:transparent;cursor:default}
+.cth-gain{color:var(--cth-rust);font:700 12px var(--cth-type)}
+@media (pointer:coarse){.cth-tick{width:24px;height:24px}}
