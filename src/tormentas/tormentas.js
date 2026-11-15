@@ -90,7 +90,7 @@
 
   // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y el manual de este sistema).
   const ap = window.NEXO_APARTADOS?.create({
-    prefix: 'tor', system: () => GAME, frame: body => frame(body),
+    prefix: 'tor', system: () => GAME, home: true, frame: body => frame(body),
     leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
     characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Héroe sin nombre', summary: describe(ch) })),
     openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
@@ -460,7 +460,7 @@
     fonts.href = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap';
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/tormentas/tormentas.css?v=1';
+    stylesheet.href = './src/tormentas/tormentas.css?v=2';
     document.head.append(fonts, stylesheet);
     host = document.createElement('section');
     host.id = 'nexoTormentas';

@@ -172,3 +172,25 @@ html.nexo-tormentas-open,html.nexo-tormentas-open body{overflow:hidden}
   .tor-list{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){.tor *,.tor-storm{animation:none!important;transition:none!important}}
+
+/* ───── Inicio de campaña y texturas: pizarra mojada, luz tormentosa en gemas y remaches de latón ───── */
+.tor{--tor-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' seed='5'/%3E%3CfeColorMatrix values='0 0 0 0 .65 0 0 0 0 .9 0 0 0 0 1 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.09'/%3E%3C/svg%3E")}
+@keyframes tor-glow{50%{box-shadow:0 0 0 6px #a6e6ff14,0 0 44px #a6e6ff88,inset 0 0 22px #dff7ff66}}
+.tor-panel{background-image:var(--tor-grain),linear-gradient(165deg,#172840ee,#101b2dee)}
+.tor-card{background-image:var(--tor-grain),linear-gradient(160deg,var(--tor-slate),var(--tor-deep));transition:transform .2s cubic-bezier(.2,.8,.2,1),border-color .2s,box-shadow .25s}
+.tor-card:active{transform:scale(.985)}
+.tor-list>.tor-card{animation:ap-pop .45s cubic-bezier(.2,.8,.2,1) backwards}
+.tor-list>.tor-card:nth-child(2){animation-delay:.05s}.tor-list>.tor-card:nth-child(3){animation-delay:.1s}.tor-list>.tor-card:nth-child(4){animation-delay:.15s}.tor-list>.tor-card:nth-child(n+5){animation-delay:.2s}
+.ap-tor .ap-hero-mark{border-color:var(--tor-brass);color:#0a111d;background:radial-gradient(circle at 35% 28%,#fff,var(--tor-light-hi) 18%,var(--tor-light) 48%,var(--tor-light-dim) 78%,#2b6d8f);box-shadow:0 0 0 4px #0a111d,0 0 0 5px var(--tor-brass-dim),0 0 30px #a6e6ff66,inset 0 0 16px #dff7ff88;animation:ap-mark .6s cubic-bezier(.2,.9,.25,1.2) backwards,tor-glow 5s ease-in-out 1s infinite}
+.ap-tor .ap-hero h1{text-shadow:0 0 34px #a6e6ff44}
+.ap-tor .ap-tile{border-radius:4px;border-color:var(--tor-line);background:var(--tor-grain),linear-gradient(160deg,#1c2e49,#0f1a2b);box-shadow:inset 0 1px 0 #a6e6ff1f,0 12px 24px -16px #000}
+.ap-tor .ap-tile::before,.ap-tor .ap-tile::after{content:'';position:absolute;top:7px;width:6px;height:6px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f3dca4,var(--tor-brass) 55%,var(--tor-brass-dim));box-shadow:0 1px 1px #000a}
+.ap-tor .ap-tile::before{left:7px}.ap-tor .ap-tile::after{right:7px}
+.ap-tor .ap-tile:hover{border-color:var(--tor-light-dim);box-shadow:inset 0 0 30px #a6e6ff1f,0 0 0 1px #5eb6dd55,0 18px 34px -16px #5eb6dd99}
+.ap-tor .ap-tile-icon{color:var(--tor-light);filter:drop-shadow(0 0 8px #a6e6ff77)}
+.ap-tor .ap-tile:hover .ap-tile-icon{filter:drop-shadow(0 0 14px #dff7ff)}
+.ap-tor .ap-tile small{color:var(--tor-brass)}
+.ap-tor .ap-appbar{border-radius:4px;background:var(--tor-grain),linear-gradient(165deg,#172840,#101b2d)}
+.ap-tor .ap-appbar-home{border-radius:4px;border-color:var(--tor-brass-dim);color:var(--tor-brass);background:linear-gradient(#1c2e49,#0f1a2b)}
+.ap-tor .ap-appbar-home:hover{border-color:var(--tor-brass);background:linear-gradient(#24395a,#132035)}
+@media(prefers-reduced-motion:reduce){.tor-list>.tor-card,.ap-tor .ap-hero-mark{animation:none!important}.tor-card{transition:none}.tor-card:hover,.tor-card:active{transform:none}}
