@@ -1,7 +1,8 @@
 /*
  * NEXO · El Archivo de las Tormentas (juego de rol del Cosmere, Manual de Stormlight).
- * Creador de personajes de nivel 1: ascendencia, culturas, camino heroico, 12 puntos de
- * atributo, 4 rangos de habilidad, pericias y camino radiante. Los textos son resúmenes propios.
+ * Creador de personajes: ascendencia, culturas, camino heroico, 12 puntos de atributo, 4 rangos
+ * de habilidad, pericias y camino radiante, y subida de nivel del 1 al 20 con la tabla de
+ * progresión. Los textos son resúmenes propios.
  */
 (() => {
   const KEY = 'nexo-tormentas-v1';
@@ -11,9 +12,27 @@
   const CULTURE_PICKS = 2;
   const MAX_LEVEL = 20;
   const MAX_IDEAL = 5;
-  // A nivel 1 ningún atributo pasa de 3 ni ninguna habilidad de rango 2; después, hasta 10 y 5.
-  const attrCap = ch => (ch.level > 1 ? 10 : 3);
-  const rankCap = ch => (ch.level > 1 ? 5 : 2);
+  // Tabla de progresión (resumen propio): lo que da cada nivel por encima del 1. Cada cinco niveles
+  // empieza un escalón, que sube el rango máximo de las habilidades y vuelve a sumar la Fuerza a la salud.
+  const ATTR_LEVELS = [3, 6, 9, 12, 15, 18];
+  const LEVEL_RANKS = 2;
+  const TIER_HEALTH = [5, 4, 3, 2];
+  const TIER_RANK = [2, 3, 4, 5];
+  const ATTR_MAX = 10;
+  const RANK_MAX = 5;
+  const EXTRAS = [['attrBonus', 'Puntos de atributo', 20], ['rankBonus', 'Rangos de habilidad', 80], ['healthBonus', 'Salud', 300]];
+  const tierOf = level => Math.min(TIER_RANK.length, Math.ceil(level / 5));
+  const tierStart = level => level > 1 && level % 5 === 1;
+  const tableAttrs = level => ATTR_LEVELS.filter(l => l <= level).length;
+  const tableRanks = level => LEVEL_RANKS * (level - 1);
+  const tableHealth = level => { let total = 0; for (let l = 2; l <= level; l += 1) total += TIER_HEALTH[tierOf(l) - 1]; return total; };
+  // A nivel 1 los botones no dejan pasar de 3 en un atributo ni de rango 2 en una habilidad. Después
+  // la tabla marca 5 en los atributos y el rango del escalón en las habilidades, pero eso solo avisa:
+  // una forma de cantor o una decisión de la mesa pueden pasarlo.
+  const ATTR_TABLE = 5;
+  const attrCap = ch => (ch.level > 1 ? ATTR_MAX : 3);
+  const rankCap = ch => TIER_RANK[tierOf(ch.level) - 1];
+  const rankLimit = ch => (ch.level > 1 ? RANK_MAX : TIER_RANK[0]);
 
   const REALMS = [['fisico', 'Físico', 'Defensa física'], ['cognitivo', 'Cognitivo', 'Defensa cognitiva'], ['espiritual', 'Espiritual', 'Defensa espiritual']];
   const ATTRS = [['fue', 'Fuerza', 'FUE', 'fisico'], ['vel', 'Velocidad', 'VEL', 'fisico'], ['int', 'Intelecto', 'INT', 'cognitivo'], ['vol', 'Voluntad', 'VOL', 'cognitivo'], ['cns', 'Consciencia', 'CNS', 'espiritual'], ['pre', 'Presencia', 'PRE', 'espiritual']];
@@ -79,7 +98,7 @@
   const RECOVERY = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20'];
   const SENSES = ['5 pies', '10 pies', '20 pies', '50 pies', '100 pies', 'Sin límite por oscuridad'];
   const LIFT = [[100, 50], [200, 100], [500, 250], [1000, 500], [5000, 2500], [10000, 5000]];
-  const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+  const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
 
   let host = null;
   let store = load();
@@ -87,6 +106,8 @@
   let exitHandler = null;
   let saveTimer = 0;
   let manualBook = null;
+  // Desplegables del panel de nivel que están abiertos: la ficha se repinta con cada cambio.
+  const lvOpen = { list: false, extras: false };
 
   // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y el manual de este sistema).
   // Tarjeta de una ficha, propia o recibida de otro jugador: nombre, resumen e iniciativa.
@@ -170,7 +191,18 @@
     out.attrs = { ...fresh.attrs, ...(ch.attrs || {}) };
     out.ranks = { ...(ch.ranks || {}) };
     out.cultures = Array.isArray(ch.cultures) ? ch.cultures : [];
+    if (!ch.adv) migrateAdvance(out);
+    out.adv = 1;
     return out;
+  }
+  // Fichas anteriores a la subida automática: lo ganado por nivel se apuntaba a mano y ahora lo suma
+  // la tabla. De lo apuntado solo se conserva lo que pasa de la tabla, para no contarlo dos veces.
+  function migrateAdvance(ch) {
+    const int = v => Math.max(0, Math.trunc(Number(v)) || 0);
+    const level = Math.max(1, Math.min(MAX_LEVEL, int(ch.level) || 1));
+    ch.attrBonus = Math.max(0, int(ch.attrBonus) - tableAttrs(level));
+    ch.rankBonus = Math.max(0, int(ch.rankBonus) - tableRanks(level));
+    ch.healthBonus = Math.max(0, int(ch.healthBonus) - tableHealth(level) - int(ch.attrs?.fue) * (tierOf(level) - 1));
   }
   function persist() {
     try { localStorage.setItem(KEY, JSON.stringify(store)); } catch { return false; }
@@ -199,7 +231,7 @@
     return {
       id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
       name: '', player: '', campaign: '', purpose: '', obstacle: '', goals: '',
-      level: 1, ancestry: '', cultures: [], path: '', spec: '',
+      level: 1, adv: 1, ancestry: '', cultures: [], path: '', spec: '',
       attrs: Object.fromEntries(ATTRS.map(([k]) => [k, 0])), attrBonus: 0, ranks: {}, rankBonus: 0,
       expertises: '', radiant: false, order: '', ideal: 0, spren: '', talents: '', healthBonus: 0, notes: ''
     };
@@ -211,17 +243,35 @@
   const rank = (ch, skill) => (ch.ranks[skill] || 0) + (pathSkill(ch) === skill ? 1 : 0);
   const skillMod = (ch, skill) => attr(ch, SKILLS[skill][1]) + rank(ch, skill);
   const attrSpent = ch => ATTRS.reduce((t, [k]) => t + attr(ch, k), 0);
-  const attrBudget = ch => ATTR_POINTS + Math.max(0, Number(ch.attrBonus) || 0);
+  // Lo que quien dirige da fuera de la tabla de progresión.
+  const extra = (ch, key) => Math.max(0, Math.trunc(Number(ch[key])) || 0);
+  const attrBudget = ch => ATTR_POINTS + tableAttrs(ch.level) + extra(ch, 'attrBonus');
   const rankSpent = ch => Object.values(ch.ranks).reduce((t, n) => t + n, 0);
-  const rankBudget = ch => SKILL_RANKS + Math.max(0, Number(ch.rankBonus) || 0);
+  const rankBudget = ch => SKILL_RANKS + tableRanks(ch.level) + extra(ch, 'rankBonus');
+  const overAttrs = ch => ATTRS.filter(([k]) => attr(ch, k) > attrCap(ch)).length;
+  const overRanks = ch => Object.keys(SKILLS).filter(k => rank(ch, k) > rankLimit(ch)).length;
   function defense(ch, realm) {
     return 10 + ATTRS.filter(a => a[3] === realm).reduce((t, [k]) => t + attr(ch, k), 0);
   }
-  const health = ch => 10 + attr(ch, 'fue') + Math.max(0, Number(ch.healthBonus) || 0);
+  // La Fuerza cuenta una vez por escalón alcanzado; cada nivel suma lo que marca su escalón.
+  const health = ch => 10 + attr(ch, 'fue') * tier(ch) + tableHealth(ch.level) + extra(ch, 'healthBonus');
   const focus = ch => 2 + attr(ch, 'vol');
   const investiture = ch => (ch.radiant && ch.ideal >= 1 ? 2 + Math.max(attr(ch, 'cns'), attr(ch, 'pre')) : 0);
-  const tier = ch => Math.ceil(ch.level / 5);
+  const tier = ch => tierOf(ch.level);
   const extraExpertises = ch => ch.expertises.split(',').map(s => s.trim()).filter(Boolean);
+  const talentLines = ch => String(ch.talents || '').split('\n').filter(line => line.trim()).length;
+  // Lo que da un nivel, en frases cortas.
+  function levelGains(l) {
+    const t = tierOf(l);
+    const start = tierStart(l);
+    return [
+      `+${TIER_HEALTH[t - 1]} de salud${start ? ' y otra vez tu Fuerza' : ''}`,
+      `+${LEVEL_RANKS} rangos de habilidad`,
+      ATTR_LEVELS.includes(l) ? '+1 punto de atributo' : '',
+      start ? '1 talento y otro por tu ascendencia' : '1 talento',
+      start ? `escalón ${t}: las habilidades llegan a rango ${TIER_RANK[t - 1]}` : ''
+    ].filter(Boolean);
+  }
 
   function sanitize(ch) {
     ch.level = Math.max(1, Math.min(MAX_LEVEL, Math.trunc(Number(ch.level)) || 1));
@@ -229,12 +279,15 @@
     ch.cultures = ch.cultures.filter(k => CULTURES[k]).slice(0, CULTURE_PICKS);
     if (!PATHS[ch.path]) ch.path = '';
     if (!PATHS[ch.path]?.specs.includes(ch.spec)) ch.spec = '';
-    ATTRS.forEach(([k]) => { ch.attrs[k] = Math.max(0, Math.min(attrCap(ch), Math.trunc(ch.attrs[k]) || 0)); });
+    // Los topes del nivel los vigilan los botones y el seguimiento: aquí no se recorta lo repartido,
+    // para que bajar de nivel o abrir una ficha antigua no borre puntos.
+    ATTRS.forEach(([k]) => { ch.attrs[k] = Math.max(0, Math.min(ATTR_MAX, Math.trunc(ch.attrs[k]) || 0)); });
     Object.keys(ch.ranks).forEach(k => {
       const bonus = pathSkill(ch) === k ? 1 : 0;
-      ch.ranks[k] = Math.max(0, Math.min(rankCap(ch) - bonus, ch.ranks[k] || 0));
+      ch.ranks[k] = Math.max(0, Math.min(RANK_MAX - bonus, Math.trunc(ch.ranks[k]) || 0));
       if (!SKILLS[k] || !ch.ranks[k]) delete ch.ranks[k];
     });
+    EXTRAS.forEach(([k, , max]) => { ch[k] = Math.min(max, extra(ch, k)); });
     if (!ORDERS[ch.order]) ch.order = '';
     ch.ideal = Math.max(0, Math.min(MAX_IDEAL, Math.trunc(ch.ideal) || 0));
   }
@@ -294,6 +347,11 @@
           ...order.surges.map(k => ({ name: SURGES[k][0], tag: 'Potencia', text: SURGES[k][1] }))
         ] } : null,
         { title: 'Talentos', kind: 'text', text: ch.talents },
+        ch.level > 1 ? { title: 'Progresión', kind: 'pairs', items: [
+          ['Nivel', `${ch.level} · escalón ${tier(ch)}`], ['Puntos de atributo', attrBudget(ch)], ['Rangos de habilidad', `${rankBudget(ch)} · rango máximo ${rankCap(ch)}`],
+          ['Salud', `10 + Fuerza × ${tier(ch)} + ${tableHealth(ch.level)} por nivel${extra(ch, 'healthBonus') ? ` + ${extra(ch, 'healthBonus')} de ajuste` : ''}`],
+          ['Talentos', `el clave, ${ch.level - 1} por nivel y ${tier(ch)} por la ascendencia`]
+        ] } : null,
         { title: 'Equipo y notas', kind: 'text', text: ch.notes }
       ]
     };
@@ -309,6 +367,9 @@
     ];
     if (attr(ch, 'int') > 0) rows.push({ label: 'Pericias', left: Math.max(0, attr(ch, 'int') - extraExpertises(ch).length), budget: attr(ch, 'int') });
     if (ch.radiant) rows.push({ label: 'Orden radiante', left: ch.order ? 0 : 1, budget: 1 });
+    // Lo que queda por encima del tope del nivel (al bajar de nivel o en una ficha antigua).
+    if (overAttrs(ch)) rows.push({ label: `Atributos por encima de ${attrCap(ch)}`, left: -overAttrs(ch), show: overAttrs(ch) });
+    if (overRanks(ch)) rows.push({ label: `Habilidades por encima de rango ${rankLimit(ch)}`, left: -overRanks(ch), show: overRanks(ch) });
     return rows;
   }
   const isComplete = ch => summary(ch).every(row => row.left === 0);
@@ -322,20 +383,43 @@
     const ch = current;
     const next = attr(ch, key) + delta;
     if (next < 0) return;
-    if (next > attrCap(ch)) return flash(ch.level > 1 ? `Los atributos no pasan de ${attrCap(ch)}.` : 'A nivel 1 ningún atributo puede pasar de 3.');
+    if (delta > 0 && next > attrCap(ch)) return flash(ch.level > 1 ? `Los atributos no pasan de ${attrCap(ch)}.` : 'A nivel 1 ningún atributo puede pasar de 3.');
     if (delta > 0 && attrSpent(ch) >= attrBudget(ch)) return flash(`Ya has repartido tus ${attrBudget(ch)} puntos de atributo. Baja otro para subir este.`);
     ch.attrs[key] = next;
     changed();
+    if (delta > 0 && next > ATTR_TABLE) flash(`Subiendo de nivel, un atributo llega como mucho a ${ATTR_TABLE}. Por encima solo se pasa con formas de cantor, armaduras esquirladas u otros efectos.`);
   }
   function stepRank(skill, delta) {
     const ch = current;
     const own = ch.ranks[skill] || 0;
     const next = own + delta;
     if (next < 0) return;
-    if (next + (pathSkill(ch) === skill ? 1 : 0) > rankCap(ch)) return flash(ch.level > 1 ? `Ninguna habilidad pasa de rango ${rankCap(ch)}.` : `A nivel 1 ninguna habilidad pasa de rango 2${pathSkill(ch) === skill ? ' (tu camino ya te da uno aquí)' : ''}.`);
+    const total = next + (pathSkill(ch) === skill ? 1 : 0);
+    if (delta > 0 && total > rankLimit(ch)) return flash(ch.level > 1 ? `Ninguna habilidad pasa de rango ${RANK_MAX}.` : `A nivel 1 ninguna habilidad pasa de rango 2${pathSkill(ch) === skill ? ' (tu camino ya te da uno aquí)' : ''}.`);
     if (delta > 0 && rankSpent(ch) >= rankBudget(ch)) return flash(`Ya has repartido tus ${rankBudget(ch)} rangos de habilidad. Quita uno para ponerlo aquí.`);
     ch.ranks[skill] = next;
     changed();
+    if (delta > 0 && total > rankCap(ch)) flash(`La tabla marca rango ${rankCap(ch)} como máximo en el escalón ${tier(ch)} (sube en el nivel ${tier(ch) * 5 + 1}). Queda señalado en rojo por si tu mesa lo permite.`);
+  }
+  // Subir y bajar de nivel. Al bajar no se borra lo repartido: el seguimiento avisa de lo que sobra.
+  function levelUp() {
+    const ch = current;
+    if (!ch.ancestry || !ch.path) return flash('Elige primero una ascendencia y un camino heroico para poder subir de nivel.');
+    if (ch.level >= MAX_LEVEL) return flash(`Ya estás en el nivel ${MAX_LEVEL}, el máximo.`);
+    ch.level += 1;
+    changed();
+    flash(`Nivel ${ch.level}: ${levelGains(ch.level).join(', ')}.`);
+  }
+  function levelDown() {
+    if (current.level <= 1) return;
+    current.level -= 1;
+    changed();
+    flash(`Nivel ${current.level}. Lo que hubieras repartido de más sale en rojo en el seguimiento.`);
+  }
+  // Al cambiar de camino, su rango gratuito no puede dejar la habilidad por encima del tope.
+  function fitPathSkill(ch) {
+    const k = pathSkill(ch);
+    if (k && (ch.ranks[k] || 0) + 1 > rankLimit(ch)) ch.ranks[k] = Math.max(0, rankLimit(ch) - 1);
   }
   function toggleCulture(key) {
     const list = current.cultures;
@@ -398,7 +482,7 @@
       const done = isComplete(ch);
       return `<button class="tor-card" data-open="${esc(ch.id)}"><span class="tor-card-gem">${esc((ch.name || '?').trim().charAt(0).toUpperCase() || '?')}</span><span class="tor-card-copy"><b>${esc(ch.name || 'Héroe sin nombre')}</b><small>${esc(describe(ch))}</small></span><span class="tor-badge ${done ? 'is-done' : ''}">${done ? 'LISTO' : 'EN CREACIÓN'}</span></button>`;
     }).join('') : '<div class="tor-empty"><span aria-hidden="true">✦</span><b>Las Llanuras están en calma</b><small>Pulsa «Despertar a un héroe» para crear tu primer personaje.</small></div>';
-    frame(`${ap?.tabs('personajes') || ''}<p class="tor-kicker">NEXO / JUEGO DE ROL DEL COSMERE · MANUAL DE STORMLIGHT</p><h1>Tus <em>héroes</em> de Roshar</h1><p class="tor-intro">Crea personajes de nivel 1: ascendencia, dos culturas, un camino heroico, 12 puntos de atributo y 4 rangos de habilidad. NEXO calcula defensas, salud, concentración, investidura, movimiento y sentidos, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="tor-actions"><button class="tor-button" data-new>✦ DESPERTAR A UN HÉROE</button>${kit?.importButton() || ''}<button class="tor-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="tor-list">${cards}</div>`);
+    frame(`${ap?.tabs('personajes') || ''}<p class="tor-kicker">NEXO / JUEGO DE ROL DEL COSMERE · MANUAL DE STORMLIGHT</p><h1>Tus <em>héroes</em> de Roshar</h1><p class="tor-intro">Crea héroes de nivel 1 y súbelos hasta el 20: ascendencia, dos culturas, un camino heroico, 12 puntos de atributo, 4 rangos de habilidad y lo que da cada nivel. NEXO calcula defensas, salud, concentración, investidura, movimiento y sentidos, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="tor-actions"><button class="tor-button" data-new>✦ DESPERTAR A UN HÉROE</button>${kit?.importButton() || ''}<button class="tor-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="tor-list">${cards}</div>`);
     host.querySelector('[data-new]').addEventListener('click', () => openEditor(newCharacter()));
     host.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
       const ch = store.characters.find(item => item.id === button.dataset.open);
@@ -422,6 +506,8 @@
 
   function openEditor(ch) {
     current = ch;
+    lvOpen.list = false;
+    lvOpen.extras = false;
     const saved = store.characters.some(item => item.id === ch.id);
     frame(`<div class="tor-editor-head"><button class="tor-button ghost" data-back>← TUS HÉROES</button>${kit?.tools() || ''}<button class="tor-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
       <div data-play></div>
@@ -431,7 +517,7 @@
         ${field('Propósito', 'purpose', { area: true, placeholder: 'Qué te impulsa a actuar' })}${field('Obstáculo', 'obstacle', { area: true, placeholder: 'Qué te frena por dentro o por fuera' })}${field('Metas', 'goals', { area: true, placeholder: 'Lo que quieres lograr' })}
       </div></section>
       <div data-sheet></div>
-      <section class="tor-panel">${heading(8, 'Talentos, equipo y notas')}<p class="tor-note">Anota los talentos que elijas en tus caminos, tu equipo inicial (armas, armadura, esferas) y la historia de tu personaje.</p>
+      <section class="tor-panel">${heading(9, 'Talentos, equipo y notas')}<p class="tor-note">Anota los talentos que elijas en tus caminos, tu equipo inicial (armas, armadura, esferas) y la historia de tu personaje.</p>
         <label class="tor-field"><span>Talentos</span><textarea data-prop="talents" rows="4" placeholder="Un talento por línea">${esc(ch.talents)}</textarea></label>
         <label class="tor-field"><span>Equipo y notas</span><textarea data-prop="notes" rows="6" placeholder="Equipo, esferas, historia…">${esc(ch.notes)}</textarea></label></section>
       <div class="tor-modal" data-modal hidden><div class="tor-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="torDelTitle"><h3 id="torDelTitle">¿Dejar que la tormenta se lleve a este héroe?</h3><p>La ficha se borrará de este dispositivo y de tu cuenta, y no se podrá recuperar.</p><div class="tor-actions"><button class="tor-button ghost" data-cancel>CANCELAR</button><button class="tor-button danger" data-confirm>ELIMINAR FICHA</button></div></div></div>`, saved ? 'GUARDADO EN ESTE DISPOSITIVO' : 'FICHA NUEVA · SIN GUARDAR');
@@ -441,6 +527,7 @@
       current[input.dataset.prop] = input.value;
       scheduleSave();
       host.querySelector('[data-delete]').hidden = false;
+      if (input.dataset.prop === 'talents') host.querySelectorAll('[data-talent-count]').forEach(node => { node.textContent = talentCount(current); });
     }));
     const modal = host.querySelector('[data-modal]');
     host.querySelector('[data-delete]').addEventListener('click', () => { modal.hidden = false; host.querySelector('[data-cancel]').focus(); });
@@ -474,8 +561,6 @@
         <label class="tor-field"><span>Camino</span><select data-choice="path">${options(sorted(PATHS), ch.path, 'Elige un camino…')}</select></label>
         ${path ? `<label class="tor-field"><span>Especialidad (opcional)</span><select data-choice="spec">${options(path.specs.map(s => [s, s]), ch.spec, 'Sin especialidad todavía')}</select></label>
           <p class="tor-narr">${esc(path.story)} ${manualLink(`tor-cam-${ch.path}`, 'Camino en el manual')}</p>${info([['Habilidad del camino', `${SKILLS[path.skill][0]} (+1 rango)`], ['Talento clave', path.talent], ['Efecto', path.talentText]])}` : '<p class="tor-note">El camino te da un talento clave, un rango en su habilidad y el árbol de talentos que irás desbloqueando.</p>'}
-        <div class="tor-level"><label class="tor-field"><span>Nivel</span><input type="number" min="1" max="${MAX_LEVEL}" data-num="level" value="${ch.level}"></label><span class="tor-tier">Escalón ${tier(ch)}</span></div>
-        ${ch.level > 1 ? `<div class="tor-fields tor-fields-3 tor-advance"><label class="tor-field"><span>Atributos ganados</span><input type="number" min="0" max="20" data-num="attrBonus" value="${ch.attrBonus}"></label><label class="tor-field"><span>Rangos ganados</span><input type="number" min="0" max="80" data-num="rankBonus" value="${ch.rankBonus}"></label><label class="tor-field"><span>Salud ganada</span><input type="number" min="0" max="300" data-num="healthBonus" value="${ch.healthBonus}"></label></div><p class="tor-note">Por encima del nivel 1, apunta lo que te da la tabla de progresión del manual y NEXO lo suma a tus repartos.</p>` : ''}
       </div>
     </div></section>`;
   }
@@ -486,7 +571,7 @@
       const rows = ATTRS.filter(a => a[3] === realm).map(([k, n]) => `<div class="tor-attr"><span class="tor-attr-name">${n}</span><span class="tor-stepper"><button data-attr="${k}" data-d="-1" aria-label="Bajar ${n}" ${attr(ch, k) <= 0 ? 'disabled' : ''}>−</button><b>${attr(ch, k)}</b><button data-attr="${k}" data-d="1" aria-label="Subir ${n}">+</button></span></div>`).join('');
       return `<div class="tor-realm is-${realm}"><div class="tor-realm-head"><b>${name}</b><span class="tor-def"><small>${term('tor-defensas', def)}</small><b>${defense(ch, realm)}</b></span></div>${rows}</div>`;
     }).join('');
-    return `<section class="tor-panel">${heading(3, term('tor-atributos', 'Atributos'), `${attrBudget(ch)} puntos`)}<p class="tor-note">Reparte ${attrBudget(ch)} puntos entre los seis atributos (todos empiezan en 0${ch.level === 1 ? ', máximo 3 a nivel 1' : ''}). Cada pareja forma la defensa de su reino: 10 + los dos atributos. <span class="tor-left ${left === 0 ? 'is-done' : left < 0 ? 'is-over' : ''}">${left === 0 ? 'Todo repartido' : left > 0 ? `Te quedan ${left}` : `Te pasas en ${-left}`}</span></p><div class="tor-realms">${cols}</div></section>`;
+    return `<section class="tor-panel">${heading(3, term('tor-atributos', 'Atributos'), `${attrBudget(ch)} puntos`)}<p class="tor-note">Reparte ${attrBudget(ch)} puntos entre los seis atributos (todos empiezan en 0, máximo ${ch.level === 1 ? '3 a nivel 1' : `${ATTR_TABLE} subiendo de nivel`})${attrBudget(ch) > ATTR_POINTS ? `: ${ATTR_POINTS} al crear el personaje y ${attrBudget(ch) - ATTR_POINTS} por tus niveles` : ''}. Cada pareja forma la defensa de su reino: 10 + los dos atributos. <span class="tor-left ${left === 0 ? 'is-done' : left < 0 ? 'is-over' : ''}">${left === 0 ? 'Todo repartido' : left > 0 ? `Te quedan ${left}` : `Te pasas en ${-left}`}</span></p><div class="tor-realms">${cols}</div></section>`;
   }
 
   function skillsPanel(ch) {
@@ -496,12 +581,12 @@
       const rows = Object.entries(SKILLS).filter(([, [, a]]) => AT[a].realm === realm).map(([k, [n, a]]) => {
         const r = rank(ch, k);
         const fromPath = pathSkill(ch) === k;
-        const pips = Array.from({ length: cap }, (_, i) => `<i class="${i < r ? (fromPath && i === 0 ? 'is-path' : 'is-on') : ''}"></i>`).join('');
-        return `<li class="${r ? 'is-ranked' : ''}"><span class="tor-skill-name">${term(`tor-hab-${k}`, n)} <small>${AT[a].short}</small></span><span class="tor-pips" aria-label="Rango ${r}">${pips}</span><span class="tor-mini"><button data-rank="${k}" data-d="-1" aria-label="Quitar rango a ${esc(n)}" ${(ch.ranks[k] || 0) <= 0 ? 'disabled' : ''}>−</button><button data-rank="${k}" data-d="1" aria-label="Añadir rango a ${esc(n)}">+</button></span><button class="nd-roll-btn tor-skill-mod" data-tor-roll="${k}" aria-label="Tirar ${esc(n)}"><b>${signed(skillMod(ch, k))}</b></button></li>`;
+        const pips = Array.from({ length: Math.max(cap, r) }, (_, i) => `<i class="${i < r ? (fromPath && i === 0 ? 'is-path' : i >= cap ? 'is-over' : 'is-on') : ''}"></i>`).join('');
+        return `<li class="${r ? 'is-ranked' : ''}"><span class="tor-skill-name">${term(`tor-hab-${k}`, n)} <small>${AT[a].short}</small></span><span class="tor-pips" aria-label="Rango ${r}${r > cap ? `, por encima del máximo ${cap}` : ''}">${pips}</span><span class="tor-mini"><button data-rank="${k}" data-d="-1" aria-label="Quitar rango a ${esc(n)}" ${(ch.ranks[k] || 0) <= 0 ? 'disabled' : ''}>−</button><button data-rank="${k}" data-d="1" aria-label="Añadir rango a ${esc(n)}">+</button></span><button class="nd-roll-btn tor-skill-mod" data-tor-roll="${k}" aria-label="Tirar ${esc(n)}"><b>${signed(skillMod(ch, k))}</b></button></li>`;
       }).join('');
       return `<div class="tor-col"><h3>${name}</h3><ul class="tor-skills">${rows}</ul></div>`;
     }).join('');
-    return `<section class="tor-panel">${heading(4, 'Habilidades', `${rankBudget(ch)} rangos`)}<p class="tor-note">Reparte ${rankBudget(ch)} rangos (máximo ${cap} por habilidad${ch.level === 1 ? ' a nivel 1' : ''}). Tu camino heroico añade uno más en su habilidad, marcado en dorado. El modificador es el atributo más el rango. <span class="tor-left ${left === 0 ? 'is-done' : left < 0 ? 'is-over' : ''}">${left === 0 ? 'Todo repartido' : left > 0 ? `Te quedan ${left}` : `Te pasas en ${-left}`}</span></p><div class="tor-cols">${cols}</div></section>`;
+    return `<section class="tor-panel">${heading(4, 'Habilidades', `${rankBudget(ch)} rangos`)}<p class="tor-note">Reparte ${rankBudget(ch)} rangos (máximo ${cap} por habilidad${ch.level === 1 ? ' a nivel 1' : tier(ch) < TIER_RANK.length ? ` en el escalón ${tier(ch)}` : ''})${ch.level > 1 ? `: ${SKILL_RANKS} al crear el personaje y ${rankBudget(ch) - SKILL_RANKS} por tus niveles` : ''}. Tu camino heroico añade uno más en su habilidad, marcado en dorado. El modificador es el atributo más el rango. <span class="tor-left ${left === 0 ? 'is-done' : left < 0 ? 'is-over' : ''}">${left === 0 ? 'Todo repartido' : left > 0 ? `Te quedan ${left}` : `Te pasas en ${-left}`}</span></p><div class="tor-cols">${cols}</div></section>`;
   }
 
   function expertisePanel(ch) {
@@ -526,7 +611,7 @@
     ];
     return `<section class="tor-panel">${heading(6, 'Hoja calculada', esc(describe(ch)))}
       <div class="tor-stats">${stats.map(([k, v]) => `<div><small>${term(STAT_RULES[k], k)}</small><b>${esc(v)}</b></div>`).join('')}</div>
-      <p class="tor-note">Salud: 10 + Fuerza${ch.healthBonus ? ' + lo ganado al subir de nivel' : ''}. Concentración: 2 + Voluntad. Investidura: 2 + el mayor entre Consciencia y Presencia, solo tras pronunciar el Primer Ideal. Movimiento, carga, sentidos y dado de recuperación salen de Velocidad, Fuerza, Consciencia y Voluntad.</p></section>`;
+      <p class="tor-note">Salud: 10 + Fuerza${tier(ch) > 1 ? ` una vez por escalón (× ${tier(ch)})` : ''}${ch.level > 1 ? ` + ${tableHealth(ch.level)} de tus niveles` : ''}${extra(ch, 'healthBonus') ? ` + ${extra(ch, 'healthBonus')} de ajuste` : ''}. Concentración: 2 + Voluntad. Investidura: 2 + el mayor entre Consciencia y Presencia, solo tras pronunciar el Primer Ideal. Movimiento, carga, sentidos y dado de recuperación salen de Velocidad, Fuerza, Consciencia y Voluntad.</p></section>`;
   }
 
   function radiantPanel(ch) {
@@ -545,6 +630,35 @@
         </div></div>` : '<p class="tor-note">Se puede empezar sin vínculo y descubrirlo en partida. Al activarlo eliges orden, spren y los Ideales que has pronunciado.</p>'}</section>`;
   }
 
+  const talentCount = ch => {
+    const n = talentLines(ch);
+    return n === 1 ? 'En «Talentos» tienes 1 línea apuntada.' : `En «Talentos» tienes ${n} líneas apuntadas.`;
+  };
+  function levelPanel(ch) {
+    const L = ch.level;
+    const T = tier(ch);
+    const adj = (key, unit) => (extra(ch, key) ? ` + ${extra(ch, key)} de ajuste${unit}` : '');
+    const rows = [
+      ['Atributos', `${attrBudget(ch)} puntos: ${ATTR_POINTS} al crear${tableAttrs(L) ? ` + ${tableAttrs(L)} por nivel` : ''}${adj('attrBonus', '')}. Ganas uno en los niveles ${ATTR_LEVELS.slice(0, -1).join(', ')} y ${ATTR_LEVELS[ATTR_LEVELS.length - 1]}.`],
+      ['Habilidades', `${rankBudget(ch)} rangos: ${SKILL_RANKS} al crear${L > 1 ? ` + ${tableRanks(L)} por nivel` : ''}${adj('rankBonus', '')}. Rango máximo ${rankCap(ch)}${T < TIER_RANK.length ? ` hasta el nivel ${T * 5}` : ''}.`],
+      ['Salud', `${health(ch)}: 10 + Fuerza${T > 1 ? ` × ${T} escalones` : ''}${L > 1 ? ` + ${tableHealth(L)} por nivel` : ''}${adj('healthBonus', '')}.`],
+      ['Talentos', `El talento clave de tu camino${L > 1 ? `, ${L - 1} por nivel` : ''} y ${T} por tu ascendencia.`]
+    ];
+    const done = L > 1 ? `<details class="tor-fold" data-lvfold="list" ${lvOpen.list ? 'open' : ''}><summary>Lo que te ha dado cada nivel</summary><div class="tor-fold-body"><ul class="tor-lvlist">${Array.from({ length: L - 1 }, (_, i) => L - i).map(l => `<li><b>Nivel ${l}</b><span>${esc(levelGains(l).join(' · '))}</span></li>`).join('')}</ul></div></details>` : '';
+    const anyExtra = EXTRAS.some(([k]) => extra(ch, k));
+    return `<section class="tor-panel tor-levels" data-levels>${heading(8, 'Nivel y progresión', `nivel ${L} · escalón ${T}`)}
+      <div class="tor-level"><div class="tor-level-num"><small>NIVEL</small><b>${L}</b></div><span class="tor-tier">Escalón ${T} de ${TIER_RANK.length}</span>
+        <div class="tor-level-actions"><button type="button" class="tor-button" data-levelup ${L >= MAX_LEVEL ? 'disabled' : ''}>${L >= MAX_LEVEL ? 'NIVEL MÁXIMO' : `▲ SUBIR AL NIVEL ${L + 1}`}</button><button type="button" class="tor-button ghost" data-leveldown ${L <= 1 ? 'disabled' : ''}>BAJAR UN NIVEL</button></div></div>
+      <p class="tor-note">Al subir, NEXO suma lo que da la tabla de progresión: los puntos de atributo y los rangos nuevos quedan por repartir arriba, y la salud sube sola. ${manualLink('tor-subir-nivel', 'Subir de nivel en el manual')}</p>
+      ${L < MAX_LEVEL ? `<div class="tor-next"><b>El nivel ${L + 1} te dará</b><span>${esc(levelGains(L + 1).join(' · '))}</span></div>` : ''}
+      ${info(rows)}
+      <p class="tor-note" data-talent-count>${esc(talentCount(ch))}</p>
+      ${done}
+      <details class="tor-fold" data-lvfold="extras" ${lvOpen.extras || anyExtra ? 'open' : ''}><summary>Ajustes de quien dirige</summary><div class="tor-fold-body"><p class="tor-note">Si tu mesa da algo fuera de la tabla (una recompensa, una regla de la casa), apúntalo aquí y se suma a lo anterior.</p>
+        <div class="tor-fields tor-fields-3 tor-advance">${EXTRAS.map(([k, label, max]) => `<label class="tor-field"><span>${label} extra</span><input type="number" min="0" max="${max}" data-num="${k}" value="${extra(ch, k)}"></label>`).join('')}</div></div></details>
+    </section>`;
+  }
+
   function renderSheet() {
     const ch = current;
     const sheet = host?.querySelector('[data-sheet]');
@@ -553,11 +667,16 @@
     const rows = summary(ch);
     const pending = rows.reduce((t, r) => t + Math.max(0, r.left), 0);
     sheet.innerHTML = `
-      <section class="tor-tracker"><div class="tor-tracker-head"><b>${pending > 1 ? `Te quedan ${pending} elecciones` : pending ? 'Te queda 1 elección' : 'Héroe completo'}</b><span>Manual de Stormlight</span></div>
-        <ul class="tor-pools">${rows.map(r => `<li class="${r.left === 0 ? 'is-done' : r.left < 0 ? 'is-over' : ''}"><span>${r.label}</span><b>${r.left === 0 ? '✓' : r.left}</b><small>/ ${r.budget}</small></li>`).join('')}</ul></section>
-      ${originPanel(ch)}${attributesPanel(ch)}${skillsPanel(ch)}${expertisePanel(ch)}${sheetPanel(ch)}${radiantPanel(ch)}`;
+      <section class="tor-tracker"><div class="tor-tracker-head"><b>${pending > 1 ? `Te quedan ${pending} elecciones` : pending ? 'Te queda 1 elección' : rows.some(r => r.left < 0) ? 'Revisa lo marcado en rojo' : 'Héroe completo'}</b><span>Nivel ${ch.level} · escalón ${tier(ch)}${ch.ancestry && ch.path && ch.level < MAX_LEVEL ? ' <button type="button" class="tor-tracker-up" data-levelup aria-label="Subir de nivel">▲ SUBIR</button>' : ''}</span></div>
+        <ul class="tor-pools">${rows.map(r => `<li class="${r.left === 0 ? 'is-done' : r.left < 0 ? 'is-over' : ''}"><span>${r.label}</span><b>${r.show ?? (r.left === 0 ? '✓' : r.left)}</b>${r.show ? '' : `<small>/ ${r.budget}</small>`}</li>`).join('')}</ul></section>
+      ${originPanel(ch)}${attributesPanel(ch)}${skillsPanel(ch)}${expertisePanel(ch)}${sheetPanel(ch)}${radiantPanel(ch)}${levelPanel(ch)}`;
 
-    sheet.querySelectorAll('[data-choice]').forEach(select => select.addEventListener('change', () => { current[select.dataset.choice] = select.value; changed(); }));
+    sheet.querySelectorAll('[data-choice]').forEach(select => select.addEventListener('change', () => { current[select.dataset.choice] = select.value; if (select.dataset.choice === 'path') fitPathSkill(current); changed(); }));
+    // Subir o bajar repinta la ficha: el foco vuelve al botón pulsado, esté en el seguimiento o en el panel.
+    const again = (button, name) => host.querySelector(`${button.closest('[data-levels]') ? '[data-levels]' : '.tor-tracker'} [data-${name}]`)?.focus({ preventScroll: true });
+    sheet.querySelectorAll('[data-levelup]').forEach(button => button.addEventListener('click', () => { levelUp(); again(button, 'levelup'); }));
+    sheet.querySelectorAll('[data-leveldown]').forEach(button => button.addEventListener('click', () => { levelDown(); again(button, 'leveldown'); }));
+    sheet.querySelectorAll('[data-lvfold]').forEach(fold => fold.addEventListener('toggle', () => { lvOpen[fold.dataset.lvfold] = fold.open; }));
     sheet.querySelectorAll('[data-num]').forEach(input => input.addEventListener('change', () => { current[input.dataset.num] = Math.max(0, Math.trunc(Number(input.value)) || 0); changed(); }));
     sheet.querySelectorAll('[data-culture]').forEach(button => button.addEventListener('click', () => toggleCulture(button.dataset.culture)));
     sheet.querySelectorAll('[data-attr]').forEach(button => button.addEventListener('click', () => stepAttr(button.dataset.attr, Number(button.dataset.d))));
@@ -584,7 +703,7 @@
     fonts.href = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap';
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/tormentas/tormentas.css?v=2';
+    stylesheet.href = './src/tormentas/tormentas.css?v=3';
     document.head.append(fonts, stylesheet);
     host = document.createElement('section');
     host.id = 'nexoTormentas';

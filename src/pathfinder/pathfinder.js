@@ -1,13 +1,21 @@
 /*
  * NEXO · Pathfinder 2ª edición (Remaster: Player Core 1 y 2).
- * Creador de personajes de nivel 1: ascendencia y herencia, bagaje, clase, mejoras de atributo,
- * habilidades entrenadas, idiomas y hoja calculada. Los textos son resúmenes propios.
+ * Creador de personajes y subida de nivel (1 a 20): ascendencia y herencia, bagaje, clase, mejoras de
+ * atributo, habilidades, idiomas y hoja calculada. La progresión de cada clase está en
+ * pathfinder-progresion.js. Los textos son resúmenes propios.
  */
 (() => {
   const KEY = 'nexo-pathfinder-v1';
   const GAME = 'pathfinder';
-  const LEVEL = 1;
+  const MAX_LEVEL = 20;
   const FREE_BOOSTS = 4;
+  // Subir de nivel: cuatro mejoras de atributo en estos niveles y dotes generales y de ascendencia en estos otros.
+  const BOOST_LEVELS = [5, 10, 15, 20];
+  const LEVEL_BOOSTS = 4;
+  const GENERAL_FEATS = [3, 7, 11, 15, 19];
+  const ANCESTRY_FEATS = [5, 9, 13, 17];
+  const SAVES = { fort: 'Fortaleza', ref: 'Reflejos', vol: 'Voluntad' };
+  const TRACKS = { perc: 'Percepción', fort: 'Fortaleza', ref: 'Reflejos', vol: 'Voluntad', weapon: 'Armas', armor: 'Defensa, con armadura y sin ella', dc: 'CD de clase', spell: 'Conjuros, ataque y CD' };
 
   const ATTRS = [['fue', 'Fuerza', 'FUE'], ['des', 'Destreza', 'DES'], ['con', 'Constitución', 'CON'], ['int', 'Inteligencia', 'INT'], ['sab', 'Sabiduría', 'SAB'], ['car', 'Carisma', 'CAR']];
   const ATTR = Object.fromEntries(ATTRS.map(([k, name, short]) => [k, { name, short }]));
@@ -72,7 +80,7 @@
     bardo: { name: 'Bardo', key: ['car'], hp: 8, perc: 2, fort: 1, ref: 1, vol: 2, skills: ['ocultismo', 'interpretacion'], free: 4, armor: 1, weapon: 1, spells: 'Ocultismo', sub: 'Musa: enigma, maestra, polifacética o guerrera', text: 'Su arte es magia ocultista que inspira a sus aliados y confunde a sus enemigos.' },
     bruja: { name: 'Bruja', key: ['int'], hp: 6, perc: 1, fort: 1, ref: 1, vol: 2, skills: [], free: 4, armor: 0, weapon: 1, spells: 'Según el patrón', sub: 'Patrón y familiar', text: 'Un patrón misterioso le concede magia a través de su familiar.' },
     campeon: { name: 'Campeón', key: ['fue', 'des'], hp: 10, perc: 1, fort: 2, ref: 1, vol: 2, skills: ['religion'], free: 3, armor: 3, weapon: 1, sub: 'Causa y dios (santo o profano)', text: 'Guerrero sagrado que protege a sus aliados en nombre de su dios.' },
-    clerigo: { name: 'Clérigo', key: ['sab'], hp: 8, perc: 1, fort: 1, ref: 1, vol: 2, skills: ['religion'], free: 3, armor: 0, weapon: 1, spells: 'Divina', sub: 'Doctrina: sacerdote de claustro o sacerdote guerrero (suma armadura ligera y media)', text: 'Canaliza el poder de su dios para curar, proteger o castigar.' },
+    clerigo: { name: 'Clérigo', key: ['sab'], hp: 8, perc: 1, fort: 1, ref: 1, vol: 2, skills: ['religion'], free: 3, armor: 0, weapon: 1, spells: 'Divina', sub: 'Dios, dominios y fuente divina: curar o dañar', text: 'Canaliza el poder de su dios para curar, proteger o castigar.' },
     druida: { name: 'Druida', key: ['sab'], hp: 8, perc: 1, fort: 1, ref: 1, vol: 2, skills: ['naturaleza'], free: 3, armor: 2, weapon: 1, spells: 'Primigenia', sub: 'Orden: animal, llama, hoja, tormenta o indómita', text: 'Guardián de la naturaleza que lanza magia primigenia.' },
     espadachin: { name: 'Espadachín', key: ['des'], hp: 10, perc: 2, fort: 1, ref: 2, vol: 2, skills: ['acrobacias'], free: 5, armor: 1, weapon: 1, sub: 'Estilo: bailarín de batalla, fanfarrón, esgrimista, gimnasta o ingenioso', text: 'Luchador vistoso que gana brío con sus fintas y acrobacias.' },
     explorador: { name: 'Explorador', key: ['fue', 'des'], hp: 10, perc: 2, fort: 2, ref: 2, vol: 1, skills: ['naturaleza', 'supervivencia'], free: 4, armor: 2, weapon: 1, sub: 'Ventaja del cazador: ráfaga, precisión o astucia', text: 'Rastreador que marca a su presa y la persigue sin descanso.' },
@@ -84,6 +92,8 @@
     oraculo: { name: 'Oráculo', key: ['car'], hp: 8, perc: 1, fort: 1, ref: 1, vol: 2, skills: ['religion'], free: 4, armor: 1, weapon: 1, spells: 'Divina', sub: 'Misterio y su maldición', text: 'Toca un misterio divino que le da poder a cambio de una maldición.' },
     picaro: { name: 'Pícaro', key: ['des', 'fue', 'int', 'car'], hp: 8, perc: 2, fort: 1, ref: 2, vol: 2, skills: ['sigilo'], free: 8, armor: 1, weapon: 1, sub: 'Truhanería: matón (FUE), ladrón, sinvergüenza (CAR) o cerebro (INT); por defecto DES', text: 'Experto en mil habilidades que golpea donde más duele.' }
   };
+  // Progresión del nivel 2 al 20 (datos en pathfinder-progresion.js).
+  Object.entries(window.NEXO_PF_PROGRESSION?.classes || {}).forEach(([k, p]) => { if (CLASSES[k]) Object.assign(CLASSES[k], p); });
   const ARMORS = {
     sin: { name: 'Sin armadura', cat: 0, ac: 0, cap: null },
     acolchada: { name: 'Armadura acolchada', cat: 1, ac: 1, cap: 3 }, cuero: { name: 'Armadura de cuero', cat: 1, ac: 1, cap: 4 },
@@ -94,7 +104,7 @@
   };
   const LANGS = ['Dracónico', 'Enano', 'Élfico', 'Feérico', 'Gnomo', 'Goblin', 'Jotun', 'Mediano', 'Orco', 'Sakvroth'];
   const ARMOR_CATS = ['sin armadura', 'ligera', 'media', 'pesada'];
-  const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
+  const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 
   let host = null;
   let store = load();
@@ -102,10 +112,11 @@
   let exitHandler = null;
   let saveTimer = 0;
   let manualBook = null;
+  const lvOpen = new Map();   // niveles de la progresión que se han abierto o cerrado a mano
 
   // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y src/pathfinder/pathfinder-manual.js).
   // Tarjeta de una ficha, propia o recibida de otro jugador: nombre, resumen e iniciativa.
-  const cardOf = ch => ({ id: ch.id, name: ch.name || 'Aventurero sin nombre', summary: describe(ch), init: cls(ch) ? mod(ch, 'sab') + prof(cls(ch).perc) : 0 });
+  const cardOf = ch => ({ id: ch.id, name: ch.name || 'Aventurero sin nombre', summary: describe(ch), init: cls(ch) ? bonus(ch, 'sab', 'perc') : 0 });
   const ap = window.NEXO_APARTADOS?.create({
     prefix: 'pf', system: () => GAME, home: true, frame: body => frame(body),
     leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
@@ -160,12 +171,18 @@
     const c = cls(ch);
     if (!c || !anc(ch)) return null;
     const drained = juego?.cond(ch, 'drenado') || 0;
+    const L = level(ch);
     const magic = [{ id: 'foco', label: 'Puntos de foco', max: 1, editMax: true, term: 'pf-foco', group: 'Magia', rest: { reenfocar: 1, noche: 'all' } }];
-    if (c.spells) magic.push({ id: 'rango1', label: 'Espacios de rango 1', max: ['hechicero', 'oraculo'].includes(ch.cls) ? 3 : 2, editMax: true, term: 'pf-rangos-conjuro', group: 'Magia', rest: { noche: 'all' } });
-    if (ch.cls === 'clerigo') magic.push({ id: 'fuente', label: 'Fuente divina', hint: 'curar o dañar', max: 4, editMax: true, group: 'Magia', rest: { noche: 'all' } });
+    // Espacios de conjuro: un rango nuevo en cada nivel impar, con un espacio más al nivel siguiente; el rango 10, al 19.
+    if (c.spells) {
+      const slots = c.slots || [2, 3];
+      for (let r = 1; r <= Math.min(9, Math.ceil(L / 2)); r++) magic.push({ id: `rango${r}`, label: `Espacios de rango ${r}`, max: L >= r * 2 ? slots[1] : slots[0], editMax: true, term: 'pf-rangos-conjuro', group: 'Magia', rest: { noche: 'all' } });
+      if (L >= 19) magic.push({ id: 'rango10', label: 'Espacio de rango 10', max: 1, editMax: true, term: 'pf-rangos-conjuro', group: 'Magia', rest: { noche: 'all' } });
+    }
+    if (ch.cls === 'clerigo') magic.push({ id: 'fuente', label: 'Fuente divina', hint: 'curar o dañar', max: L >= 15 ? 6 : L >= 5 ? 5 : 4, editMax: true, group: 'Magia', rest: { noche: 'all' } });
     return {
       counters: [
-        { id: 'pg', label: 'Puntos de golpe', max: Math.max(1, hp(ch) - drained * LEVEL), big: true, temp: 'pgt', verbs: ['Daño', 'Curar'], zero: 'A 0 PG caes inconsciente y quedas moribundo 1 (2 si fue un crítico), más tu valor de herido.' },
+        { id: 'pg', label: 'Puntos de golpe', max: Math.max(1, hp(ch) - drained * L), big: true, temp: 'pgt', verbs: ['Daño', 'Curar'], zero: 'A 0 PG caes inconsciente y quedas moribundo 1 (2 si fue un crítico), más tu valor de herido.' },
         { id: 'pgt', label: 'PG temporales', kind: 'value', start: 0, cap: 999, inside: 'pg', rest: { noche: { set: 0 } } },
         { id: 'heroe', label: 'Puntos de héroe', kind: 'value', start: 1, cap: 3, term: 'pf-puntos-heroe', group: 'General', rest: { sesion: { set: 1 } } },
         ...magic
@@ -173,7 +190,7 @@
       conditions: PLAY_CONDITIONS.map(([id, label, max, entry, effect]) => ({ id, label, max, term: entry, effect, rest: CONDITION_REST[id] })),
       rests: [
         { id: 'reenfocar', label: 'Reenfocar', hint: '10 minutos · recuperas 1 punto de foco' },
-        { id: 'noche', label: 'Descanso nocturno', hint: '8 horas · puntos de golpe, foco y conjuros', run: a => { a.add('pg', Math.max(1, mod(ch, 'con')) * LEVEL); if (a.get('pg') >= a.max('pg')) a.setCond('herido', 0); } },
+        { id: 'noche', label: 'Descanso nocturno', hint: '8 horas · puntos de golpe, foco y conjuros', run: a => { a.add('pg', Math.max(1, mod(ch, 'con')) * L); if (a.get('pg') >= a.max('pg')) a.setCond('herido', 0); } },
         { id: 'sesion', label: 'Nueva sesión', hint: 'los puntos de héroe vuelven a 1' }
       ]
     };
@@ -205,6 +222,15 @@
   function normalize(ch) {
     const out = { ...newCharacter(), ...ch };
     ['ancBoosts', 'bgBoosts', 'freeBoosts', 'freeSkills', 'lores'].forEach(k => { out[k] = Array.isArray(ch[k]) ? ch[k] : []; });
+    // Subida de nivel: las fichas de antes no la traen y se quedan en el nivel 1.
+    const obj = v => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
+    out.level = Math.max(1, Math.min(MAX_LEVEL, Math.trunc(Number(ch.level)) || 1));
+    out.variant = typeof ch.variant === 'string' ? ch.variant.slice(0, 20) : '';
+    out.hpBonus = Math.max(0, Math.min(400, Math.trunc(Number(ch.hpBonus)) || 0));
+    out.lvBoosts = Object.fromEntries(BOOST_LEVELS.map(l => [l, (Array.isArray(obj(ch.lvBoosts)[l]) ? obj(ch.lvBoosts)[l] : []).filter(k => typeof k === 'string')]));
+    out.skillUps = Object.fromEntries(Object.entries(obj(ch.skillUps)).filter(([l, t]) => Number(l) >= 2 && Number(l) <= MAX_LEVEL && typeof t === 'string' && t).map(([l, t]) => [Number(l), t.slice(0, 60)]));
+    out.saveUps = Object.fromEntries(Object.entries(obj(ch.saveUps)).filter(([l, t]) => Number(l) >= 2 && Number(l) <= MAX_LEVEL && typeof t === 'string' && SAVES[t]).map(([l, t]) => [Number(l), t]));
+    out.lvFeats = Object.fromEntries(Object.entries(obj(ch.lvFeats)).filter(([slot, t]) => /^\d{1,2}:[a-z]{1,10}$/.test(slot) && typeof t === 'string' && t).slice(0, 80).map(([slot, t]) => [slot, t.slice(0, 80)]));
     return out;
   }
   function persist() {
@@ -238,18 +264,27 @@
       background: '', bgSkill: '', bgLore: '', bgFeat: '', bgBoosts: [],
       cls: '', subclass: '', classBoost: '', freeBoosts: [],
       freeSkills: [], lores: [], languages: '', armor: 'sin',
-      feats: '', gear: '', notes: ''
+      feats: '', gear: '', notes: '',
+      level: 1, variant: '', hpBonus: 0, lvBoosts: Object.fromEntries(BOOST_LEVELS.map(l => [l, []])), skillUps: {}, saveUps: {}, lvFeats: {}
     };
   }
 
   // Valores derivados
+  const level = ch => ch.level || 1;
   const anc = ch => ANCESTRIES[ch.ancestry];
   const bg = ch => BACKGROUNDS[ch.background];
-  const cls = ch => CLASSES[ch.cls];
+  // La clase, con su variante aplicada si la tiene (la doctrina del clérigo cambia competencias).
+  function cls(ch) {
+    const c = CLASSES[ch.cls];
+    const v = c?.variants && (c.variants[ch.variant] || Object.values(c.variants)[0]);
+    return v ? { ...c, ...v.set, up: { ...c.up, ...v.up } } : c;
+  }
   const ancFixed = ch => (anc(ch) && !ch.altBoosts ? anc(ch).boosts : []);
   const ancFree = ch => (!anc(ch) ? 0 : ch.altBoosts ? 2 : anc(ch).free);
   const ancFlaw = ch => (anc(ch) && !ch.altBoosts ? anc(ch).flaw : '');
-  function mod(ch, k) {
+  // Modificador de un atributo. Las mejoras de los niveles 5, 10, 15 y 20 suman +1, salvo que el modificador
+  // ya sea +4 o más: entonces hacen falta dos mejoras para subirlo y la primera se queda a medias (half).
+  function boosted(ch, k) {
     let n = 0;
     if (ancFixed(ch).includes(k)) n++;
     if (ch.ancBoosts.includes(k)) n++;
@@ -257,9 +292,37 @@
     if (ch.classBoost === k) n++;
     if (ch.freeBoosts.includes(k)) n++;
     if (ancFlaw(ch) === k) n--;
-    return n;
+    let half = false;
+    let fromLevels = 0;
+    BOOST_LEVELS.forEach(l => {
+      if (l > level(ch) || !(ch.lvBoosts?.[l] || []).includes(k)) return;
+      fromLevels++;
+      if (n < 4) n++;
+      else if (half) { n++; half = false; }
+      else half = true;
+    });
+    return { mod: n, half, fromLevels };
   }
-  const prof = rank => (rank ? rank * 2 + LEVEL : 0);
+  const mod = (ch, k) => boosted(ch, k).mod;
+  // Competencia: el rango (entrenado 1, experto 2, maestro 3, legendario 4) por 2, más el nivel.
+  const prof = (ch, rank) => (rank ? rank * 2 + level(ch) : 0);
+  const upsOf = (ch, track) => (cls(ch)?.up?.[track] || []).filter(l => l <= level(ch)).length;
+  // Rango de la clase en Percepción, una salvación, las armas, la CD de clase o los conjuros, a su nivel.
+  function rankOf(ch, track) {
+    const c = cls(ch);
+    if (!c) return 0;
+    let rank = (track === 'dc' || track === 'spell' ? 1 : c[track] || 0) + upsOf(ch, track);
+    if (c.paths && SAVES[track]) rank += c.paths.filter(l => l <= level(ch) && ch.saveUps?.[l] === track).length;
+    return Math.min(4, rank);
+  }
+  // Rango con una categoría de armadura (0 es sin armadura): solo sube si la clase está entrenada en ella.
+  function defenseRank(ch, cat) {
+    const c = cls(ch);
+    if (!c) return 0;
+    const base = cat === 0 ? c.unarmored || 1 : c.armor >= cat ? 1 : 0;
+    return base ? Math.min(4, base + upsOf(ch, 'armor')) : 0;
+  }
+  const bonus = (ch, attr, track) => mod(ch, attr) + prof(ch, rankOf(ch, track));
   function bgSkill(ch) {
     const b = bg(ch);
     if (!b) return '';
@@ -281,16 +344,40 @@
     if (ch.freeSkills.includes(k)) return 'elegida';
     return '';
   }
-  const skillMod = (ch, k) => mod(ch, SKILLS[k][1]) + prof(skillSource(ch, k) ? 1 : 0);
-  const loreMod = ch => mod(ch, 'int') + prof(1);
-  const hp = ch => (anc(ch)?.hp || 0) + ((cls(ch)?.hp || 0) + mod(ch, 'con')) * LEVEL;
+  // Aumentos de habilidad: en los niveles impares desde el 3, o en todos desde el 2 (pícaro e investigador).
+  // Cada uno sube un rango una habilidad o un Saber («lore:Nombre»); maestro pide nivel 7 y legendario, nivel 15.
+  function upLevels(ch) {
+    const c = cls(ch);
+    const out = [];
+    if (c) for (let l = c.skillful ? 2 : 3; l <= level(ch); l += c.skillful ? 1 : 2) out.push(l);
+    return out;
+  }
+  const maxSkillRank = l => (l >= 15 ? 4 : l >= 7 ? 3 : 2);
+  const loreNames = ch => [bg(ch) ? ch.bgLore || bg(ch).lore : '', ...ch.lores].filter(Boolean);
+  const baseRank = (ch, t) => (t.startsWith('lore:') ? (loreNames(ch).includes(t.slice(5)) ? 1 : 0) : SKILLS[t] && skillSource(ch, t) ? 1 : 0);
+  function skillRank(ch, t, upto = level(ch)) {
+    let rank = baseRank(ch, t);
+    upLevels(ch).forEach(l => { if (l <= upto && ch.skillUps?.[l] === t) rank++; });
+    return Math.min(4, rank);
+  }
+  const skillMod = (ch, k) => mod(ch, SKILLS[k][1]) + prof(ch, skillRank(ch, k));
+  const loreMod = (ch, name) => mod(ch, 'int') + prof(ch, skillRank(ch, 'lore:' + name));
+  const hp = ch => (anc(ch)?.hp || 0) + ((cls(ch)?.hp || 0) + mod(ch, 'con')) * level(ch) + (ch.hpBonus || 0);
+  // Dotes que toca elegir en un nivel por encima del 1: [tipo, nombre].
+  function featSlots(ch, l) {
+    const out = [];
+    if (l % 2 === 0) out.push(['clase', 'Dote de clase'], ['hab', 'Dote de habilidad']);
+    else if (cls(ch)?.skillFeats?.includes(l)) out.push(['hab', 'Dote de habilidad']);
+    if (GENERAL_FEATS.includes(l)) out.push(['general', 'Dote general']);
+    if (ANCESTRY_FEATS.includes(l)) out.push(['asc', 'Dote de ascendencia']);
+    return out;
+  }
   const keyAttr = ch => cls(ch) ? (cls(ch).key.length === 1 ? cls(ch).key[0] : ch.classBoost || cls(ch).key[0]) : '';
   function armorClass(ch) {
     const a = ARMORS[ch.armor] || ARMORS.sin;
-    const c = cls(ch);
-    const rank = a.cat === 0 ? (c?.unarmored || 1) : (c && c.armor >= a.cat ? 1 : 0);
+    const rank = defenseRank(ch, a.cat);
     const dex = a.cap === null ? mod(ch, 'des') : Math.min(mod(ch, 'des'), a.cap);
-    return { total: 10 + dex + prof(rank) + a.ac, trained: rank > 0 };
+    return { total: 10 + dex + prof(ch, rank) + a.ac, trained: rank > 0, rank };
   }
   function langCount(ch) {
     if (!anc(ch)) return 0;
@@ -298,9 +385,14 @@
   }
 
   function sanitize(ch) {
+    ['lvBoosts', 'skillUps', 'saveUps', 'lvFeats'].forEach(k => { if (!ch[k] || typeof ch[k] !== 'object') ch[k] = {}; });
+    ch.level = Math.max(1, Math.min(MAX_LEVEL, Math.trunc(Number(ch.level)) || 1));
     if (!ANCESTRIES[ch.ancestry]) ch.ancestry = '';
     if (!BACKGROUNDS[ch.background]) ch.background = '';
     if (!CLASSES[ch.cls]) ch.cls = '';
+    const variants = CLASSES[ch.cls]?.variants;
+    if (!variants) ch.variant = '';
+    else if (!variants[ch.variant]) ch.variant = Object.keys(variants)[0];
     if (!ARMORS[ch.armor]) ch.armor = 'sin';
     ch.altBoosts = Boolean(ch.altBoosts);
     const a = anc(ch);
@@ -317,6 +409,7 @@
     else if (c.key.length === 1) ch.classBoost = c.key[0];
     else if (!c.key.includes(ch.classBoost)) ch.classBoost = '';
     ch.freeBoosts = uniq(ch.freeBoosts).slice(0, FREE_BOOSTS);
+    BOOST_LEVELS.forEach(l => { ch.lvBoosts[l] = uniq(Array.isArray(ch.lvBoosts[l]) ? ch.lvBoosts[l] : []).slice(0, LEVEL_BOOSTS); });
     const taken = new Set([...classSkills(ch), bgSkill(ch)]);
     ch.freeSkills = ch.freeSkills.filter((k, i) => SKILLS[k] && !taken.has(k) && ch.freeSkills.indexOf(k) === i);
     ch.lores = ch.lores.map(s => String(s).trim()).filter(Boolean);
@@ -325,6 +418,18 @@
       ch.freeSkills = ch.freeSkills.slice(0, room);
       ch.lores = ch.lores.slice(0, Math.max(0, room - ch.freeSkills.length));
     }
+    // Lo elegido al subir de nivel, hasta el nivel actual (lo de niveles más altos se guarda por si se vuelve a subir).
+    if (c?.paths) {
+      const [first, second, third] = c.paths;
+      if (ch.saveUps[second] && ch.saveUps[second] === ch.saveUps[first]) delete ch.saveUps[second];
+      if (ch.saveUps[third] && ![ch.saveUps[first], ch.saveUps[second]].includes(ch.saveUps[third])) delete ch.saveUps[third];
+    }
+    upLevels(ch).forEach(l => {
+      const t = ch.skillUps[l];
+      if (!t) return;
+      const known = t.startsWith('lore:') ? baseRank(ch, t) > 0 : Boolean(SKILLS[t]);
+      if (!known || skillRank(ch, t, l - 1) + 1 > maxSkillRank(l)) delete ch.skillUps[l];
+    });
   }
 
   // Ficha que llega de un archivo: se completa y se deja solo lo que el creador entiende.
@@ -342,43 +447,53 @@
     const a = anc(ch);
     const b = bg(ch);
     const c = cls(ch);
-    const save = (attr, rank) => (c ? signed(mod(ch, attr) + prof(rank)) : '—');
+    const save = (attr, track) => (c ? signed(bonus(ch, attr, track)) : '—');
     const ac = armorClass(ch);
     const key = keyAttr(ch);
     const fue = mod(ch, 'fue');
-    const lores = [b ? (ch.bgLore || b.lore) : '', ...ch.lores].filter(Boolean);
+    const lores = loreNames(ch);
+    const rankNote = r => (r > 1 ? ` · ${RANKS[r].toLowerCase()}` : '');
+    const L = level(ch);
+    const progress = [];
+    for (let l = 2; l <= L && c; l++) {
+      if (BOOST_LEVELS.includes(l) && ch.lvBoosts[l]?.length) progress.push([`Nivel ${l} · mejoras`, ch.lvBoosts[l].map(k => ATTR[k].short).join(', ')]);
+      if (upLevels(ch).includes(l) && ch.skillUps[l]) progress.push([`Nivel ${l} · habilidad`, `${targetName(ch.skillUps[l])} a ${RANKS[skillRank(ch, ch.skillUps[l], l)].toLowerCase()}`]);
+      if (c.paths?.includes(l) && ch.saveUps[l]) progress.push([`Nivel ${l} · camino a la perfección`, SAVES[ch.saveUps[l]]]);
+      featSlots(ch, l).forEach(([kind, label]) => { if (ch.lvFeats[`${l}:${kind}`]) progress.push([`Nivel ${l} · ${label.toLowerCase()}`, ch.lvFeats[`${l}:${kind}`]]); });
+    }
     const langs = [...(a?.langs || []), ...ch.languages.split(',').map(s => s.trim()).filter(Boolean)];
     const bgFeat = b ? (ch.background === 'propio' ? ch.bgFeat : b.feat) : '';
     return {
       system: 'Pathfinder · 2ª edición Remaster', accent: '#5b3a8c',
       name: ch.name || 'Aventurero sin nombre', subtitle: describe(ch),
-      meta: [['Nivel', LEVEL], ['Jugador', ch.player], ['Campaña', ch.campaign]],
+      meta: [['Nivel', L], ['Jugador', ch.player], ['Campaña', ch.campaign]],
       blocks: [
         { title: 'Aventurero', kind: 'pairs', items: [
-          ['Ascendencia', a?.name], ['Herencia', ch.heritage], ['Bagaje', b?.name], ['Dote del bagaje', bgFeat], ['Clase', c?.name], ['Subclase y elecciones', ch.subclass],
+          ['Ascendencia', a?.name], ['Herencia', ch.heritage], ['Bagaje', b?.name], ['Dote del bagaje', bgFeat], ['Clase', c?.name], [c?.variantLabel || 'Doctrina', c?.variants?.[ch.variant]?.name], ['Subclase y elecciones', ch.subclass],
           ['Atributo clave', key ? ATTR[key].name : ''], ['Dios o filosofía', ch.deity], ['Edad', ch.age], ['Edictos y anatemas', ch.edicts],
           ['Tamaño', a?.size], ['Sentidos', a?.vision], ['Idiomas', langs.join(', ')], ['Armadura', (ARMORS[ch.armor] || ARMORS.sin).name]
         ] },
         { title: 'Atributos', kind: 'stats', items: ATTRS.map(([k, name, short]) => ({ label: name, value: signed(mod(ch, k)), sub: short })) },
         { title: 'Defensa', kind: 'stats', note: c && !ac.trained ? 'La clase no está entrenada en esa armadura: no suma competencia a la CA.' : '', items: [
-          { label: 'Puntos de golpe', value: a && c ? hp(ch) : '—' }, { label: 'Clase de Armadura', value: c ? ac.total : '—' }, { label: 'Percepción', value: save('sab', c?.perc) },
-          { label: 'Fortaleza', value: save('con', c?.fort) }, { label: 'Reflejos', value: save('des', c?.ref) }, { label: 'Voluntad', value: save('sab', c?.vol) },
+          { label: 'Puntos de golpe', value: a && c ? hp(ch) : '—' }, { label: 'Clase de Armadura', value: c ? ac.total : '—' }, { label: 'Percepción', value: save('sab', 'perc') },
+          { label: 'Fortaleza', value: save('con', 'fort') }, { label: 'Reflejos', value: save('des', 'ref') }, { label: 'Voluntad', value: save('sab', 'vol') },
           { label: 'Velocidad', value: a ? a.speed : '—', sub: a ? 'pies' : '' }
         ] },
         { title: 'Ataques y CD', kind: 'stats', items: [
-          { label: 'Cuerpo a cuerpo', value: c ? signed(fue + prof(c.weapon)) : '—' }, { label: 'A distancia', value: c ? signed(mod(ch, 'des') + prof(c.weapon)) : '—' },
-          { label: 'CD de clase', value: c ? 10 + mod(ch, key) + prof(1) : '—' },
-          c?.spells ? { label: 'Ataque de conjuro', value: signed(mod(ch, key) + prof(1)) } : null, c?.spells ? { label: 'CD de conjuros', value: 10 + mod(ch, key) + prof(1), sub: c.spells } : null,
+          { label: 'Cuerpo a cuerpo', value: c ? signed(bonus(ch, 'fue', 'weapon')) : '—' }, { label: 'A distancia', value: c ? signed(bonus(ch, 'des', 'weapon')) : '—' },
+          { label: 'CD de clase', value: c ? 10 + bonus(ch, key, 'dc') : '—' },
+          c?.spells ? { label: 'Ataque de conjuro', value: signed(bonus(ch, key, 'spell')) } : null, c?.spells ? { label: 'CD de conjuros', value: 10 + bonus(ch, key, 'spell'), sub: c.spells } : null,
           { label: 'Impedimenta', value: `${5 + fue} / ${10 + fue}`, sub: 'impedido / máx.' }
         ] },
         { title: 'En partida', kind: 'tracks', items: [
           { label: 'Puntos de golpe', value: '', max: a && c ? hp(ch) : '' }, { label: 'Puntos de héroe', value: '', max: 3, boxes: 3, marked: 1 }, { label: 'Moribundo', value: '', max: 4, boxes: 4 }, { label: 'Herido', value: '', max: '' }
         ] },
-        { title: 'Habilidades', kind: 'list', cols: 2, note: 'El punto marca las habilidades entrenadas (+2 más el nivel).', items: [
-          ...SKILL_KEYS.map(k => ({ name: `${SKILLS[k][0]} (${ATTR[SKILLS[k][1]].short})`, value: signed(skillMod(ch, k)), mark: Boolean(skillSource(ch, k)) })),
-          ...lores.map(name => ({ name: `Saber: ${name} (INT)`, value: signed(loreMod(ch)), mark: true }))
+        { title: 'Habilidades', kind: 'list', cols: 2, note: 'El punto marca las habilidades entrenadas (+2 más el nivel); experto suma +4, maestro +6 y legendario +8.', items: [
+          ...SKILL_KEYS.map(k => ({ name: `${SKILLS[k][0]} (${ATTR[SKILLS[k][1]].short})${rankNote(skillRank(ch, k))}`, value: signed(skillMod(ch, k)), mark: skillRank(ch, k) > 0 })),
+          ...lores.map(name => ({ name: `Saber: ${name} (INT)${rankNote(skillRank(ch, 'lore:' + name))}`, value: signed(loreMod(ch, name)), mark: true }))
         ] },
         { title: 'Dotes y rasgos', kind: 'text', text: ch.feats },
+        ...(progress.length ? [{ title: 'Subida de nivel', kind: 'pairs', items: progress }] : []),
         { title: 'Equipo', kind: 'text', text: ch.gear },
         { title: 'Notas', kind: 'text', text: ch.notes }
       ]
@@ -402,11 +517,20 @@
     if (c && c.key.length > 1) rows.push({ label: 'Atributo clave', left: ch.classBoost ? 0 : 1, budget: 1 });
     rows.push({ label: 'Mejoras libres', left: FREE_BOOSTS - ch.freeBoosts.length, budget: FREE_BOOSTS });
     if (c) rows.push({ label: 'Habilidades', left: skillPicks(ch) - picksSpent(ch), budget: skillPicks(ch) });
+    // Lo que queda por elegir de los niveles ya subidos.
+    const L = level(ch);
+    if (c && L > 1) {
+      BOOST_LEVELS.filter(l => l <= L).forEach(l => rows.push({ label: `Mejoras del nivel ${l}`, left: LEVEL_BOOSTS - (ch.lvBoosts?.[l] || []).length, budget: LEVEL_BOOSTS }));
+      const ups = upLevels(ch);
+      if (ups.length) rows.push({ label: 'Aumentos de habilidad', left: ups.filter(l => !ch.skillUps?.[l]).length, budget: ups.length });
+      const paths = (c.paths || []).filter(l => l <= L);
+      if (paths.length) rows.push({ label: 'Caminos a la perfección', left: paths.filter(l => !ch.saveUps?.[l]).length, budget: paths.length });
+    }
     return rows;
   }
   const isComplete = ch => summary(ch).every(row => row.left === 0);
   function describe(ch) {
-    const parts = [anc(ch)?.name, cls(ch)?.name, cls(ch) ? `nivel ${LEVEL}` : ''].filter(Boolean);
+    const parts = [anc(ch)?.name, cls(ch)?.name, cls(ch) ? `nivel ${level(ch)}` : ''].filter(Boolean);
     return parts.length ? parts.join(' · ') : 'Sin ascendencia ni clase';
   }
 
@@ -444,6 +568,32 @@
     if (!value) return flash('Escribe de qué es el Saber: Absalom, Ingeniería, Dragones…');
     if (picksSpent(ch) >= skillPicks(ch)) return flash(`Ya has elegido tus ${skillPicks(ch)} habilidades. Quita una para añadir un Saber.`);
     ch.lores.push(value.slice(0, 40));
+    changed();
+  }
+
+  // Subir y bajar de nivel. Al bajar no se borra lo elegido: vuelve si se sube otra vez.
+  function levelUp() {
+    const ch = current;
+    if (!cls(ch) || !anc(ch)) return flash('Elige primero una ascendencia y una clase para poder subir de nivel.');
+    if (level(ch) >= MAX_LEVEL) return flash('Ya estás en el nivel 20, el máximo.');
+    ch.level = level(ch) + 1;
+    lvOpen.set(ch.level, true);
+    changed();
+    const panel = host.querySelector('[data-levels]');
+    panel?.scrollIntoView({ block: 'start', behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    flash(`Nivel ${ch.level}. Abajo tienes lo que ganas y lo que te queda por elegir.`);
+  }
+  function levelDown() {
+    if (level(current) <= 1) return;
+    current.level = level(current) - 1;
+    changed();
+  }
+  function toggleLevelBoost(l, k) {
+    const list = current.lvBoosts[l] || (current.lvBoosts[l] = []);
+    if (list.includes(k)) list.splice(list.indexOf(k), 1);
+    else if (list.length >= LEVEL_BOOSTS) return flash(`Ya has repartido las ${LEVEL_BOOSTS} mejoras del nivel ${l}. Quita una para moverla.`);
+    else list.push(k);
+    lvOpen.set(l, true);
     changed();
   }
 
@@ -488,13 +638,12 @@
     const c = cls(ch);
     const items = [];
     if (c) {
-      items.push(['perc', 'Percepción', mod(ch, 'sab') + prof(c.perc)], ['fort', 'Fortaleza', mod(ch, 'con') + prof(c.fort)], ['ref', 'Reflejos', mod(ch, 'des') + prof(c.ref)], ['vol', 'Voluntad', mod(ch, 'sab') + prof(c.vol)],
-        ['melee', 'Ataque cuerpo a cuerpo', mod(ch, 'fue') + prof(c.weapon)], ['ranged', 'Ataque a distancia', mod(ch, 'des') + prof(c.weapon)]);
-      if (c.spells) items.push(['spell', 'Ataque de conjuro', mod(ch, keyAttr(ch)) + prof(1)]);
+      items.push(['perc', 'Percepción', bonus(ch, 'sab', 'perc')], ['fort', 'Fortaleza', bonus(ch, 'con', 'fort')], ['ref', 'Reflejos', bonus(ch, 'des', 'ref')], ['vol', 'Voluntad', bonus(ch, 'sab', 'vol')],
+        ['melee', 'Ataque cuerpo a cuerpo', bonus(ch, 'fue', 'weapon')], ['ranged', 'Ataque a distancia', bonus(ch, 'des', 'weapon')]);
+      if (c.spells) items.push(['spell', 'Ataque de conjuro', bonus(ch, keyAttr(ch), 'spell')]);
     }
     SKILL_KEYS.forEach(k => items.push(['sk:' + k, SKILLS[k][0], skillMod(ch, k)]));
-    const bgLore = bg(ch) ? (ch.bgLore || bg(ch).lore) : '';
-    [bgLore, ...ch.lores].filter(Boolean).forEach((name, i) => items.push(['lore:' + i, `Saber (${name})`, loreMod(ch)]));
+    loreNames(ch).forEach((name, i) => items.push(['lore:' + i, `Saber (${name})`, loreMod(ch, name)]));
     return items;
   }
   function diceSources() { return current ? [{ label: 'Tirada de la ficha', items: diceItems(current), show: signed }] : []; }
@@ -513,7 +662,7 @@
       const done = isComplete(ch);
       return `<button class="pf-card" data-open="${esc(ch.id)}"><span class="pf-card-mark" aria-hidden="true">${window.NEXO_ICONS?.pathfinder || ''}</span><span class="pf-card-copy"><b>${esc(ch.name || 'Aventurero sin nombre')}</b><small>${esc(describe(ch))}</small></span><span class="pf-badge ${done ? 'is-done' : ''}">${done ? 'Listo' : 'En curso'}</span></button>`;
     }).join('') : `<div class="pf-empty"><span aria-hidden="true">${window.NEXO_ICONS?.pathfinder || ''}</span><b>Aún no hay aventureros</b><small>Pulsa «Nuevo aventurero» para crear tu primer personaje.</small></div>`;
-    frame(`${ap?.tabs('personajes') || ''}<p class="pf-kicker">NEXO / PATHFINDER · 2ª EDICIÓN REMASTER</p><h1>Tus <em>aventureros</em></h1><p class="pf-intro">Crea personajes de nivel 1 para Golarion: ascendencia y herencia, bagaje, clase, mejoras de atributo y habilidades entrenadas. NEXO calcula puntos de golpe, Clase de Armadura, Percepción, salvaciones, CD de clase y de conjuros, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="pf-actions"><button class="pf-button" data-new>NUEVO AVENTURERO</button>${kit?.importButton() || ''}<button class="pf-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="pf-list">${cards}</div><p class="pf-quote">«Explora, informa, coopera.»</p>`);
+    frame(`${ap?.tabs('personajes') || ''}<p class="pf-kicker">NEXO / PATHFINDER · 2ª EDICIÓN REMASTER</p><h1>Tus <em>aventureros</em></h1><p class="pf-intro">Crea personajes para Golarion y súbelos del nivel 1 al 20: ascendencia y herencia, bagaje, clase, mejoras de atributo, habilidades y lo que da cada nivel. NEXO calcula puntos de golpe, Clase de Armadura, Percepción, salvaciones, CD de clase y de conjuros, y guarda las fichas en este dispositivo y en tu cuenta.</p><div class="pf-actions"><button class="pf-button" data-new>NUEVO AVENTURERO</button>${kit?.importButton() || ''}<button class="pf-button ghost" data-exit>← VOLVER A LA MESA</button></div><div class="pf-list">${cards}</div><p class="pf-quote">«Explora, informa, coopera.»</p>`);
     host.querySelector('[data-new]').addEventListener('click', () => openEditor(newCharacter()));
     host.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
       const ch = store.characters.find(item => item.id === button.dataset.open);
@@ -535,6 +684,7 @@
 
   function openEditor(ch) {
     current = ch;
+    lvOpen.clear();
     const saved = store.characters.some(item => item.id === ch.id);
     frame(`<div class="pf-editor-head"><button class="pf-button ghost" data-back>← TUS AVENTUREROS</button>${kit?.tools() || ''}<button class="pf-button danger" data-delete ${saved ? '' : 'hidden'}>BORRAR FICHA</button></div>
       <div data-play></div>
@@ -543,7 +693,7 @@
         ${field('Dios o filosofía', 'deity', { placeholder: 'Iomedae, Desna, ninguno…' })}${field('Edad', 'age')}${field('Edictos y anatemas', 'edicts', { placeholder: 'Lo que defiendes y lo que nunca harías' })}
       </div></section>
       <div data-sheet></div>
-      <section class="pf-panel">${heading(9, 'Dotes, equipo y notas')}<div class="pf-fields pf-fields-3">
+      <section class="pf-panel">${heading(10, 'Dotes, equipo y notas')}<div class="pf-fields pf-fields-3">
         ${field('Dotes y rasgos de nivel 1', 'feats', { area: true, rows: 6, placeholder: 'Dote de ascendencia, dote de clase, rasgos de la subclase…' })}${field('Equipo', 'gear', { area: true, rows: 6, placeholder: 'Empiezas con 15 po: armas, armadura, mochila, cuerda, raciones…' })}${field('Notas', 'notes', { area: true, rows: 6, placeholder: 'Historia, contactos, objetivos…' })}</div></section>
       <div class="pf-modal" data-modal hidden><div class="pf-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="pfDelTitle"><h3 id="pfDelTitle">¿Borrar este aventurero?</h3><p>La ficha se borrará de este dispositivo y de tu cuenta, y no se podrá recuperar.</p><div class="pf-actions"><button class="pf-button ghost" data-cancel>CANCELAR</button><button class="pf-button danger" data-confirm>BORRAR FICHA</button></div></div></div>`, saved ? 'GUARDADO EN ESTE DISPOSITIVO' : 'FICHA NUEVA · SIN GUARDAR');
 
@@ -607,13 +757,18 @@
     const c = cls(ch);
     let body = '<p class="pf-note">La clase da tu atributo clave, los puntos de golpe por nivel, tus competencias iniciales y tus habilidades.</p>';
     if (c) {
-      const rank = r => RANKS[r].toLowerCase();
+      const rank = track => RANKS[rankOf(ch, track)].toLowerCase();
+      const defense = RANKS[defenseRank(ch, c.armor ? 1 : 0)].toLowerCase();
+      const variants = CLASSES[ch.cls].variants;
       body = `<p class="pf-narr">${esc(c.text)} ${manualLink(`pf-cls-${ch.cls}`, 'Leer en el manual')}</p>
+        ${variants ? `<label class="pf-field pf-field-wide"><span>Doctrina</span><select data-choice="variant">${options(Object.entries(variants).map(([k, v]) => [k, v.name]), ch.variant)}</select></label><p class="pf-note">${esc(variants[ch.variant]?.text || '')}</p>` : ''}
         <dl class="pf-info"><div><dt>Atributo clave</dt><dd>${c.key.map(k => ATTR[k].name).join(' o ')}</dd></div><div><dt>Puntos de golpe</dt><dd>${c.hp} + CON por nivel</dd></div>
-          <div><dt>Percepción</dt><dd>${rank(c.perc)}</dd></div><div><dt>Salvaciones</dt><dd>Fortaleza ${rank(c.fort)}, Reflejos ${rank(c.ref)}, Voluntad ${rank(c.vol)}</dd></div>
+          <div><dt>Percepción</dt><dd>${rank('perc')}</dd></div><div><dt>Salvaciones</dt><dd>Fortaleza ${rank('fort')}, Reflejos ${rank('ref')}, Voluntad ${rank('vol')}</dd></div>
           <div><dt>Habilidades</dt><dd>${[...c.skills.map(k => SKILLS[k][0]), `${c.free} más + INT`].join(', ')}</dd></div>
-          <div><dt>Defensa</dt><dd>${c.armor ? `Armadura ${ARMOR_CATS.slice(1, c.armor + 1).join(', ').replace(/, ([^,]*)$/, ' y $1')} y sin armadura` : `Solo sin armadura${c.unarmored === 2 ? ' (experto)' : ''}`}</dd></div>
-          ${c.spells ? `<div><dt>Conjuros</dt><dd>Tradición ${esc(c.spells.toLowerCase())}</dd></div>` : ''}</dl>
+          <div><dt>Defensa</dt><dd>${c.armor ? `Armadura ${ARMOR_CATS.slice(1, c.armor + 1).join(', ').replace(/, ([^,]*)$/, ' y $1')} y sin armadura` : 'Solo sin armadura'} (${defense})</dd></div>
+          <div><dt>Armas</dt><dd>${rank('weapon')}</dd></div>
+          ${c.spells ? `<div><dt>Conjuros</dt><dd>Tradición ${esc(c.spells.toLowerCase())} (${rank('spell')})</dd></div>` : ''}</dl>
+        ${level(ch) > 1 ? `<p class="pf-note">Las competencias son las de tu nivel ${level(ch)}.</p>` : ''}
         <label class="pf-field pf-field-wide"><span>Subclase y elecciones</span><input data-text="subclass" value="${esc(ch.subclass)}" maxlength="80" placeholder="${esc(c.sub)}"></label>`;
     }
     return `<section class="pf-panel">${heading(4, 'Clase', c ? esc(c.name) : '')}
@@ -625,6 +780,7 @@
     const b = bg(ch);
     const c = cls(ch);
     const cell = (kind, k, on, can, label) => `<button class="pf-boost ${on ? 'is-on' : ''}" data-boost="${kind}" data-attr="${k}" aria-pressed="${on}" ${can ? '' : 'disabled'} aria-label="${label} a ${ATTR[k].name}">${on ? '▲' : ''}</button>`;
+    const fromLevels = [];
     const rows = ATTRS.map(([k, name, short]) => {
       const fixed = ancFixed(ch).includes(k);
       const flaw = ancFlaw(ch) === k;
@@ -634,12 +790,15 @@
       const bgCell = b ? cell('bg', k, ch.bgBoosts.includes(k), true, 'Mejora de bagaje') : '<span class="pf-boost is-empty"></span>';
       const clsCell = c && c.key.includes(k) ? (c.key.length === 1 ? '<span class="pf-boost is-on is-fixed" title="Atributo clave">▲</span>' : cell('cls', k, ch.classBoost === k, true, 'Atributo clave')) : '<span class="pf-boost is-empty"></span>';
       const m = mod(ch, k);
+      const lv = boosted(ch, k);
+      if (lv.fromLevels) fromLevels.push(`${short} ${lv.fromLevels > 1 ? `×${lv.fromLevels}` : ''}${lv.half ? ' (una a medias)' : ''}`.replace('  ', ' ').trim());
       return `<div class="pf-attr-row ${b && b.attrs.includes(k) && b.attrs.length < 6 ? 'is-bg' : ''}"><span class="pf-attr-name"><b>${short}</b><small>${name}</small></span>${ancCell}${bgCell}${clsCell}${cell('free', k, ch.freeBoosts.includes(k), true, 'Mejora libre')}<b class="pf-attr-mod ${m > 0 ? 'is-up' : m < 0 ? 'is-down' : ''}">${signed(m)}</b></div>`;
     }).join('');
     return `<section class="pf-panel">${heading(5, term('pf-atributos', 'Atributos'), 'mejoras de nivel 1')}
       <p class="pf-note">Todos los modificadores empiezan en +0. Cada mejora suma +1 y el defecto resta 1; en un mismo apartado no puedes mejorar dos veces el mismo atributo. ${b && b.attrs.length < 6 ? `Una de las mejoras del bagaje va a ${boostList(b.attrs).replace(', ', ' o ')} (filas marcadas).` : ''}</p>
       <div class="pf-attrs"><div class="pf-attr-row pf-attr-head" aria-hidden="true"><span></span><span>Ascend.</span><span>Bagaje</span><span>Clase</span><span>Libres</span><span>Mod.</span></div>${rows}
-        <div class="pf-attr-row pf-attr-foot"><span>Por repartir</span><span>${a ? leftBadge(ancFree(ch) - ch.ancBoosts.length, '✓') : '—'}</span><span>${b ? leftBadge(2 - ch.bgBoosts.length, '✓') : '—'}</span><span>${c ? leftBadge(ch.classBoost ? 0 : 1, '✓') : '—'}</span><span>${leftBadge(FREE_BOOSTS - ch.freeBoosts.length, '✓')}</span><span></span></div></div></section>`;
+        <div class="pf-attr-row pf-attr-foot"><span>Por repartir</span><span>${a ? leftBadge(ancFree(ch) - ch.ancBoosts.length, '✓') : '—'}</span><span>${b ? leftBadge(2 - ch.bgBoosts.length, '✓') : '—'}</span><span>${c ? leftBadge(ch.classBoost ? 0 : 1, '✓') : '—'}</span><span>${leftBadge(FREE_BOOSTS - ch.freeBoosts.length, '✓')}</span><span></span></div></div>
+      ${level(ch) >= BOOST_LEVELS[0] ? `<p class="pf-note">El modificador ya cuenta las mejoras de los niveles ${BOOST_LEVELS.filter(l => l <= level(ch)).join(', ').replace(/, ([^,]*)$/, ' y $1')}${fromLevels.length ? `: ${esc(fromLevels.join(', '))}` : ', que aún no has repartido'}. Se eligen en «Nivel y progresión».</p>` : ''}</section>`;
   }
 
   function skillsPanel(ch) {
@@ -649,16 +808,18 @@
       const source = skillSource(ch, k);
       const locked = source === 'clase' || source === 'bagaje';
       const total = skillMod(ch, k);
-      return `<li class="${source ? 'is-trained' : ''}"><button class="pf-skill-pick" data-skill="${k}" aria-pressed="${Boolean(source)}" ${locked || !c ? 'disabled' : ''} title="${locked ? `Entrenada por ${source === 'clase' ? 'la clase' : 'el bagaje'}` : 'Entrenar esta habilidad'}">${source ? '●' : '○'}</button>
-        <span class="pf-skill-name">${term(`pf-hab-${k}`, SKILLS[k][0])} <small>${ATTR[SKILLS[k][1]].short}</small></span><span class="pf-skill-src">${source ? `${RANK_SHORT[1]} · ${source}` : 'N'}</span><button class="nd-roll-btn pf-skill-roll" data-pf-roll="sk:${k}" aria-label="Tirar ${esc(SKILLS[k][0])}"><b class="pf-skill-total">${signed(total)}</b></button></li>`;
+      const r = skillRank(ch, k);
+      return `<li class="${r ? 'is-trained' : ''}"><button class="pf-skill-pick" data-skill="${k}" aria-pressed="${Boolean(source)}" ${locked || !c ? 'disabled' : ''} title="${locked ? `Entrenada por ${source === 'clase' ? 'la clase' : 'el bagaje'}` : 'Entrenar esta habilidad'}">${source ? '●' : '○'}</button>
+        <span class="pf-skill-name">${term(`pf-hab-${k}`, SKILLS[k][0])} <small>${ATTR[SKILLS[k][1]].short}</small>${rankTag(r)}</span><span class="pf-skill-src">${r ? `${RANK_SHORT[r]} · ${source || 'nivel'}` : 'N'}</span><button class="nd-roll-btn pf-skill-roll" data-pf-roll="sk:${k}" aria-label="Tirar ${esc(SKILLS[k][0])}"><b class="pf-skill-total">${signed(total)}</b></button></li>`;
     }).join('');
     const bgLore = bg(ch) ? (ch.bgLore || bg(ch).lore) : '';
+    const loreRank = name => skillRank(ch, 'lore:' + name);
     const lores = [
-      ...(bgLore ? [`<li class="is-trained"><span class="pf-skill-pick is-fixed">●</span><span class="pf-skill-name">Saber (${esc(bgLore)}) <small>INT</small></span><span class="pf-skill-src">E · bagaje</span><button class="nd-roll-btn pf-skill-roll" data-pf-roll="lore:0" aria-label="Tirar Saber (${esc(bgLore)})"><b class="pf-skill-total">${signed(loreMod(ch))}</b></button></li>`] : []),
-      ...ch.lores.map((name, i) => `<li class="is-trained"><button class="pf-skill-pick" data-lore-del="${i}" aria-label="Quitar Saber (${esc(name)})">×</button><span class="pf-skill-name">Saber (${esc(name)}) <small>INT</small></span><span class="pf-skill-src">E · elegida</span><button class="nd-roll-btn pf-skill-roll" data-pf-roll="lore:${i + (bgLore ? 1 : 0)}" aria-label="Tirar Saber (${esc(name)})"><b class="pf-skill-total">${signed(loreMod(ch))}</b></button></li>`)
+      ...(bgLore ? [`<li class="is-trained"><span class="pf-skill-pick is-fixed">●</span><span class="pf-skill-name">Saber (${esc(bgLore)}) <small>INT</small>${rankTag(loreRank(bgLore))}</span><span class="pf-skill-src">${RANK_SHORT[loreRank(bgLore)]} · bagaje</span><button class="nd-roll-btn pf-skill-roll" data-pf-roll="lore:0" aria-label="Tirar Saber (${esc(bgLore)})"><b class="pf-skill-total">${signed(loreMod(ch, bgLore))}</b></button></li>`] : []),
+      ...ch.lores.map((name, i) => `<li class="is-trained"><button class="pf-skill-pick" data-lore-del="${i}" aria-label="Quitar Saber (${esc(name)})">×</button><span class="pf-skill-name">Saber (${esc(name)}) <small>INT</small>${rankTag(loreRank(name))}</span><span class="pf-skill-src">${RANK_SHORT[loreRank(name)]} · elegida</span><button class="nd-roll-btn pf-skill-roll" data-pf-roll="lore:${i + (bgLore ? 1 : 0)}" aria-label="Tirar Saber (${esc(name)})"><b class="pf-skill-total">${signed(loreMod(ch, name))}</b></button></li>`)
     ].join('');
-    return `<section class="pf-panel">${heading(6, 'Habilidades', 'entrenadas a nivel 1')}
-      <p class="pf-note">${c ? `Tu clase te deja entrenar ${skillPicks(ch)} habilidades más (${c.free} ${mod(ch, 'int') >= 0 ? '+' : '−'} ${Math.abs(mod(ch, 'int'))} por INT${bgSkill(ch) && classSkills(ch).includes(bgSkill(ch)) ? ', +1 porque el bagaje repite una de clase' : ''}${ch.heritage === 'Humano habilidoso' ? ', +1 por humano habilidoso' : ''}). Pulsa el círculo para entrenarla; también puedes gastar una en un Saber.` : 'Elige una clase para repartir habilidades.'} Entrenado suma +2 más el nivel; sin entrenar solo cuenta el atributo.
+    return `<section class="pf-panel">${heading(6, 'Habilidades', level(ch) > 1 ? `nivel ${level(ch)}` : 'entrenadas a nivel 1')}
+      <p class="pf-note">${c ? `Tu clase te deja entrenar ${skillPicks(ch)} habilidades más (${c.free} ${mod(ch, 'int') >= 0 ? '+' : '−'} ${Math.abs(mod(ch, 'int'))} por INT${bgSkill(ch) && classSkills(ch).includes(bgSkill(ch)) ? ', +1 porque el bagaje repite una de clase' : ''}${ch.heritage === 'Humano habilidoso' ? ', +1 por humano habilidoso' : ''}). Pulsa el círculo para entrenarla; también puedes gastar una en un Saber.` : 'Elige una clase para repartir habilidades.'} Entrenado suma +2 más el nivel; sin entrenar solo cuenta el atributo.${level(ch) > 2 ? ' Los aumentos de habilidad (experto, maestro, legendario) se eligen en «Nivel y progresión».' : ''}
         ${c ? `<span class="pf-pool">${leftBadge(left, 'Todo repartido')}</span>` : ''}</p>
       <ul class="pf-skills">${rows}</ul>
       <h3>Saberes</h3><ul class="pf-skills pf-lores">${lores || '<li class="pf-none">Sin Saberes todavía.</li>'}</ul>
@@ -671,16 +832,16 @@
   function sheetPanel(ch) {
     const c = cls(ch);
     const a = anc(ch);
-    const save = (attr, rank) => (c ? signed(mod(ch, attr) + prof(rank)) : '—');
+    const save = (attr, track) => (c ? signed(bonus(ch, attr, track)) : '—');
     const ac = armorClass(ch);
     const key = keyAttr(ch);
     const fue = mod(ch, 'fue');
     const stats = [
-      ['Puntos de golpe', a && c ? hp(ch) : '—'], ['Clase de Armadura', c ? ac.total : '—'], ['Percepción', save('sab', c?.perc)],
-      ['Fortaleza', save('con', c?.fort)], ['Reflejos', save('des', c?.ref)], ['Voluntad', save('sab', c?.vol)],
-      ['Velocidad', a ? `${a.speed} pies` : '—'], ['CD de clase', c ? 10 + mod(ch, key) + prof(1) : '—'],
-      ...(c?.spells ? [['Ataque de conjuro', signed(mod(ch, key) + prof(1))], ['CD de conjuros', 10 + mod(ch, key) + prof(1)]] : []),
-      ['Cuerpo a cuerpo', c ? signed(fue + prof(c.weapon)) : '—'], ['A distancia', c ? signed(mod(ch, 'des') + prof(c.weapon)) : '—'],
+      ['Puntos de golpe', a && c ? hp(ch) : '—'], ['Clase de Armadura', c ? ac.total : '—'], ['Percepción', save('sab', 'perc')],
+      ['Fortaleza', save('con', 'fort')], ['Reflejos', save('des', 'ref')], ['Voluntad', save('sab', 'vol')],
+      ['Velocidad', a ? `${a.speed} pies` : '—'], ['CD de clase', c ? 10 + bonus(ch, key, 'dc') : '—'],
+      ...(c?.spells ? [['Ataque de conjuro', signed(bonus(ch, key, 'spell'))], ['CD de conjuros', 10 + bonus(ch, key, 'spell')]] : []),
+      ['Cuerpo a cuerpo', c ? signed(bonus(ch, 'fue', 'weapon')) : '—'], ['A distancia', c ? signed(bonus(ch, 'des', 'weapon')) : '—'],
       ['Impedimenta', `${5 + fue} / ${10 + fue}`], ['Puntos de héroe', 1], ['Tamaño', a?.size || '—'], ['Sentidos', a?.vision || '—']
     ];
     const armors = Object.entries(ARMORS).map(([k, v]) => [k, `${v.name}${v.ac ? ` (+${v.ac}, DES máx. ${v.cap})` : ''}${v.cat ? ` · ${ARMOR_CATS[v.cat]}` : ''}`]);
@@ -688,7 +849,7 @@
       <div class="pf-stats">${stats.map(([k, v]) => { const roll = c && ROLLABLE[k]; return `<div><small>${term(STAT_RULES[k], k)}</small>${roll ? `<button class="nd-roll-btn" data-pf-roll="${roll}" aria-label="Tirar ${k}"><b>${esc(v)}</b></button>` : `<b>${esc(v)}</b>`}</div>`; }).join('')}</div>
       <label class="pf-field pf-field-wide"><span>Armadura</span><select data-choice="armor">${options(armors, ch.armor)}</select></label>
       ${c && !ac.trained ? '<p class="pf-note pf-warn">Tu clase no está entrenada en esa armadura: no sumas competencia a la CA.</p>' : ''}
-      <p class="pf-note">Competencia: entrenado +2, experto +4, maestro +6 y legendario +8, más el nivel; sin entrenar, +0. Puntos de golpe: los de la ascendencia más los de la clase y CON por nivel. CA: 10 + DES (hasta el máximo de la armadura) + competencia + armadura; un escudo alzado suma su bonificador. CD de clase: 10 + atributo clave + competencia. Impedimenta: impedido a partir de 5 + FUE y máximo 10 + FUE.</p><p class="pf-note">${manualLink('pf-competencia', 'Competencia')} ${manualLink('pf-clase-armadura', 'Clase de Armadura')} ${manualLink('pf-salvaciones', 'Salvaciones')} ${manualLink('pf-grados-exito', 'Grados de éxito')}</p></section>`;
+      <p class="pf-note">Competencia: entrenado +2, experto +4, maestro +6 y legendario +8, más el nivel; sin entrenar, +0. Puntos de golpe: los de la ascendencia más los de la clase y CON por cada nivel${ch.hpBonus ? `, y ${ch.hpBonus} más por dotes` : ''}. CA: 10 + DES (hasta el máximo de la armadura) + competencia + armadura; un escudo alzado suma su bonificador. CD de clase: 10 + atributo clave + competencia. Impedimenta: impedido a partir de 5 + FUE y máximo 10 + FUE.</p><p class="pf-note">${manualLink('pf-competencia', 'Competencia')} ${manualLink('pf-clase-armadura', 'Clase de Armadura')} ${manualLink('pf-salvaciones', 'Salvaciones')} ${manualLink('pf-grados-exito', 'Grados de éxito')}</p></section>`;
   }
 
   function languagesPanel(ch) {
@@ -699,12 +860,97 @@
       <label class="pf-field pf-field-wide"><span>Idiomas adicionales</span><input data-text="languages" value="${esc(ch.languages)}" maxlength="120" placeholder="Separados por comas"></label></section>`;
   }
 
+  const rankTag = r => (r > 1 ? ` <em class="pf-rank">${RANKS[r].toLowerCase()}</em>` : '');
+  const targetName = t => (t.startsWith('lore:') ? `Saber (${t.slice(5)})` : SKILLS[t]?.[0] || t);
+
+  // Lo que da un nivel por sí solo: puntos de golpe, competencias de la clase, conjuros y rasgos.
+  function levelGains(ch, l) {
+    const c = cls(ch);
+    const con = mod(ch, 'con');
+    const out = [`<b>+${c.hp + con} puntos de golpe</b> (${c.hp} de la clase ${con < 0 ? '−' : '+'} ${Math.abs(con)} de CON) y +1 a todo aquello en lo que tienes competencia.`];
+    Object.entries(c.up || {}).forEach(([track, levels]) => {
+      const i = levels.indexOf(l);
+      if (i < 0) return;
+      const base = track === 'dc' || track === 'spell' ? 1 : track === 'armor' ? c.unarmored || 1 : c[track] || 0;
+      out.push(`<b>${TRACKS[track]}</b>: pasa a ${RANKS[Math.min(4, base + i + 1)].toLowerCase()}.`);
+    });
+    if (c.spec === l) out.push('<b>Especialización con armas</b>: +2 al daño con las armas en las que eres experto, +3 si eres maestro y +4 si eres legendario.');
+    if (c.gspec === l) out.push('<b>Especialización mayor con armas</b>: el daño extra sube a +4, +6 y +8.');
+    if (c.spells && c.slots) {
+      if (l % 2 && l <= 17) out.push(`<b>Conjuros de rango ${(l + 1) / 2}</b>: ${c.slots[0]} espacios al día. Tus trucos suben también de rango.`);
+      else if (l % 2 === 0 && l <= 18) out.push(`<b>Un espacio más</b> de rango ${l / 2}: ${c.slots[1]} al día.`);
+    }
+    (c.features || []).filter(f => f[0] === l).forEach(f => out.push(`<b>${esc(f[1])}</b>: ${esc(f[2])}`));
+    return out;
+  }
+  // Lo que queda por elegir en un nivel (las dotes se apuntan, pero no cuentan como pendientes).
+  function levelPending(ch, l) {
+    let n = 0;
+    if (BOOST_LEVELS.includes(l)) n += LEVEL_BOOSTS - (ch.lvBoosts[l] || []).length;
+    if (upLevels(ch).includes(l) && !ch.skillUps[l]) n++;
+    if (cls(ch).paths?.includes(l) && !ch.saveUps[l]) n++;
+    return n;
+  }
+  function levelChoices(ch, l) {
+    const c = cls(ch);
+    const parts = [];
+    if (BOOST_LEVELS.includes(l)) {
+      const list = ch.lvBoosts[l] || [];
+      // Para saber si una mejora de este nivel se queda a medias hay que mirar el modificador justo antes.
+      const before = k => boosted({ ...ch, level: l - 1 }, k);
+      parts.push(`<div class="pf-pick"><span>Cuatro mejoras de atributo, a cuatro atributos distintos ${leftBadge(LEVEL_BOOSTS - list.length, '✓')}</span><div class="pf-chips">${ATTRS.map(([k, name, short]) => {
+        const b = before(k);
+        const partial = b.mod >= 4 && !b.half;
+        return `<button type="button" class="pf-chip ${list.includes(k) ? 'is-on' : ''}" data-lvboost="${l}" data-attr="${k}" data-lvkey="b${l}${k}" aria-pressed="${list.includes(k)}" aria-label="Mejora del nivel ${l} a ${name}${partial ? ', a medias' : ''}">${short}${partial ? ' <small>½</small>' : ''}</button>`;
+      }).join('')}</div><small class="pf-pick-note">Con +4 o más, una mejora se queda a medias (½): hace falta otra, en un nivel posterior, para sumar +1.</small></div>`);
+    }
+    if (upLevels(ch).includes(l)) {
+      const cap = maxSkillRank(l);
+      const row = (t, name) => {
+        const r = skillRank(ch, t, l - 1);
+        if (r >= 4) return '';
+        return `<option value="${esc(t)}" ${ch.skillUps[l] === t ? 'selected' : ''} ${r + 1 > cap ? 'disabled' : ''}>${esc(name)}: ${RANKS[r].toLowerCase()} → ${RANKS[r + 1].toLowerCase()}</option>`;
+      };
+      parts.push(`<label class="pf-field pf-pick"><span>Aumento de habilidad ${leftBadge(ch.skillUps[l] ? 0 : 1, '✓')}</span><select data-skillup="${l}" data-lvkey="s${l}"><option value="">Elige una habilidad…</option>${SKILL_KEYS.map(k => row(k, SKILLS[k][0])).join('')}${loreNames(ch).map(name => row('lore:' + name, `Saber (${name})`)).join('')}</select>${cap < 4 ? `<small class="pf-pick-note">${cap < 3 ? 'Maestro pide nivel 7 y legendario, nivel 15.' : 'Legendario pide nivel 15.'}</small>` : ''}</label>`);
+    }
+    if (c.paths?.includes(l)) {
+      const i = c.paths.indexOf(l);
+      const first = ch.saveUps[c.paths[0]];
+      const second = ch.saveUps[c.paths[1]];
+      const can = k => (i === 0 ? true : i === 1 ? k !== first : k === first || k === second);
+      parts.push(`<label class="pf-field pf-pick"><span>${i === 2 ? 'Salvación que pasa a legendario' : 'Salvación que pasa a maestro'} ${leftBadge(ch.saveUps[l] ? 0 : 1, '✓')}</span><select data-saveup="${l}" data-lvkey="p${l}"><option value="">Elige una salvación…</option>${Object.entries(SAVES).map(([k, name]) => `<option value="${k}" ${ch.saveUps[l] === k ? 'selected' : ''} ${can(k) ? '' : 'disabled'}>${name}</option>`).join('')}</select></label>`);
+    }
+    const feats = featSlots(ch, l);
+    if (feats.length) parts.push(`<div class="pf-lv-feats">${feats.map(([kind, label]) => `<label class="pf-field"><span>${label}</span><input data-lvfeat="${l}:${kind}" value="${esc(ch.lvFeats[`${l}:${kind}`] || '')}" maxlength="80" autocomplete="off" placeholder="Apunta la que elijas"></label>`).join('')}</div>`);
+    return parts.join('');
+  }
+  function levelPanel(ch) {
+    const c = cls(ch);
+    const L = level(ch);
+    const ready = Boolean(c && anc(ch));
+    let timeline = '';
+    if (ready && L > 1) {
+      const rows = [];
+      for (let l = L; l >= 2; l--) {
+        const left = levelPending(ch, l);
+        const open = lvOpen.has(l) ? lvOpen.get(l) : l === L || left > 0;
+        rows.push(`<li><details class="pf-lv" data-lv="${l}" ${open ? 'open' : ''}><summary><b>Nivel ${l}</b>${left ? leftBadge(left) : ''}</summary><div class="pf-lv-body"><ul class="pf-gains">${levelGains(ch, l).map(g => `<li>${g}</li>`).join('')}</ul>${levelChoices(ch, l)}</div></details></li>`);
+      }
+      timeline = `<ol class="pf-timeline">${rows.join('')}</ol>`;
+    }
+    return `<section class="pf-panel pf-levels" data-levels>${heading(9, 'Nivel y progresión', c ? `${esc(c.name)} · nivel ${L}` : '')}
+      <div class="pf-level"><span class="pf-level-num"><small>Nivel</small><b>${L}</b></span><button type="button" class="pf-button" data-levelup data-lvkey="up" ${L >= MAX_LEVEL ? 'disabled' : ''}>▲ ${L >= MAX_LEVEL ? 'NIVEL MÁXIMO' : `SUBIR AL NIVEL ${L + 1}`}</button><button type="button" class="pf-button ghost" data-leveldown data-lvkey="down" ${L <= 1 ? 'disabled' : ''}>▼ BAJAR UN NIVEL</button></div>
+      <p class="pf-note">${ready ? 'Cada nivel suma los puntos de golpe de tu clase más CON y +1 a todo aquello en lo que tienes competencia. NEXO aplica solo lo que sube tu clase (Percepción, salvaciones, armas, defensa, CD y conjuros) y te deja elegir lo demás: mejoras de atributo, aumentos de habilidad y dotes.' : 'Elige una ascendencia y una clase para poder subir de nivel.'} ${manualLink('pf-subir-nivel', 'Subir de nivel en el manual')}</p>
+      ${L > 1 ? `<label class="pf-field pf-field-wide"><span>Puntos de golpe extra por dotes</span><input type="number" min="0" max="400" inputmode="numeric" data-hpbonus value="${ch.hpBonus || 0}"></label>` : ''}
+      ${timeline}</section>`;
+  }
+
   function renderTracker() {
     const node = host?.querySelector('[data-tracker]');
     if (!node || !current) return;
     const rows = summary(current);
     const pending = rows.filter(r => r.left !== 0).length;
-    node.innerHTML = `<div class="pf-tracker-head"><b>${pending > 1 ? `Quedan ${pending} apartados` : pending ? 'Queda 1 apartado' : 'Aventurero listo'}</b><span>Nivel ${LEVEL}</span></div>
+    node.innerHTML = `<div class="pf-tracker-head"><b>${pending > 1 ? `Quedan ${pending} apartados` : pending ? 'Queda 1 apartado' : 'Aventurero listo'}</b><span>Nivel ${level(current)}${cls(current) && anc(current) && level(current) < MAX_LEVEL ? ' <button type="button" class="pf-tracker-up" data-levelup aria-label="Subir de nivel">▲ SUBIR</button>' : ''}</span></div>
       <ul class="pf-pools">${rows.map(r => `<li class="${r.left === 0 ? 'is-done' : r.left < 0 ? 'is-over' : ''}"><span>${r.label}</span><b>${r.left === 0 ? '✓' : r.left}</b><small>/ ${r.budget}</small></li>`).join('')}</ul>`;
   }
 
@@ -713,8 +959,37 @@
     const sheet = host?.querySelector('[data-sheet]');
     if (!ch || !sheet) return;
     sanitize(ch);
-    sheet.innerHTML = `<section class="pf-tracker" data-tracker></section>${ancestryPanel(ch)}${backgroundPanel(ch)}${classPanel(ch)}${attrsPanel(ch)}${skillsPanel(ch)}${sheetPanel(ch)}${languagesPanel(ch)}`;
+    // Tras repintar, el foco vuelve al control de la progresión que se estaba usando.
+    const focused = sheet.contains(document.activeElement) ? document.activeElement.dataset.lvkey : '';
+    sheet.innerHTML = `<section class="pf-tracker" data-tracker></section>${ancestryPanel(ch)}${backgroundPanel(ch)}${classPanel(ch)}${attrsPanel(ch)}${skillsPanel(ch)}${sheetPanel(ch)}${languagesPanel(ch)}${levelPanel(ch)}`;
     renderTracker();
+    if (focused) sheet.querySelector(`[data-lvkey="${focused}"]`)?.focus({ preventScroll: true });
+
+    sheet.querySelectorAll('[data-levelup]').forEach(button => button.addEventListener('click', levelUp));
+    sheet.querySelector('[data-leveldown]')?.addEventListener('click', levelDown);
+    sheet.querySelectorAll('[data-lv]').forEach(details => details.addEventListener('toggle', () => lvOpen.set(Number(details.dataset.lv), details.open)));
+    sheet.querySelectorAll('[data-lvboost]').forEach(button => button.addEventListener('click', () => toggleLevelBoost(Number(button.dataset.lvboost), button.dataset.attr)));
+    sheet.querySelectorAll('[data-skillup]').forEach(select => select.addEventListener('change', () => {
+      const l = Number(select.dataset.skillup);
+      if (select.value) current.skillUps[l] = select.value; else delete current.skillUps[l];
+      lvOpen.set(l, true);
+      changed();
+    }));
+    sheet.querySelectorAll('[data-saveup]').forEach(select => select.addEventListener('change', () => {
+      const l = Number(select.dataset.saveup);
+      if (select.value) current.saveUps[l] = select.value; else delete current.saveUps[l];
+      lvOpen.set(l, true);
+      changed();
+    }));
+    sheet.querySelectorAll('[data-lvfeat]').forEach(input => input.addEventListener('input', () => {
+      const text = input.value.slice(0, 80);
+      if (text.trim()) current.lvFeats[input.dataset.lvfeat] = text; else delete current.lvFeats[input.dataset.lvfeat];
+      scheduleSave();
+    }));
+    sheet.querySelector('[data-hpbonus]')?.addEventListener('change', event => {
+      current.hpBonus = Math.max(0, Math.min(400, Math.trunc(Number(event.target.value)) || 0));
+      changed();
+    });
 
     sheet.querySelectorAll('[data-choice]').forEach(select => select.addEventListener('change', () => {
       current[select.dataset.choice] = select.value;
@@ -741,7 +1016,7 @@
     fonts.href = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Alegreya:ital,wght@0,400;0,700;1,400&display=swap';
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/pathfinder/pathfinder.css?v=2';
+    stylesheet.href = './src/pathfinder/pathfinder.css?v=3';
     document.head.append(fonts, stylesheet);
     host = document.createElement('section');
     host.id = 'nexoPathfinder';

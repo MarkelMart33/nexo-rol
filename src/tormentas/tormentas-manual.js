@@ -19,7 +19,7 @@
       mech: 'Una **ventaja** te deja tirar otra vez un dado de la prueba (el d20, el [[tor-dado-trama|dado de trama]] o un dado de daño) y quedarte con el resultado que prefieras. Una **desventaja** obliga a quedarte con el peor. Cada una se anula con una de la otra clase.' },
     { id: 'tor-atributos', title: 'Atributos y reinos', aka: ['Físico', 'Cognitivo', 'Espiritual'], summary: 'Seis atributos repartidos en tres reinos: físico, cognitivo y espiritual.',
       narr: 'En el Cosmere todo existe en tres reinos: el cuerpo, la mente y el alma. Tus atributos describen cómo te desenvuelves en cada uno.',
-      mech: list(['**Físico**: Fuerza y Velocidad.', '**Cognitivo**: Intelecto y Voluntad.', '**Espiritual**: Consciencia y Presencia.']) + '\n\nA nivel 1 repartes 12 puntos con un máximo de 3 en cada atributo. Cada reino da una [[tor-defensas|defensa]].' },
+      mech: list(['**Físico**: Fuerza y Velocidad.', '**Cognitivo**: Intelecto y Voluntad.', '**Espiritual**: Consciencia y Presencia.']) + '\n\nA nivel 1 repartes 12 puntos con un máximo de 3 en cada atributo, y al [[tor-subir-nivel|subir de nivel]] ganas alguno más. Cada reino da una [[tor-defensas|defensa]].' },
     { id: 'tor-defensas', title: 'Defensas', aka: ['Defensa física', 'Defensa cognitiva', 'Defensa espiritual'], summary: 'La CD que tienen que superar los ataques y efectos contra ti.',
       narr: 'Esquivar una lanza, no dejarte engañar o mantener tu identidad frente a una influencia extraña.',
       mech: 'Cada defensa es 10 + la suma de los dos [[tor-atributos|atributos]] de su reino. La armadura puede sumar a la física. Un ataque contra ti tira contra la defensa que corresponda: un golpe contra la física, una mentira contra la cognitiva…' },
@@ -31,7 +31,10 @@
       mech: 'Al empezar el asalto, cada personaje elige: un **turno rápido** (2 acciones, antes de que actúen los adversarios) o un **turno lento** (3 acciones, después de ellos). Además tienes una **reacción** por asalto para responder a lo que pase.' },
     { id: 'tor-radiantes', title: 'Radiantes e Ideales', aka: ['Ideales', 'Nahel', 'Spren'], summary: 'Un vínculo con un spren que crece al pronunciar Ideales.',
       narr: 'Un spren elige a alguien roto por dentro y lo une a él. Al pronunciar las Palabras de su orden, el vínculo y el poder crecen.',
-      mech: 'Un personaje del camino radiante elige una [[tor-cap-ordenes|orden]], con su spren y sus dos [[tor-cap-potencias|potencias]]. Empieza con el Primer Ideal pronunciado; cada Ideal nuevo es un hito de la historia que desbloquea más poder. La luz tormentosa es su [[tor-recursos|investidura]].' }
+      mech: 'Un personaje del camino radiante elige una [[tor-cap-ordenes|orden]], con su spren y sus dos [[tor-cap-potencias|potencias]]. Empieza con el Primer Ideal pronunciado; cada Ideal nuevo es un hito de la historia que desbloquea más poder. La luz tormentosa es su [[tor-recursos|investidura]].' },
+    { id: 'tor-subir-nivel', title: 'Subir de nivel', aka: ['Nivel', 'Escalón', 'Progresión'], summary: 'Del nivel 1 al 20 en cuatro escalones: más salud, rangos y talentos y, de vez en cuando, un punto de atributo.',
+      narr: 'Quien empezó cargando puentes acaba al frente de un batallón; quien copiaba glifos, descifrando lo que nadie más entiende. El DJ decide cuándo sube el grupo, casi siempre al cerrar un tramo importante de la historia.',
+      mech: list(['**Cada nivel** por encima del 1 da más salud, 2 rangos de habilidad y 1 talento.', '**Salud por nivel**: +5 en los niveles 2 a 5, +4 del 6 al 10, +3 del 11 al 15 y +2 del 16 al 20.', '**Puntos de atributo**: uno más en los niveles 3, 6, 9, 12, 15 y 18. Subiendo de nivel, un atributo llega como mucho a 5.', '**Escalones**: cada cinco niveles empieza uno nuevo (niveles 6, 11 y 16). Al empezarlo sumas otra vez tu Fuerza a la salud, tu ascendencia te da un talento más y sube el rango máximo de las habilidades: 2, 3, 4 y 5.']) + '\n\nEn la ficha, el botón de subir de nivel suma todo esto: los puntos y los rangos nuevos quedan por repartir en los [[tor-atributos|atributos]] y en las habilidades, y la [[tor-recursos|salud]] sube sola. Lo que tu mesa dé fuera de la tabla se apunta en «Ajustes de quien dirige».' }
   ];
 
   window.NEXO_MANUALS = window.NEXO_MANUALS || {};
@@ -45,7 +48,7 @@
     }));
     const skills = Object.entries(d.SKILLS).map(([k, [name, attr]]) => ({
       id: `tor-hab-${k}`, title: name, summary: `Habilidad de ${d.AT[attr]?.name || attr} (reino ${realmOf(attr).toLowerCase()}).`,
-      mech: `Su modificador es tu **${d.AT[attr]?.name || attr}** más tus rangos (máximo 2 a nivel 1). Ver [[tor-prueba|pruebas de habilidad]].`
+      mech: `Su modificador es tu **${d.AT[attr]?.name || attr}** más tus rangos (máximo 2 hasta el nivel 5; el tope sube con cada [[tor-subir-nivel|escalón]]). Ver [[tor-prueba|pruebas de habilidad]].`
     }));
     const surges = Object.entries(d.SURGES).map(([k, [name, text]]) => ({
       id: `tor-pot-${k}`, title: name, summary: text, narr: text,

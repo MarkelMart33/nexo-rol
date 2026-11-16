@@ -86,14 +86,34 @@ html.nexo-tormentas-open,html.nexo-tormentas-open body{overflow:hidden}
 .tor-chip:hover{border-color:var(--tor-light-dim);color:var(--tor-text)}
 .tor-chip.is-on{border-color:var(--tor-light);color:var(--tor-light-hi);background:#1f4566;box-shadow:0 0 12px -4px #6fc6ec}
 .tor-chip.is-fixed{cursor:default}
-.tor-level{display:flex;align-items:flex-end;gap:14px;margin-top:14px}
-.tor-level .tor-field{width:110px;margin:0}
-.tor-tier{padding-bottom:10px;color:var(--tor-brass);font:500 12px var(--tor-head);letter-spacing:.1em}
-.tor-advance{margin-top:14px}
+
+/* Nivel y progresión */
+.tor-level{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;margin:0 0 12px}
+.tor-level-num{display:grid;place-items:center;align-content:center;gap:3px;min-width:70px;height:62px;padding:0 10px;border:1px solid var(--tor-brass-dim);border-radius:3px;background:#0b1422;box-shadow:inset 0 0 18px -8px #6fc6ec}
+.tor-level-num small{color:var(--tor-faint);font:500 10px var(--tor-head);letter-spacing:.16em}
+.tor-level-num b{color:var(--tor-light-hi);font:700 26px/1 var(--tor-head);text-shadow:0 0 14px #6fc6ec88}
+.tor-tier{color:var(--tor-brass);font:500 12px var(--tor-head);letter-spacing:.1em}
+.tor-level-actions{display:flex;flex-wrap:wrap;gap:10px;margin-left:auto}
+.tor-levels .tor-button:disabled{opacity:.4;cursor:default;box-shadow:none}
+.tor-tracker-up{margin-left:8px;padding:3px 10px;border:1px solid var(--tor-brass-dim);border-radius:12px;background:transparent;color:var(--tor-brass);font:700 10.5px var(--tor-head);letter-spacing:.12em;cursor:pointer}
+.tor-tracker-up:hover{background:#d4b06a1c}
+.tor-next{display:grid;gap:4px;margin:14px 0;padding:11px 14px;border:1px solid var(--tor-line);border-left:3px solid var(--tor-light-dim);border-radius:3px;background:#0c1626}
+.tor-next b{color:var(--tor-light);font:700 12px var(--tor-head);letter-spacing:.1em}
+.tor-next span{color:var(--tor-muted);line-height:1.5}
+.tor-fold{margin-top:10px;border:1px solid var(--tor-line);border-radius:3px;background:#0c1626}
+.tor-fold>summary{padding:10px 14px;cursor:pointer;color:var(--tor-muted);font:500 12px var(--tor-head);letter-spacing:.1em}
+.tor-fold[open]>summary{border-bottom:1px dashed var(--tor-line-soft);color:var(--tor-light)}
+.tor-fold-body{padding:10px 14px 14px}
+.tor-fold-body .tor-note:first-child{margin-top:0}
+.tor-lvlist{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.tor-lvlist li{display:grid;grid-template-columns:86px minmax(0,1fr);gap:10px;padding-bottom:6px;border-bottom:1px dashed var(--tor-line-soft);color:var(--tor-muted);line-height:1.45}
+.tor-lvlist li:last-child{border-bottom:0;padding-bottom:0}
+.tor-lvlist b{padding-top:2px;color:var(--tor-brass);font:500 11.5px var(--tor-head);letter-spacing:.08em}
+.tor-advance{margin-top:4px}
 
 /* Seguimiento de elecciones */
 .tor-tracker{position:sticky;top:78px;z-index:4;margin-bottom:16px;padding:12px 16px;border:1px solid var(--tor-light-dim);border-radius:3px;background:#0d1828ee;backdrop-filter:blur(6px);box-shadow:0 0 26px -14px #6fc6ec}
-.tor-tracker-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px;font:700 14px var(--tor-head);letter-spacing:.06em}
+.tor-tracker-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;margin-bottom:8px;font:700 14px var(--tor-head);letter-spacing:.06em}
 .tor-tracker-head span{color:var(--tor-faint);font-weight:500;font-size:11px;letter-spacing:.12em}
 .tor-pools{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
 .tor-pools li{display:flex;align-items:baseline;gap:6px;padding:4px 10px;border:1px solid var(--tor-line);border-radius:12px;font-size:14px;color:var(--tor-muted)}
@@ -129,6 +149,7 @@ html.nexo-tormentas-open,html.nexo-tormentas-open body{overflow:hidden}
 .tor-pips i{width:10px;height:10px;border:1px solid var(--tor-line);transform:rotate(45deg)}
 .tor-pips i.is-on{border-color:var(--tor-light);background:var(--tor-light);box-shadow:0 0 6px var(--tor-light-dim)}
 .tor-pips i.is-path{border-color:var(--tor-brass);background:var(--tor-brass)}
+.tor-pips i.is-over{border-color:var(--tor-ruby);background:var(--tor-ruby)}
 .tor-mini{display:flex;gap:4px}
 .tor-mini button{width:26px;height:26px;font-size:15px}
 .tor-skill-mod{text-align:right;font:700 16px var(--tor-head);color:var(--tor-light)}
@@ -168,6 +189,8 @@ html.nexo-tormentas-open,html.nexo-tormentas-open body{overflow:hidden}
   .tor-panel{padding:18px 16px}
   .tor-panel h2 small{margin-left:0}
   .tor-info div{grid-template-columns:1fr;gap:2px}
+  .tor-level-actions{margin-left:0}
+  .tor-lvlist li{grid-template-columns:1fr;gap:2px}
   .tor-tracker{position:static}
   .tor-list{grid-template-columns:1fr}
 }
