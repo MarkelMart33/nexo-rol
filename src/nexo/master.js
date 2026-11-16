@@ -419,13 +419,16 @@
     return { refresh: paint };
   }
 
-  // Las tres herramientas juntas, con pestañas (la app Máster de Traveller).
+  // Las tres herramientas juntas, con pestañas (la app Máster de Traveller), y el Mundo de la partida
+  // (src/nexo/mundo.js) como una pestaña más.
   function mountAll(node, ctx, start = 'combate') {
-    let tool = NAMES[start] ? start : 'combate';
+    const names = { ...NAMES, ...(window.NEXO_MUNDO ? { mundo: 'Mundo' } : {}) };
+    let tool = names[start] ? start : 'combate';
     function paint() {
-      node.innerHTML = `<nav class="nm-tabs ap-${ctx.prefix}" aria-label="Herramientas de máster">${Object.entries(NAMES).map(([id, label]) => `<button type="button" class="nm-tab ${id === tool ? 'is-active' : ''}" data-nm-tab="${id}" ${id === tool ? 'aria-current="page"' : ''}>${label}</button>`).join('')}</nav><div data-nm-body></div>`;
+      node.innerHTML = `<nav class="nm-tabs ap-${ctx.prefix}" aria-label="Herramientas de máster">${Object.entries(names).map(([id, label]) => `<button type="button" class="nm-tab ${id === tool ? 'is-active' : ''}" data-nm-tab="${id}" ${id === tool ? 'aria-current="page"' : ''}>${label}</button>`).join('')}</nav><div data-nm-body></div>`;
       node.querySelectorAll('[data-nm-tab]').forEach(button => button.addEventListener('click', () => { tool = button.dataset.nmTab; paint(); node.querySelector(`[data-nm-tab="${tool}"]`)?.focus({ preventScroll: true }); }));
-      mount(tool, node.querySelector('[data-nm-body]'), ctx);
+      if (tool === 'mundo') window.NEXO_MUNDO.mount(node.querySelector('[data-nm-body]'), { prefix: ctx.prefix, id: ctx.id, data: ctx.data, save: ctx.save, sharing: 'no' });
+      else mount(tool, node.querySelector('[data-nm-body]'), ctx);
     }
     paint();
   }
@@ -438,6 +441,7 @@
       if (!root || !api) return;
       const data = api.get();
       Object.assign(data, clean(data));
+      if (window.NEXO_MUNDO) data.world = window.NEXO_MUNDO.clean(data.world);
       mountAll(root, { system: 'traveller', prefix: 'trv', id: api.id(), data, save: () => api.commit(), party: () => api.party(), note: (title, body) => api.note(title, body) });
     }
   };

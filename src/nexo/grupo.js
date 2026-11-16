@@ -154,10 +154,19 @@
   // Lo que los jugadores ven de la campaña de quien dirige.
   function publicInfo(c) {
     const info = { master: text(c.master, 60), premise: text(c.premise, 1200), vtt: webLink(c.vtt) };
+    // Del mundo solo salen las entradas que quien dirige ha marcado como visibles (src/nexo/mundo.js).
+    const world = window.NEXO_MUNDO?.publicEntries(c.world) || [];
+    if (world.length) info.world = world;
     if (c.shared?.diary) {
-      let room = 100000;
+      let room = 100000 - world.reduce((t, e) => t + e.name.length + e.text.length + 80, 0);
       info.sessions = [...(c.sessions || [])].sort((a, b) => String(b.date).localeCompare(String(a.date))).map(s => ({ date: text(s.date, 10), title: text(s.title, 80), text: text(s.text, 6000) }))
         .filter(s => (room -= s.text.length + s.title.length + 40) > 0).slice(0, 80);
+    }
+    // La fila admite 150000 octetos y una tilde ocupa dos: si aun así no cabe, se sueltan las sesiones más antiguas.
+    const octets = () => new TextEncoder().encode(JSON.stringify(info)).length;
+    while (octets() > 135000 && (info.sessions?.length || info.world?.length)) {
+      if (info.sessions?.length) info.sessions.pop();
+      else info.world.pop();
     }
     return info;
   }
@@ -486,7 +495,7 @@
           <div class="ng-code"><output class="ng-code-value" aria-label="Código de invitación">${esc(showCode(c.shared.code)) || '········'}</output><button type="button" class="${p}-button" data-ng-copy>COPIAR</button><button type="button" class="${p}-button ${asking === 'renew' ? 'danger' : 'ghost'}" data-ng-renew>${asking === 'renew' ? '¿CAMBIARLO? PULSA OTRA VEZ' : 'CAMBIAR EL CÓDIGO'}</button></div>
           <p class="${p}-note">Tus jugadores lo escriben en la pestaña «Campañas» de ${esc(SYSTEM_NAMES[ctx.system] || 'este sistema')}, en «Unirse con un código». Si lo cambias, el anterior deja de servir; quien ya está dentro, sigue dentro.</p>
           <p class="ng-flash" data-ng-flash role="status" ${note ? '' : 'hidden'}>${esc(note)}</p>
-          <label class="ap-check ng-live"><input type="checkbox" data-ng-diary ${c.shared.diary ? 'checked' : ''}><span><b>Los jugadores ven el diario de sesiones</b><small>Solo para leerlo. Tus notas, tus PNJ y el combate siguen siendo solo tuyos.</small></span></label>
+          <label class="ap-check ng-live"><input type="checkbox" data-ng-diary ${c.shared.diary ? 'checked' : ''}><span><b>Los jugadores ven el diario de sesiones</b><small>Solo para leerlo. Tus notas, tus PNJ y el combate siguen siendo solo tuyos. Del «Mundo» ven solo las entradas que marques una a una.</small></span></label>
           ${liveBox(ctx.system, id)}</section>
         <section class="${p}-panel ap-panel ng-panel"><h2>Jugadores <small data-ng-count>${(rosters.get(id) || []).length}</small></h2><div data-ng-members>${membersHtml()}</div></section>
         <section class="${p}-panel ap-panel ng-panel"><h2>Tiradas en directo</h2><div data-ng-feed>${feedHtml(id)}</div></section>
@@ -599,6 +608,7 @@
       const mine = ctx.characters();
       const chosen = mine.some(ch => ch.id === g.sheet_id) ? g.sheet_id : '';
       const sessions = Array.isArray(info.sessions) ? info.sessions.filter(s => s && typeof s === 'object') : null;
+      const world = window.NEXO_MUNDO && Array.isArray(info.world) ? info.world.filter(e => e && typeof e === 'object') : [];
       node.innerHTML = `<header class="ap-hero ng-hero"><span class="ap-hero-mark" aria-hidden="true">${esc((g.name || '?').trim().charAt(0).toUpperCase() || '?')}</span><p class="${p}-kicker">CAMPAÑA COMPARTIDA${info.master || g.owner_name ? ` · NARRA ${esc(String(info.master || g.owner_name).toLocaleUpperCase('es'))}` : ''}</p><h1>${esc(g.name || 'Campaña sin nombre')}</h1>${text(info.premise, 1200).trim() ? `<p class="ap-hero-premise">${esc(text(info.premise, 1200).trim())}</p>` : ''}
           ${link ? `<div class="${p}-actions"><a class="${p}-button" href="${esc(link)}" target="_blank" rel="noopener noreferrer">ABRIR LA MESA VIRTUAL</a></div>` : ''}</header>
         <section class="${p}-panel ap-panel ng-panel"><h2>Tu personaje</h2>
@@ -609,7 +619,15 @@
         <section class="${p}-panel ap-panel ng-panel"><h2>El grupo</h2><div data-ng-party>${partyHtml()}</div></section>
         <section class="${p}-panel ap-panel ng-panel"><h2>Tiradas en directo</h2><div data-ng-feed>${feedHtml(id)}</div></section>
         ${sessions ? `<section class="${p}-panel ap-panel ng-panel"><h2>Diario de sesiones <small>${sessions.length}</small></h2>${sessions.length ? `<div class="ap-log">${sessions.map(s => `<details class="ap-session"><summary><span class="ap-session-date">${esc(s.date ? new Date(`${text(s.date, 10)}T12:00`).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sin fecha')}</span><b>${esc(text(s.title, 80) || 'Sesión sin título')}</b></summary><p class="ng-session-text">${esc(text(s.text, 6000)) || 'Sin apuntes.'}</p></details>`).join('')}</div>` : `<p class="ng-none">Quien dirige aún no ha apuntado ninguna sesión.</p>`}</section>` : ''}
+        ${world.length ? `<section class="${p}-panel ap-panel ng-panel"><h2>Mundo <small>${world.length}</small></h2><p class="${p}-note">Lo que quien dirige ha querido enseñaros de la campaña: gente, lugares y tramas.</p><div data-ng-world></div></section>` : ''}
         <div class="${p}-actions ap-danger-row"><button type="button" class="${p}-button danger" data-ng-leave>${asking ? '¿SALIR? PULSA OTRA VEZ' : 'SALIR DE LA CAMPAÑA'}</button></div>`;
+      // Texto de otra cuenta: mundo.js lo rehace con tipos sanos y lo escapa todo antes de pintarlo.
+      if (world.length) {
+        const box = node.querySelector('[data-ng-world]');
+        const shown = window.NEXO_MUNDO.view(box, world, { prefix: p });
+        if (shown) box.parentNode.querySelector('h2 small').textContent = shown;
+        else box.parentNode.remove();
+      }
       node.querySelector('[data-ng-sheet]')?.addEventListener('change', async event => {
         const sid = event.target.value;
         const mineNow = sid ? ctx.shared.raw(sid) : null;
