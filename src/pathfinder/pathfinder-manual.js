@@ -35,10 +35,20 @@
       mech: list(['**Éxito crítico**: superas la CD por 10 o más.', '**Éxito**: igualas o superas la CD.', '**Fallo**: quedas por debajo de la CD.', '**Fallo crítico**: quedas 10 o más por debajo.', 'Un **20 natural** sube un grado el resultado y un **1 natural** lo baja un grado.']) + '\n\nCada efecto dice qué pasa en cada grado. En los ataques, el éxito crítico hace el doble de daño. En las [[pf-salvaciones|salvaciones]], el éxito crítico suele librarte por completo.' },
     { id: 'pf-competencia', title: 'Competencia', aka: ['Rangos de competencia', 'Entrenado', 'Experto', 'Maestro', 'Legendario'], summary: 'Lo bien entrenado que estás en algo suma a tus pruebas junto con tu nivel.',
       narr: 'La competencia mide la práctica: un guardia entrenado y un maestro de armas tiran el mismo dado, pero el maestro ha dedicado la vida a ello.',
-      mech: 'Hay cinco rangos. A todos menos al primero se les suma tu nivel:\n\n' + list(['**No entrenado**: +0.', '**Entrenado**: +2 + nivel.', '**Experto**: +4 + nivel.', '**Maestro**: +6 + nivel.', '**Legendario**: +8 + nivel.']) + '\n\nTu clase fija la competencia en Percepción, [[pf-salvaciones|salvaciones]], armas y armaduras; las habilidades se entrenan con la clase, el bagaje y la Inteligencia. NEXO usa nivel 1, así que entrenado suma +3.' },
+      mech: 'Hay cinco rangos. A todos menos al primero se les suma tu nivel:\n\n' + list(['**No entrenado**: +0.', '**Entrenado**: +2 + nivel.', '**Experto**: +4 + nivel.', '**Maestro**: +6 + nivel.', '**Legendario**: +8 + nivel.']) + '\n\nTu clase fija la competencia en Percepción, [[pf-salvaciones|salvaciones]], armas y armaduras; las habilidades se entrenan con la clase, el bagaje y la Inteligencia, y suben de rango al [[pf-subir-nivel|subir de nivel]]. NEXO suma el nivel de la ficha: a nivel 1, entrenado suma +3.' },
     { id: 'pf-atributos', title: 'Atributos y mejoras', aka: ['Modificadores de atributo', 'Mejora de atributo', 'Defecto'], summary: 'Seis atributos expresados directamente como modificadores, que suben con mejoras.',
       narr: 'Fuerza, Destreza, Constitución, Inteligencia, Sabiduría y Carisma describen el cuerpo y la mente del personaje. En el Remaster ya no hay puntuaciones: se trabaja directamente con el modificador.',
       mech: 'Todo empieza en +0. Cada **mejora** suma +1 y cada **defecto** resta 1. A nivel 1 recibes mejoras de la [[pf-ascendencias|ascendencia]], del [[pf-bagajes|bagaje]], de la [[pf-clases|clase]] (su atributo clave) y cuatro libres, sin repetir atributo dentro de un mismo grupo. Lo normal es empezar con +4 en el atributo principal.\n\nA niveles 5, 10, 15 y 20 recibes cuatro mejoras más; por encima de +4, una mejora solo da medio punto hasta completar el siguiente.' },
+    { id: 'pf-subir-nivel', title: 'Subir de nivel', aka: ['Nivel', 'Progresión', 'Aumento de habilidad', 'Dotes'], summary: 'Cada nivel da puntos de golpe, +1 a tus competencias y algo que elegir.',
+      narr: 'Con cada aventura el personaje aprende: golpea mejor, aguanta más y descubre trucos nuevos. Subir de nivel es llevar todo eso a la ficha.',
+      mech: 'Se sube al reunir 1.000 puntos de experiencia, o cuando lo diga el DJ. En cada nivel:\n\n' + list([
+        '**Puntos de golpe**: los de tu clase más tu CON.',
+        '**Competencia**: todo aquello en lo que estás entrenado suma 1 más, porque la [[pf-competencia|competencia]] cuenta tu nivel.',
+        '**Dotes**: de clase y de habilidad en los niveles pares; general en los niveles 3, 7, 11, 15 y 19; de ascendencia en los niveles 5, 9, 13 y 17.',
+        '**Aumento de habilidad** en los niveles impares desde el 3 (el pícaro y el investigador, en todos desde el 2): una habilidad sube un rango. Maestro pide nivel 7 y legendario, nivel 15.',
+        '**Mejoras de atributo**: cuatro, a atributos distintos, en los niveles 5, 10, 15 y 20. Ver [[pf-atributos|atributos y mejoras]].',
+        '**Rasgos de clase**: tu clase sube de rango su Percepción, sus salvaciones, sus armas, su defensa y sus conjuros en niveles fijos, y da rasgos propios. Cada [[pf-clases|clase]] los detalla.'
+      ]) + '\n\nEn la ficha, «Nivel y progresión» aplica lo que sube solo y deja elegir lo demás. Las dotes se apuntan a mano.' },
     { id: 'pf-acciones', title: 'Turno y acciones', aka: ['Tres acciones', 'Reacción', 'Acción gratuita'], summary: 'En tu turno tienes tres acciones y una reacción para usar cuando se cumpla su desencadenante.',
       narr: 'El combate se cuenta por asaltos de unos seis segundos. Cada personaje decide qué hace con su tiempo: moverse, golpear, levantar el escudo, lanzar un conjuro…',
       mech: 'Al empezar tu turno recuperas **3 acciones** y **1 reacción**.\n\n' + list(['Moverse (**Zancada**), atacar (**Golpe**), **Alzar un escudo** o sacar un objeto cuestan una acción cada uno.', 'Muchos conjuros cuestan dos acciones; algunas actividades, tres.', 'La **reacción** se usa fuera de tu turno cuando ocurre lo que indica, como el **Golpe reactivo** del guerrero.', 'Las acciones gratuitas no gastan nada.']) + '\n\nAtacar varias veces en el mismo turno tiene un [[pf-penalizador-multiple|penalizador por ataque múltiple]].' },
@@ -89,6 +99,24 @@
         b.feat ? `**Dote de habilidad**: ${b.feat}.` : ''
       ])
     }));
+    // Lo que sube cada clase con los niveles: competencias (también las de cada doctrina), especialización y rasgos.
+    const TRACK = { perc: 'Percepción', fort: 'Fortaleza', ref: 'Reflejos', vol: 'Voluntad', weapon: 'armas', armor: 'defensa', dc: 'CD de clase', spell: 'conjuros' };
+    const progression = c => {
+      const ups = {};
+      const feats = {};
+      const add = (book, l, text) => { (book[l] = book[l] || []).push(text); };
+      const walk = (up, set, tag) => Object.entries(up || {}).forEach(([track, levels]) => levels.forEach((l, i) => {
+        const base = track === 'dc' || track === 'spell' ? 1 : track === 'armor' ? c.unarmored || 1 : (set[track] ?? c[track]) || 0;
+        add(ups, l, `${TRACK[track] || track} a ${rank(Math.min(4, base + i + 1)).toLowerCase()}${tag}`);
+      }));
+      walk(c.up, {}, '');
+      Object.values(c.variants || {}).forEach(v => walk(v.up, v.set || {}, ` (${v.name.toLowerCase()})`));
+      if (c.spec) add(ups, c.spec, 'especialización con armas');
+      if (c.gspec) add(ups, c.gspec, 'especialización mayor con armas');
+      (c.features || []).forEach(([l, name, text]) => add(feats, l, `**${name}**: ${text}`));
+      return [...new Set([...Object.keys(ups), ...Object.keys(feats)].map(Number))].sort((a, b) => a - b)
+        .map(l => `**Nivel ${l}**: ${[ups[l] ? `${ups[l].join(', ')}.` : '', ...(feats[l] || [])].filter(Boolean).join(' ')}`);
+    };
     const classes = Object.entries(d.CLASSES).map(([k, c]) => ({
       id: `pf-cls-${k}`, title: c.name, summary: c.text,
       narr: c.text,
@@ -99,8 +127,9 @@
         `**Habilidades**: ${c.skills.length ? `${join(c.skills.map(s => `[[pf-hab-${s}|${d.SKILLS[s]?.[0] || s}]]`))} y ` : ''}${c.free} más a elegir (+ INT).`,
         `**Armadura**: ${c.armor ? `entrenado hasta armaduras ${['', 'ligeras', 'medias', 'pesadas'][c.armor]}` : 'sin armadura'}${c.unarmored ? ' (experto sin armadura)' : ''}; **armas**: ${c.weapon > 1 ? 'experto' : 'entrenado'}.`,
         c.spells ? `**Conjuros**: tradición ${c.spells.toLowerCase()}.` : '',
+        c.variants ? `**Doctrina**: ${Object.values(c.variants).map(v => `${v.name.toLowerCase()} (${v.text.charAt(0).toLowerCase()}${v.text.slice(1).replace(/\.$/, '')})`).join(' o ')}.` : '',
         c.sub ? `**Subclase**: ${c.sub}.` : ''
-      ]) + '\n\nVer [[pf-competencia|competencia]] y [[pf-salvaciones|salvaciones]].'
+      ]) + (progression(c).length ? `\n\n**Al [[pf-subir-nivel|subir de nivel]]**, además de las dotes y los aumentos de habilidad:\n\n${list(progression(c))}` : '') + '\n\nVer [[pf-competencia|competencia]] y [[pf-salvaciones|salvaciones]].'
     }));
     const skills = Object.entries(d.SKILLS).map(([k, [name, attr]]) => ({
       id: `pf-hab-${k}`, title: name, summary: SKILL_TEXT[k]?.[0] || '',
