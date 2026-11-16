@@ -93,10 +93,14 @@
 
   // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y src/vampiro/vampiro-manual.js).
   // Noches modernas y Edad Oscura tienen cada una sus campañas y su manual.
+  // Tarjeta de una ficha, propia o recibida de otro jugador: nombre, resumen e iniciativa.
+  const cardOf = ch => ({ id: ch.id, name: ch.name || (ch.era === 'da' ? 'Cainita sin nombre' : 'Vástago sin nombre'), summary: `${clanOf(ch).name} · ${generation(ch)}ª generación`, init: value(ch, 'attrs', 'destreza') + value(ch, 'attrs', 'astucia') });
   const ap = window.NEXO_APARTADOS?.create({
     prefix: 'vtm', system: () => (side === 'da' ? 'vampiro-da' : 'vampiro-v20'), home: true, frame: body => frame(body),
     leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
-    characters: () => store.characters.filter(ch => ch.era === side).map(ch => ({ id: ch.id, name: ch.name || (side === 'da' ? 'Cainita sin nombre' : 'Vástago sin nombre'), summary: `${clanOf(ch).name} · ${generation(ch)}ª generación`, init: value(ch, 'attrs', 'destreza') + value(ch, 'attrs', 'astucia') })),
+    characters: () => store.characters.filter(ch => ch.era === side).map(cardOf),
+    // Campaña compartida (src/nexo/grupo.js): la ficha que se deja ver y cómo se lee la de otro jugador.
+    shared: { raw: id => store.characters.find(ch => ch.id === id) || null, card: ch => ({ ...cardOf(ch), play: juego?.brief(ch) || '' }), accept: raw => window.NEXO_FICHA.accept('vampiro', raw), view: (ch, opts) => kit?.view(ch, opts) },
     openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
     currentId: () => current?.id,
     manual: () => manualBooks[side] || (manualBooks[side] = window.NEXO_MANUALS?.vampiro?.({ side, slug, ERAS, ROADS, DISCIPLINES, ATTRS, GENERATIONS, TRAIT_MAX, LORE }) || null),

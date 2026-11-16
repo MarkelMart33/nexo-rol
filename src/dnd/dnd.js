@@ -102,10 +102,14 @@
   let manualBook = null;
 
   // Apartados: Personajes, Campañas y Manual (src/nexo/apartados.js y el manual de este sistema).
+  // Tarjeta de una ficha, propia o recibida de otro jugador: nombre, resumen e iniciativa.
+  const cardOf = ch => ({ id: ch.id, name: ch.name || 'Aventurero sin nombre', summary: describe(ch), init: mod(ch, 'des') + (hasFeat(ch, 'alerta') ? profBonus(ch) : 0) });
   const ap = window.NEXO_APARTADOS?.create({
     prefix: 'dnd', system: () => 'dnd', home: true, frame: body => frame(body),
     leave: () => { flushSave(); current = null; }, renderCharacters: () => renderList(),
-    characters: () => store.characters.map(ch => ({ id: ch.id, name: ch.name || 'Aventurero sin nombre', summary: describe(ch), init: mod(ch, 'des') + (hasFeat(ch, 'alerta') ? profBonus(ch) : 0) })),
+    characters: () => store.characters.map(cardOf),
+    // Campaña compartida (src/nexo/grupo.js): la ficha que se deja ver y cómo se lee la de otro jugador.
+    shared: { raw: id => store.characters.find(ch => ch.id === id) || null, card: ch => ({ ...cardOf(ch), play: juego?.brief(ch) || '' }), accept: raw => window.NEXO_FICHA.accept('dnd', raw), view: (ch, opts) => kit?.view(ch, opts) },
     openCharacter: id => { const ch = store.characters.find(item => item.id === id); if (ch) openEditor(ch); else renderList(); },
     currentId: () => current?.id,
     manual: () => manualBook || (manualBook = window.NEXO_MANUALS?.dnd?.({ AB, SKILLS, CLASSES, FEATS, BACKGROUNDS, SPECIES, P }) || null),

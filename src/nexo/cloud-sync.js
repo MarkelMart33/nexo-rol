@@ -38,6 +38,8 @@
   // Uploads the game's store. Resolves null without an account, otherwise whether it reached the cloud.
   async function save(game, key, store) {
     mark(key, 'dirty');
+    // Aviso para quien dependa de lo guardado: la campaña compartida pone al día la ficha que se deja ver.
+    document.dispatchEvent(new CustomEvent('nexo:saved', { detail: { game, key } }));
     await ready;
     if (!client || !user) return null;
     const row = { owner_id: user.id, game, data: store };

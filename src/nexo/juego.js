@@ -236,6 +236,12 @@
         ${lines ? `<ul class="nj-effects">${lines}</ul>` : ''}</div>`;
     }
     const shownOpen = ch => { const saved = folds()[ch.id]; return typeof saved === 'boolean' ? saved : cfg.ready?.(ch) ?? true; };
+    // Resumen de una línea: el contador principal y los estados activos (la cabecera del panel y la campaña compartida).
+    function summaryOf(a, model) {
+      const first = model.counters.find(c => c.big && !c.inside && (!c.showAt || a.get(c.showAt.id) === c.showAt.is));
+      const states = model.conditions.filter(c => a.cond(c.id)).map(c => c.label + (c.max ? ' ' + a.cond(c.id) : ''));
+      return model.summary?.(a) || [first ? `${first.label} ${read(a.play, first)}${first.kind === 'value' ? '' : '/' + maxOf(a.play, first)}` : '', states.join(', ')].filter(Boolean).join(' · ');
+    }
     function panelHtml(ch) {
       const model = defs(ch);
       if (!model) return '';
@@ -249,9 +255,7 @@
         if (!groups.has(title)) groups.set(title, []);
         groups.get(title).push(c);
       });
-      const first = big[0];
-      const states = model.conditions.filter(c => a.cond(c.id)).map(c => c.label + (c.max ? ' ' + a.cond(c.id) : ''));
-      const summary = model.summary?.(a) || [first ? `${first.label} ${read(play, first)}${first.kind === 'value' ? '' : '/' + maxOf(play, first)}` : '', states.join(', ')].filter(Boolean).join(' · ');
+      const summary = summaryOf(a, model);
       const isOpen = shownOpen(ch);
       const restOptions = model.rests.map(r => `<option value="${esc(r.id)}">Con ${esc(r.label.toLowerCase())}</option>`).join('');
       const note = notice && notice.id === ch.id ? `<p class="nj-notice" role="status"><span>${esc(notice.text)}</span>${notice.undo ? '<button type="button" class="nj-act" data-nj-undo data-nj-key="undo">DESHACER</button>' : ''}</p>` : '';
@@ -420,6 +424,8 @@
       render(node) { mount = node || null; if (notice && notice.id !== cfg.current()?.id) notice = null; paint(); },
       refresh: paint,
       api: ch => api(ch),
+      // Resumen de cualquier ficha del sistema (también la de otro jugador), o vacío si aún no tiene panel.
+      brief(ch) { try { const model = defs(ch); return model ? summaryOf(api(ch, model), model) : ''; } catch { return ''; } },
       get: (ch, id) => api(ch).get(id),
       cond: (ch, id) => stateOf(ch).c[id] || 0,
       mark: (ch, id) => Boolean(stateOf(ch).m[id]),
