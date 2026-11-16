@@ -40,6 +40,7 @@ Sistemas y edición de referencia (no mezcles ediciones):
   - `copias.js`: archivos de ficha y copia de seguridad completa (`window.NEXO_COPIAS`).
   - `juego.js` / `juego.css`: panel «En juego» de las fichas (`window.NEXO_JUEGO`): contadores, estados y descansos.
   - `master.js` / `master.css`: herramientas de máster de las campañas (`window.NEXO_MASTER`): combate con iniciativa, PNJ y generadores. `master-datos.js` (`window.NEXO_MASTER_DATOS`) lleva las tablas de los generadores, una por ambientación, y el generador de mundos de Traveller.
+  - `grupo.js` / `grupo.css`: campañas compartidas (`window.NEXO_GRUPO`): código de invitación, grupo, ficha de cada jugador a la vista de quien dirige y tiradas en directo. Es el único módulo que habla con las tablas `shared_*`.
   - `icons.js`: emblemas SVG de cada sistema (`window.NEXO_ICONS`).
 - `src/<sistema>/`: `<sistema>.js` (creador y fichas), `<sistema>.css`, `<sistema>-mesa.css` (su objeto en la mesa), `<sistema>-manual.js` y `<sistema>-manual-reglas.js` (manual de consulta). Traveller es distinto: `app.js` es la aplicación de partidas (comercio, cartera, inventario, notas, mapa, hangar…) y gestiona también el inicio de sesión de toda NEXO.
 - `assets/iconos/`, `assets/fondos/`: iconos de la app e imágenes.
@@ -52,12 +53,16 @@ Sistemas y edición de referencia (no mezcles ediciones):
   - Traveller expone `window.NEXO_TRAVELLER` (`campaigns`, `openCampaign`, `showCampaigns`, `signIn`).
   - Las herramientas de máster no saben dónde se guardan: `NEXO_MASTER.mount(herramienta, nodo, ctx)` recibe en `ctx` el sistema, el objeto donde viven `npcs` y `combat`, y las funciones `save()`, `party()` y `note(título, texto)`. En las campañas se lo da `apartados.js`; en Traveller, `app.js` a través de `window.NEXO_MASTER_API`, y `NEXO_MASTER_UI.open()` pinta la aplicación «MÁSTER». Cada sistema tiene su entrada en `SYSTEMS` de `master.js` (nombres de sus puntos de golpe y su defensa, cómo va su iniciativa y qué tablas usa): un sistema nuevo necesita la suya, y su tabla en `master-datos.js` si no le vale ninguna.
   - La función `characters()` que cada sistema pasa a `NEXO_APARTADOS` devuelve, además de `id`, `name` y `summary`, el modificador de iniciativa del personaje en `init`, que usa el combate.
+  - Para las campañas compartidas, cada sistema pasa a `NEXO_APARTADOS` un `shared` con `raw(id)` (la ficha tal cual), `card(ch)` (nombre, resumen, iniciativa y estado de juego), `accept(raw)` (el mismo de las fichas importadas) y `view(ch, opts)` (la hoja de solo lectura). `apartados.js` pinta la baldosa «Grupo» y «Unirse con un código» solo donde existe, y `NEXO_GRUPO` hace el resto con `mountOwner`, `mountPlayer` y `mountJoin`. Un sistema nuevo necesita su `shared` y su entrada en `THEMES` y `SYSTEM_NAMES` de `grupo.js`.
   - Los manuales se registran en `window.NEXO_MANUALS.<sistema>`.
   - Cada sistema de fichas describe con datos lo que el código común pinta: `sheetData(ch)` para la hoja de imprimir, `accept(raw)` para revisar una ficha importada y `playModel(ch)` para el panel «En juego» (contadores, medidores, estados y descansos). Un estado que cambia las tiradas se aplica en el `rollFromSheet` del sistema, que pasa a los dados el modificador y una nota (`opts.note`).
 - Eventos:
   - `nexo:account-ready`: lo lanza `app.js` cuando la cuenta ha cargado.
   - `nexo:cloud-pulled`: lo lanza `cloud-sync.js` cuando ha traído de la nube las fichas y campañas de todos los sistemas.
   - `nexo:signed-out`: lo lanza `cloud-sync.js` al cerrar sesión, después de borrar la copia local de esa cuenta. Si un módulo guarda datos de la cuenta en memoria, debe soltarlos con este evento.
+  - `nexo:saved` (`detail: { game, key }`): lo lanza `cloud-sync.js` cada vez que un sistema guarda su almacén. `grupo.js` lo usa para poner al día la ficha y la campaña compartidas.
+  - `nexo:roll` (`detail: { system, result }`): lo lanza `dice.js` con cada tirada. `grupo.js` la envía al grupo si la campaña va en directo.
+  - `nexo:group-changed`: lo lanza `grupo.js` cuando cambia a qué campaña van las tiradas o qué ha sido de la última; `dice.js` repinta su ventana.
 - Mientras un sistema está abierto, `<html>` lleva la clase `nexo-<sistema>-open`, y `nexo-system-selected` cuando la mesa está oculta.
 - Cada módulo carga su propio CSS y sus fuentes desde el JS al abrirse (`link.href = './src/…css?v=N'`).
 - Los textos de la interfaz se escriben en el código, en español, con tildes y signos de apertura (¿ ¡). Escapa todo lo que venga del usuario con la función `esc` del módulo antes de meterlo en `innerHTML`.
@@ -69,14 +74,17 @@ Sistemas y edición de referencia (no mezcles ediciones):
   - `nexo-vampire-v1`, `nexo-dnd-v1`, `nexo-tormentas-v1`, `nexo-cthulhu-v1` y `nexo-pathfinder-v1`: fichas de cada sistema.
   - `nexo-campanas-v1`: campañas de todos los sistemas.
   - `nexo-juego-plegado`: si el panel «En juego» de cada ficha está plegado. Es una preferencia del dispositivo: no se sincroniza ni toca `updatedAt`.
+  - `nexo-grupos-v1`: campañas de otras cuentas en las que se juega y, por sistema, la campaña a la que van las tiradas. Es una copia de lo que dice la nube y se borra al cerrar sesión.
   - Cada clave de fichas y campañas tiene su marca `<clave>-cloud` (`clean` o `dirty`).
 - Supabase:
   - `public.campaigns` guarda una fila por partida de Traveller.
   - `public.game_saves` guarda una fila por cuenta y juego (`vampiro`, `dnd`, `tormentas`, `cthulhu`, `pathfinder`, `campanas`) con todo el almacén en `data`.
   - `public.usernames` asegura que cada nombre de usuario (`user_metadata.display_name`) sea de una sola cuenta, sin distinguir mayúsculas. La rellenan unos triggers sobre `auth.users`. La app consulta si un nombre está libre con la función `username_available(name)`, nunca leyendo la tabla.
+  - `public.shared_campaigns` (una fila por campaña compartida, con lo que ven los jugadores en `info`), `public.shared_members` (un jugador por fila, con la ficha que deja ver) y `public.shared_rolls` (las últimas 100 tiradas de cada campaña, que llegan por Realtime y, si falla, preguntando cada pocos segundos). Desde la app solo se leen y se borran: se escribe con las funciones `share_campaign`, `update_shared_campaign`, `renew_share_code`, `join_campaign` y `share_sheet`, y los nombres del grupo se piden con `shared_party`. Las tiradas son la única inserción directa.
   - La seguridad depende de las políticas RLS de `schema.sql`. La clave de `cloud-config.js` es la publicable: nunca pongas una clave secreta ni una contraseña en archivos servidos.
 - La copia local es la de trabajo. Al guardar se sube el almacén entero, y al abrir un sistema se mezcla con la nube. Gana el `updatedAt` más reciente si hay cambios sin subir; si no, manda la nube.
-- Al cerrar sesión se borra la copia local de esa cuenta. No hay edición colaborativa ni partidas compartidas entre cuentas.
+- Al cerrar sesión se borra la copia local de esa cuenta. No hay edición colaborativa: cada cuenta edita solo lo suyo. Lo único que cruza de una cuenta a otra son las campañas compartidas con código, y nunca para escribir en los datos de otro.
+- Una campaña compartida lleva `shared: { id, code, diary }` (su fila en la nube, el código y si los jugadores leen el diario) y viaja con la campaña en `game_saves`. Las notas, los PNJ y el combate nunca se copian a las tablas `shared_*`: lo que sale es lo que arma `publicInfo` en `grupo.js`.
 - Lo que cambia durante la partida vive en la propia ficha, en `ch.play` (`v` contadores, `mx` máximos editados, `c` estados, `m` marcas, `t` medidores, `custom` contadores propios). Solo se lee a través de `NEXO_JUEGO`, que lo rehace con tipos sanos la primera vez que toca una ficha (`clean`), venga de donde venga; no lo leas directamente desde un sistema. Los contadores guardan la diferencia con su valor por defecto, así que un personaje que cambia de nivel conserva lo gastado.
 - Las herramientas de máster guardan en la propia campaña (`npcs`, `combat` y el enlace `vtt`) y, en Traveller, en `data.master` de la partida. `NEXO_MASTER.clean` las rehace con tipos y límites sanos cada vez que se carga la campaña. Los resultados de los generadores no se guardan: viven en memoria hasta que se mandan a los PNJ o a las notas.
 - Si cambias la forma de los datos, añade la normalización en el `normalize`/`load` del módulo para que las fichas antiguas sigan abriendo. No cambies el nombre de una clave sin migrar los datos.
@@ -94,6 +102,10 @@ Sistemas y edición de referencia (no mezcles ediciones):
   - añadir su clave a `LOCAL_KEYS` y a `GAMES` en `cloud-sync.js`.
 - Después, **Markel tiene que volver a ejecutar `schema.sql`** en el SQL Editor de Supabase. Hasta entonces la nube rechaza ese sistema (error 23514) y la app avisa de que lo guarda solo en el dispositivo. Dilo en el PR.
 - `schema.sql` debe poder ejecutarse varias veces sin romper nada (`if not exists`, `drop … if exists`).
+- Campañas compartidas:
+  - el código de invitación no se lee nunca de la tabla (la columna `code` no tiene permiso de lectura): solo lo devuelven `share_campaign`, `update_shared_campaign` y `renew_share_code` a quien dirige;
+  - lo que llega de otra cuenta es texto ajeno: la ficha pasa por el `accept` de su sistema antes de pintarse y todo lo demás por `esc`; un enlace solo se pinta si es `http` o `https`;
+  - si cambias una tabla o una función `shared_*`, Markel tiene que volver a ejecutar `schema.sql`. Hasta entonces la app avisa de que la nube aún no admite campañas compartidas.
 
 **Mesa y navegación**
 - Cada clic en un objeto de la mesa, o cualquier acción que salga de la mesa, llama a `window.NEXO_NAV.away()` antes de abrir. Dentro de un sistema, cada vista nueva (pestaña, ficha, entrada del manual) se apila con `NEXO_NAV.sub(volver)` y se quita con `NEXO_NAV.drop()`, para que «atrás» recorra las vistas antes de volver a la mesa.

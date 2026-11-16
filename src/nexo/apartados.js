@@ -8,6 +8,7 @@
  * - Desde una ficha, los rasgos enlazados (term) y los botones del manual (link) asoman la regla en una
  *   ventanita sin salir de la ficha.
  * - Diario: las tiradas se pueden apuntar en la sesión de hoy de una campaña (NEXO_APARTADOS.diary).
+ * - Campañas compartidas (src/nexo/grupo.js): la baldosa «Grupo» de quien dirige y las campañas de otros en las que se juega.
  * El botón «atrás» del navegador recorre las vistas (NEXO_NAV.sub) antes de volver a la mesa.
  */
 (() => {
@@ -29,9 +30,11 @@
   function normalizeCampaign(c) {
     // PNJ y combate (src/nexo/master.js); si el módulo no está, se conservan tal cual.
     const master = window.NEXO_MASTER?.clean(c) || { npcs: Array.isArray(c.npcs) ? c.npcs : [], combat: c.combat && typeof c.combat === 'object' && !Array.isArray(c.combat) ? c.combat : {} };
+    // Campaña compartida con un código (src/nexo/grupo.js): su id en la nube, el código y si los jugadores leen el diario.
+    const shared = c.shared && typeof c.shared === 'object' && typeof c.shared.id === 'string' && c.shared.id ? { id: c.shared.id.slice(0, 64), code: String(c.shared.code || '').slice(0, 16), diary: Boolean(c.shared.diary) } : null;
     return {
       id: typeof c.id === 'string' && c.id ? c.id : uid(), system: String(c.system || ''), name: String(c.name || ''), master: String(c.master || ''),
-      premise: String(c.premise || ''), notes: String(c.notes || ''), vtt: String(c.vtt || '').slice(0, 300), npcs: master.npcs, combat: master.combat,
+      premise: String(c.premise || ''), notes: String(c.notes || ''), vtt: String(c.vtt || '').slice(0, 300), npcs: master.npcs, combat: master.combat, shared,
       characterIds: Array.isArray(c.characterIds) ? c.characterIds.map(String) : [],
       sessions: Array.isArray(c.sessions) ? c.sessions.filter(s => s && typeof s === 'object').map(s => ({ id: s.id || uid(), date: String(s.date || ''), title: String(s.title || ''), text: String(s.text || '') })) : [],
       createdAt: String(c.createdAt || new Date().toISOString()), updatedAt: String(c.updatedAt || new Date().toISOString())
@@ -168,6 +171,7 @@
     pnj: svg('<path d="M4.5 6.5c2.4 1 5 1.5 7.5 1.5s5.1-.5 7.5-1.5c.3 6.5-2.2 11.5-7.5 13-5.3-1.5-7.8-6.5-7.5-13Z"/><path d="M8 11.5c.9-.7 1.9-.7 2.8 0M13.2 11.5c.9-.7 1.9-.7 2.8 0M9.5 15.2c1.6 1 3.4 1 5 0"/>'),
     generador: svg('<path d="M12 3.5 13.8 9l5.7 1.8-5.7 1.8L12 18.2l-1.8-5.6-5.7-1.8L10.2 9Z"/><path d="M18.5 3.5v3M17 5h3M5.5 16.5v3M4 18h3"/>'),
     mesa: svg('<path d="m3.5 6.5 5.5-2 6 2 5.5-2v13l-5.5 2-6-2-5.5 2Z"/><path d="M9 4.5v13M15 6.5v13"/>'),
+    grupo: svg('<circle cx="6" cy="12" r="2.6"/><circle cx="17.5" cy="6" r="2.6"/><circle cx="17.5" cy="18" r="2.6"/><path d="m8.3 10.8 6.9-3.6M8.3 13.2l6.9 3.6"/>'),
     inicio: svg('<path d="M4 11.5 12 4.5l8 7"/><path d="M6.5 10v9.5h11V10"/><path d="M10 19.5v-5h4v5"/>')
   };
 
@@ -185,6 +189,8 @@
    *   manual: () => ({ title, intro, chapters }),
    *   words: { campaign, campaigns, character, characters, newCampaign }  (opcional)
    *   home: true para que cada campaña tenga su inicio con herramientas (como las partidas de Traveller)
+   *   shared: { raw: id => ficha, card: ch => ({ name, summary, init, play }), accept: raw => ficha revisada,
+   *             view: (ch, opts) => void }  para las campañas compartidas (opcional)
    *   start: pestaña inicial; custom: { pestaña: estado => void } para pintar una pestaña propia (opcionales)
    * }
    */
@@ -203,8 +209,12 @@
       if (source !== bookSource) { bookSource = source; book = prepare(source); }
       return book;
     }
+    // Campañas compartidas: solo en los sistemas que dicen cómo se comparte una ficha.
+    const grupo = () => (cfg.shared ? window.NEXO_GRUPO || null : null);
     instances.push({
       visible: () => Boolean(host && host.isConnected && !host.hidden && host.getClientRects().length),
+      system: () => cfg.system(), shared: cfg.shared || null,
+      who: () => { const cid = cfg.currentId?.() || ''; return cid ? cfg.characters().find(ch => ch.id === cid)?.name || '' : ''; },
       // Traveller usa sus partidas como campañas: no tiene diario de sesiones.
       diary: cfg.custom?.campanas ? null : () => {
         const list = campaignsOf(cfg.system());
@@ -290,22 +300,27 @@
       cfg.leave();
       cfg.frame(`${tabs(next.tab)}<div class="ap-view ap-${p}" data-ap-view></div>`);
       const view = host.querySelector('[data-ap-view]');
-      if (next.tab === 'campanas') next.campaignId ? renderCampaign(view, next.campaignId, next.tool) : renderCampaigns(view);
-      else renderManual(view, next);
+      if (next.tab !== 'campanas') renderManual(view, next);
+      else if (next.sharedId && grupo()) renderShared(view, next.sharedId);
+      else if (next.campaignId) renderCampaign(view, next.campaignId, next.tool);
+      else { renderCampaigns(view, next.flash); delete state.flash; }
       if (!next.keepScroll) host.scrollTop = 0;
       if (!next.keepScroll && !next.quiet) enter(view);
     }
 
     // ── Campañas
-    function renderCampaigns(view) {
+    function renderCampaigns(view, flash = '') {
       const rows = campaignsOf(cfg.system());
+      const joined = grupo()?.joined(cfg.system()) || [];
       const cards = rows.length ? rows.map(c => {
         const sessions = c.sessions.length;
         const people = c.characterIds.length;
-        return `<button class="${p}-card ap-camp-card" data-ap-campaign="${esc(c.id)}"><span class="ap-camp-mark" aria-hidden="true">${esc((c.name || '?').trim().charAt(0).toUpperCase() || '?')}</span><span class="${p}-card-copy"><b>${esc(c.name || 'Campaña sin nombre')}</b><small>${people} ${people === 1 ? words.character : words.characters} · ${sessions} ${sessions === 1 ? 'sesión' : 'sesiones'}${c.master ? ` · Narra ${esc(c.master)}` : ''}</small></span></button>`;
-      }).join('') : `<div class="${p}-empty"><span aria-hidden="true">✎</span><b>Aún no hay campañas</b><small>Crea una para reunir a tus ${words.characters}, apuntar cada sesión y guardar las notas de la mesa.</small></div>`;
+        return `<button class="${p}-card ap-camp-card" data-ap-campaign="${esc(c.id)}"><span class="ap-camp-mark" aria-hidden="true">${esc((c.name || '?').trim().charAt(0).toUpperCase() || '?')}</span><span class="${p}-card-copy"><b>${esc(c.name || 'Campaña sin nombre')}</b><small>${people} ${people === 1 ? words.character : words.characters} · ${sessions} ${sessions === 1 ? 'sesión' : 'sesiones'}${c.master ? ` · Narra ${esc(c.master)}` : ''}${c.shared ? ' · Compartida' : ''}</small></span></button>`;
+      }).join('') : joined.length ? '' : `<div class="${p}-empty"><span aria-hidden="true">✎</span><b>Aún no hay campañas</b><small>Crea una para reunir a tus ${words.characters}, apuntar cada sesión y guardar las notas de la mesa.</small></div>`;
       view.innerHTML = `<p class="${p}-kicker">CAMPAÑAS</p><h1>${esc(words.campaigns)}</h1><p class="${p}-intro">Cada campaña reúne a los ${words.characters} que juegan en ella, un diario de sesiones y las notas de la mesa. Se guardan en este dispositivo y, con cuenta, en la nube.</p>
-        <div class="${p}-actions"><button class="${p}-button" data-ap-new>＋ ${esc(words.newCampaign)}</button></div><div class="${p}-list ap-camp-list">${cards}</div>`;
+        <div class="${p}-actions"><button class="${p}-button" data-ap-new>＋ ${esc(words.newCampaign)}</button>${grupo() ? `<button type="button" class="${p}-button ghost" data-ap-join aria-expanded="false">UNIRSE CON UN CÓDIGO</button>` : ''}</div>
+        ${flash ? `<p class="${p}-note ap-flash" role="status">${esc(flash)}</p>` : ''}<div class="ap-join-box" data-ap-join-box hidden></div><div class="${p}-list ap-camp-list">${cards}</div>
+        ${joined.length ? `<p class="${p}-kicker ap-joined-title">CAMPAÑAS EN LAS QUE JUEGAS</p><div class="${p}-list ap-camp-list">${joined.map(g => `<button class="${p}-card ap-camp-card" data-ap-shared="${esc(g.id)}"><span class="ap-camp-mark" aria-hidden="true">${esc((g.name || '?').trim().charAt(0).toUpperCase() || '?')}</span><span class="${p}-card-copy"><b>${esc(g.name || 'Campaña sin nombre')}</b><small>${g.info?.master || g.owner_name ? `Narra ${esc(g.info?.master || g.owner_name)}` : 'Campaña compartida'} · ${g.sheet_name ? `Juegas con ${esc(g.sheet_name)}` : 'Aún sin personaje'}</small></span></button>`).join('')}</div>` : ''}`;
       view.querySelector('[data-ap-new]').addEventListener('click', () => {
         const campaign = normalizeCampaign({ system: cfg.system(), name: '' });
         store.campaigns.unshift(campaign);
@@ -314,6 +329,28 @@
         host.querySelector('[data-ap-prop="name"]')?.focus();
       });
       view.querySelectorAll('[data-ap-campaign]').forEach(button => button.addEventListener('click', () => go({ tab: 'campanas', campaignId: button.dataset.apCampaign })));
+      // Campañas de otros: entrar con un código y abrir aquellas en las que ya se juega.
+      const joinBox = view.querySelector('[data-ap-join-box]');
+      view.querySelector('[data-ap-join]')?.addEventListener('click', event => {
+        joinBox.hidden = !joinBox.hidden;
+        event.currentTarget.setAttribute('aria-expanded', String(!joinBox.hidden));
+        if (joinBox.hidden) joinBox.innerHTML = '';
+        else grupo().mountJoin(joinBox, { prefix: p, system: cfg.system(), joined: g => go({ tab: 'campanas', sharedId: g.id }) });
+      });
+      view.querySelectorAll('[data-ap-shared]').forEach(button => button.addEventListener('click', () => go({ tab: 'campanas', sharedId: button.dataset.apShared })));
+      grupo()?.refresh(true).then(moved => {
+        if (moved && view.isConnected && joinBox.hidden && state.tab === 'campanas' && !state.campaignId && !state.sharedId) apply({ ...state, keepScroll: true });
+      }).catch(() => {});
+    }
+
+    // Campaña de otra persona en la que se juega: la pinta src/nexo/grupo.js.
+    function renderShared(view, sid) {
+      view.innerHTML = `<div class="ap-head-row"><button class="${p}-button ghost" data-ap-back>← ${esc(words.campaigns.toLocaleUpperCase('es'))}</button></div><div class="ap-shared" data-ap-grupo></div>`;
+      view.querySelector('[data-ap-back]').addEventListener('click', () => go({ tab: 'campanas' }));
+      grupo().mountPlayer(view.querySelector('[data-ap-grupo]'), {
+        system: cfg.system(), prefix: p, id: sid, characters: () => cfg.characters(), shared: cfg.shared,
+        gone: message => { if (state.tab === 'campanas' && state.sharedId === sid) apply({ tab: 'campanas', flash: message }); }
+      });
     }
 
     function renderCampaign(view, id, tool) {
@@ -344,9 +381,10 @@
         combate: masterTools ? '<div data-ap-master="combate"></div>' : '',
         pnj: masterTools ? '<div data-ap-master="pnj"></div>' : '',
         generador: masterTools ? '<div data-ap-master="generador"></div>' : '',
+        grupo: grupo() ? '<div data-ap-grupo></div>' : '',
         notas: `<section class="${p}-panel ap-panel"><h2>Notas de la campaña</h2><div class="${p}-fields">${field('Notas', 'notes', { area: true, rows: cfg.home ? 14 : 7, max: 12000, placeholder: 'Personajes no jugadores, lugares, pistas, deudas, ganchos…' })}</div></section>`
       };
-      const confirmBox = `<div class="${p}-modal" data-ap-modal hidden><div class="${p}-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="apDelTitle"><h3 id="apDelTitle">¿Borrar esta campaña?</h3><p>Se borrarán su diario y sus notas de este dispositivo y de tu cuenta. Las fichas de los ${words.characters} no se tocan.</p><div class="${p}-actions"><button class="${p}-button ghost" data-ap-cancel>CANCELAR</button><button class="${p}-button danger" data-ap-confirm>BORRAR CAMPAÑA</button></div></div></div>`;
+      const confirmBox = `<div class="${p}-modal" data-ap-modal hidden><div class="${p}-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="apDelTitle"><h3 id="apDelTitle">¿Borrar esta campaña?</h3><p>Se borrarán su diario y sus notas de este dispositivo y de tu cuenta. Las fichas de los ${words.characters} no se tocan.${c.shared ? ' Dejará de estar compartida: tus jugadores ya no la verán.' : ''}</p><div class="${p}-actions"><button class="${p}-button ghost" data-ap-cancel>CANCELAR</button><button class="${p}-button danger" data-ap-confirm>BORRAR CAMPAÑA</button></div></div></div>`;
       // Herramientas del inicio de campaña: [id, nombre, detalle].
       const link = webLink(c.vtt);
       const tools = [
@@ -354,6 +392,7 @@
         ['diario', 'Diario', `${c.sessions.length} ${c.sessions.length === 1 ? 'sesión' : 'sesiones'}`],
         ['notas', 'Notas', c.notes.trim() ? 'Con apuntes' : 'En blanco'],
         ...(masterTools || []),
+        ...(grupo() ? [['grupo', 'Grupo', c.shared ? 'Compartida con un código' : 'Invitar a tus jugadores']] : []),
         ['dados', 'Dados', 'Tirar ahora'],
         ['manual', 'Manual', 'Reglas y consulta'],
         ...(link ? [['mesa', 'Mesa virtual', 'Abrir el enlace']] : []),
@@ -389,7 +428,8 @@
       const masterNode = view.querySelector('[data-ap-master]');
       if (masterNode) window.NEXO_MASTER.mount(masterNode.dataset.apMaster, masterNode, {
         system: cfg.system(), prefix: p, id: c.id, data: c, save: () => scheduleSave(c, status),
-        party: () => cfg.characters().filter(ch => c.characterIds.includes(ch.id)),
+        // El grupo: las fichas vinculadas de este dispositivo y, si la campaña está compartida, las de los jugadores.
+        party: () => [...cfg.characters().filter(ch => c.characterIds.includes(ch.id)), ...(grupo()?.party(c, cfg.shared) || [])],
         note(heading, body) {
           const add = `${heading}\n${body}`.trim();
           const next = `${c.notes.replace(/\s+$/, '')}${c.notes.trim() ? '\n\n' : ''}${add}`;
@@ -399,6 +439,9 @@
           return { ok: true, text: 'Apuntado en las notas de la campaña.' };
         }
       });
+      const groupNode = view.querySelector('[data-ap-grupo]');
+      if (groupNode) grupo().mountOwner(groupNode, { system: cfg.system(), prefix: p, campaign: c, shared: cfg.shared, save: () => scheduleSave(c, status) });
+      grupo()?.warm(c);
       view.querySelectorAll('[data-ap-prop]').forEach(input => input.addEventListener('input', () => {
         c[input.dataset.apProp] = input.value;
         if (input.dataset.apProp === 'vtt') { const note = view.querySelector('[data-ap-vtt-note]'); if (note) note.textContent = input.value.trim() && !webLink(input.value) ? 'El enlace tiene que empezar por https://' : 'NEXO no lleva mapa táctico: pega aquí el enlace de la mesa que uséis y lo tendrás a un toque en el inicio de la campaña.'; }
@@ -440,6 +483,7 @@
       view.querySelector('[data-ap-delete]')?.addEventListener('click', () => { modal.hidden = false; view.querySelector('[data-ap-cancel]').focus(); });
       view.querySelector('[data-ap-cancel]')?.addEventListener('click', () => { modal.hidden = true; });
       view.querySelector('[data-ap-confirm]')?.addEventListener('click', () => {
+        if (c.shared) window.NEXO_GRUPO?.unshare({ shared: { ...c.shared } });
         store.campaigns = store.campaigns.filter(item => item.id !== c.id);
         clearTimeout(saveTimer);
         saveTimer = 0;
@@ -557,7 +601,7 @@
           if (getBook().index.has(id)) { event.stopPropagation(); peek(id); }
           return;
         }
-        if (t.dataset.apTab) { if (t.dataset.apTab !== state.tab || state.campaignId || state.entry || state.chapter || state.q || state.characterId) go({ tab: t.dataset.apTab }); return; }
+        if (t.dataset.apTab) { if (t.dataset.apTab !== state.tab || state.campaignId || state.sharedId || state.entry || state.chapter || state.q || state.characterId) go({ tab: t.dataset.apTab }); return; }
         if (t.dataset.apEntry || t.dataset.manual) { const id = t.dataset.apEntry || t.dataset.manual; if (getBook().index.has(id)) go({ tab: 'manual', entry: id, focusPage: true }); return; }
         if (t.dataset.apChapter) { go({ tab: 'manual', chapter: t.dataset.apChapter, focusPage: true }); return; }
         if (t.hasAttribute('data-ap-home')) { go({ tab: 'manual' }); return; }
@@ -585,6 +629,7 @@
       // Al abrir el sistema: lista de personajes y campañas al día con la cuenta.
       reset() {
         state = { tab: start };
+        grupo()?.enter(cfg.system());
         pull().then(changed => { if (changed && host && !host.hidden && state.tab === 'campanas' && !state.campaignId) apply({ ...state, keepScroll: true }); });
       },
       // La ficha se abrió desde fuera de la lista (por ejemplo, desde el perfil).
@@ -602,5 +647,16 @@
     };
   }
 
-  window.NEXO_APARTADOS = { create, prepare, rich, campaigns: system => campaignsOf(system).map(c => ({ ...c })), pull, esc, fold, flush, reload, diary, cleanCampaign: normalizeCampaign };
+  // Para las campañas compartidas (src/nexo/grupo.js): el apartado a la vista, lo que cada sistema sabe compartir
+  // de sus fichas y las campañas propias que están compartidas.
+  function where() {
+    // Con cuenta, Traveller puede quedar pintado debajo de otro apartado: manda el que sabe compartir fichas.
+    const seen = instances.filter(item => item.visible());
+    const inst = seen.find(item => item.shared) || seen[0];
+    return inst ? { system: inst.system(), who: inst.who(), shared: inst.shared } : null;
+  }
+  const sources = () => instances.map(item => item.shared).filter(Boolean);
+  const sharedCampaigns = () => store.campaigns.filter(c => c.shared).map(c => ({ ...c }));
+
+  window.NEXO_APARTADOS = { create, prepare, rich, campaigns: system => campaignsOf(system).map(c => ({ ...c })), pull, esc, fold, flush, reload, diary, cleanCampaign: normalizeCampaign, where, sources, sharedCampaigns };
 })();

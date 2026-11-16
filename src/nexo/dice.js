@@ -388,6 +388,14 @@
       : `<span>${esc(ctx.campaigns[0].name)}</span>`;
     return `<div class="nd-diary">${where}<button type="button" data-nd-diary ${state.last.logged ? 'disabled' : ''}>${state.last.logged ? '✓ Apuntada' : '✎ Al diario'}</button></div>`;
   }
+  // Campaña compartida: con «en directo» activo, la tirada llega al grupo (src/nexo/grupo.js).
+  function groupHtml() {
+    const g = window.NEXO_GRUPO?.dice?.(state.last) || null;
+    if (!g) return '';
+    const told = g.status === 'sent' ? `✓ Enviada a ${g.name}` : g.status === 'sending' ? `Enviando a ${g.name}…` : g.status === 'failed' ? `No llegó a ${g.name}` : `Oculta para ${g.name}`;
+    return `<div class="nd-diary nd-group"><span>${esc(told)}</span>${g.status === 'hidden' || g.status === 'failed' ? '<button type="button" data-nd-group="send">Enviar al grupo</button>' : ''}<button type="button" data-nd-group="mute" aria-pressed="${g.muted}" title="${g.muted ? 'Ahora tus tiradas no se envían solas' : 'Ahora tus tiradas se envían al grupo al momento'}">${g.muted ? 'Tirar en directo' : 'Tirar en oculto'}</button></div>`;
+  }
+  document.addEventListener('nexo:group-changed', () => { if (win && !win.hidden && !state.formOpen) render(); });
   function logToDiary() {
     const ctx = diaryContext();
     const r = state.last;
@@ -418,6 +426,7 @@
       </form>
       <div class="nd-actions"><button type="button" class="nd-roll" data-nd-roll>⚄ ${state.formOpen || !state.lastOpts ? 'Tirar' : 'Repetir'}</button></div>
       ${diaryHtml()}
+      ${groupHtml()}
       ${history ? `<details class="nd-history"><summary>Tiradas anteriores</summary><ul>${history}</ul></details>` : ''}`;
     bind();
   }
@@ -443,6 +452,7 @@
     win.querySelector('[data-nd-form]').addEventListener('submit', event => { event.preventDefault(); rollFromForm(); });
     win.querySelector('[data-nd-diary]')?.addEventListener('click', logToDiary);
     win.querySelector('[data-nd-diary-campaign]')?.addEventListener('change', event => { state.diary = event.target.value; });
+    win.querySelectorAll('[data-nd-group]').forEach(button => button.addEventListener('click', () => { window.NEXO_GRUPO?.diceAction?.(button.dataset.ndGroup, state.last); render(); }));
     win.querySelector('[data-nd-roll]').addEventListener('click', () => {
       if (state.formOpen || !state.lastOpts) return rollFromForm();
       state.mode = state.lastOpts.mode;
@@ -480,6 +490,7 @@
       state.history.length = Math.min(state.history.length, 8);
       throwDice(result);
       opts.onResult?.(result);
+      document.dispatchEvent(new CustomEvent('nexo:roll', { detail: { system: state.system, result } }));
     }
     return result;
   }
