@@ -35,6 +35,8 @@
     return {
       id: typeof c.id === 'string' && c.id ? c.id : uid(), system: String(c.system || ''), name: String(c.name || ''), master: String(c.master || ''),
       premise: String(c.premise || ''), notes: String(c.notes || ''), vtt: String(c.vtt || '').slice(0, 300), npcs: master.npcs, combat: master.combat, shared,
+      // Notas de mundo enlazadas (src/nexo/mundo.js); si el módulo no está, se conservan tal cual.
+      world: window.NEXO_MUNDO?.clean(c.world) || (Array.isArray(c.world) ? c.world : []),
       characterIds: Array.isArray(c.characterIds) ? c.characterIds.map(String) : [],
       sessions: Array.isArray(c.sessions) ? c.sessions.filter(s => s && typeof s === 'object').map(s => ({ id: s.id || uid(), date: String(s.date || ''), title: String(s.title || ''), text: String(s.text || '') })) : [],
       createdAt: String(c.createdAt || new Date().toISOString()), updatedAt: String(c.updatedAt || new Date().toISOString())
@@ -171,6 +173,7 @@
     pnj: svg('<path d="M4.5 6.5c2.4 1 5 1.5 7.5 1.5s5.1-.5 7.5-1.5c.3 6.5-2.2 11.5-7.5 13-5.3-1.5-7.8-6.5-7.5-13Z"/><path d="M8 11.5c.9-.7 1.9-.7 2.8 0M13.2 11.5c.9-.7 1.9-.7 2.8 0M9.5 15.2c1.6 1 3.4 1 5 0"/>'),
     generador: svg('<path d="M12 3.5 13.8 9l5.7 1.8-5.7 1.8L12 18.2l-1.8-5.6-5.7-1.8L10.2 9Z"/><path d="M18.5 3.5v3M17 5h3M5.5 16.5v3M4 18h3"/>'),
     mesa: svg('<path d="m3.5 6.5 5.5-2 6 2 5.5-2v13l-5.5 2-6-2-5.5 2Z"/><path d="M9 4.5v13M15 6.5v13"/>'),
+    mundo: svg('<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.6 2.4 3.9 5.2 3.9 8.5s-1.3 6.1-3.9 8.5c-2.6-2.4-3.9-5.2-3.9-8.5s1.3-6.1 3.9-8.5Z"/>'),
     grupo: svg('<circle cx="6" cy="12" r="2.6"/><circle cx="17.5" cy="6" r="2.6"/><circle cx="17.5" cy="18" r="2.6"/><path d="m8.3 10.8 6.9-3.6M8.3 13.2l6.9 3.6"/>'),
     inicio: svg('<path d="M4 11.5 12 4.5l8 7"/><path d="M6.5 10v9.5h11V10"/><path d="M10 19.5v-5h4v5"/>')
   };
@@ -374,6 +377,8 @@
       const title = words.characters.charAt(0).toUpperCase() + words.characters.slice(1);
       // Herramientas de máster (src/nexo/master.js): combate, PNJ y generadores de esta campaña.
       const masterTools = window.NEXO_MASTER?.tools(c) || null;
+      // Notas de mundo enlazadas (src/nexo/mundo.js).
+      const worldTool = window.NEXO_MUNDO?.summary(c) || null;
       const panels = {
         ficha: `<section class="${p}-panel ap-panel"><h2>Campaña</h2><div class="${p}-fields">${field('Nombre', 'name', { placeholder: 'Nombre de la campaña' })}${field('Narrador', 'master', { placeholder: 'Quién dirige' })}${field('Premisa', 'premise', { area: true, rows: 3, max: 1200, placeholder: 'De qué va la campaña, dónde empieza, qué busca el grupo…' })}${field('Mesa virtual o mapa (enlace)', 'vtt', { wide: true, url: true, max: 300, placeholder: 'https://… el enlace de vuestra mesa virtual, mapa o llamada' })}</div><p class="${p}-note" data-ap-vtt-note>${c.vtt.trim() && !webLink(c.vtt) ? 'El enlace tiene que empezar por https://' : 'NEXO no lleva mapa táctico: pega aquí el enlace de la mesa que uséis y lo tendrás a un toque en el inicio de la campaña.'}</p></section>`,
         personajes: `<section class="${p}-panel ap-panel"><h2>${esc(title)} de la campaña <small data-ap-count>${linked} de ${all.length}</small></h2>${roster}${lost ? `<p class="${p}-note">${lost === 1 ? 'Una ficha vinculada ya no existe' : `${lost} fichas vinculadas ya no existen`} en este dispositivo.</p>` : ''}</section>`,
@@ -382,6 +387,7 @@
         pnj: masterTools ? '<div data-ap-master="pnj"></div>' : '',
         generador: masterTools ? '<div data-ap-master="generador"></div>' : '',
         grupo: grupo() ? '<div data-ap-grupo></div>' : '',
+        mundo: worldTool ? '<div data-ap-mundo></div>' : '',
         notas: `<section class="${p}-panel ap-panel"><h2>Notas de la campaña</h2><div class="${p}-fields">${field('Notas', 'notes', { area: true, rows: cfg.home ? 14 : 7, max: 12000, placeholder: 'Personajes no jugadores, lugares, pistas, deudas, ganchos…' })}</div></section>`
       };
       const confirmBox = `<div class="${p}-modal" data-ap-modal hidden><div class="${p}-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="apDelTitle"><h3 id="apDelTitle">¿Borrar esta campaña?</h3><p>Se borrarán su diario y sus notas de este dispositivo y de tu cuenta. Las fichas de los ${words.characters} no se tocan.${c.shared ? ' Dejará de estar compartida: tus jugadores ya no la verán.' : ''}</p><div class="${p}-actions"><button class="${p}-button ghost" data-ap-cancel>CANCELAR</button><button class="${p}-button danger" data-ap-confirm>BORRAR CAMPAÑA</button></div></div></div>`;
@@ -391,6 +397,7 @@
         ['personajes', title, `${linked} de ${all.length}`],
         ['diario', 'Diario', `${c.sessions.length} ${c.sessions.length === 1 ? 'sesión' : 'sesiones'}`],
         ['notas', 'Notas', c.notes.trim() ? 'Con apuntes' : 'En blanco'],
+        ...(worldTool ? [worldTool] : []),
         ...(masterTools || []),
         ...(grupo() ? [['grupo', 'Grupo', c.shared ? 'Compartida con un código' : 'Invitar a tus jugadores']] : []),
         ['dados', 'Dados', 'Tirar ahora'],
@@ -420,8 +427,9 @@
         else go({ tab: 'campanas', campaignId: id, tool: tid, fromHome: true });
       }));
       // El botón de inicio deshace la entrada a la herramienta para que «atrás» no vuelva a ella.
+      // (Dentro del Mundo puede haber, además, varias entradas abiertas una detrás de otra.)
       view.querySelector('[data-ap-camp-home]')?.addEventListener('click', () => {
-        if (state.fromHome) nav().drop();
+        for (let n = (state.fromHome ? 1 : 0) + (state.depth || 0); n > 0; n -= 1) nav().drop();
         apply({ tab: 'campanas', campaignId: id });
       });
       view.querySelector('[data-ap-back]')?.addEventListener('click', () => go({ tab: 'campanas' }));
@@ -438,6 +446,19 @@
           scheduleSave(c, status);
           return { ok: true, text: 'Apuntado en las notas de la campaña.' };
         }
+      });
+      // El Mundo: cada entrada abierta es una vista más, para que «atrás» vuelva por ellas.
+      const worldNode = view.querySelector('[data-ap-mundo]');
+      if (worldNode) window.NEXO_MUNDO.mount(worldNode, {
+        prefix: p, id: c.id, data: c, save: () => scheduleSave(c, status), entry: state.entry || '', edit: Boolean(state.edit),
+        open: (entry, opts = {}) => go({ tab: 'campanas', campaignId: id, tool: 'mundo', entry, edit: Boolean(opts.edit), fromHome: state.fromHome, depth: (state.depth || 0) + 1 }),
+        close: () => {
+          for (let n = state.depth || 0; n > 0; n -= 1) nav().drop();
+          apply({ tab: 'campanas', campaignId: id, tool: 'mundo', fromHome: state.fromHome });
+        },
+        editing: on => { state.edit = on; },
+        mentions: () => [...c.sessions.map(s => ({ label: `Diario · ${s.title || 'Sesión sin título'}`, text: s.text })), { label: 'Notas de la campaña', text: c.notes }],
+        sharing: grupo() ? (c.shared ? 'on' : 'off') : 'no'
       });
       const groupNode = view.querySelector('[data-ap-grupo]');
       if (groupNode) grupo().mountOwner(groupNode, { system: cfg.system(), prefix: p, campaign: c, shared: cfg.shared, save: () => scheduleSave(c, status) });
