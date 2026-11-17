@@ -1016,7 +1016,7 @@
     fonts.href = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Alegreya:ital,wght@0,400;0,700;1,400&display=swap';
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/pathfinder/pathfinder.css?v=3';
+    stylesheet.href = './src/pathfinder/pathfinder.css?v=4';
     document.head.append(fonts, stylesheet);
     host = document.createElement('section');
     host.id = 'nexoPathfinder';
