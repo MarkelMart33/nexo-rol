@@ -6,7 +6,7 @@
     stylesheet.href = './src/nexo/terminal-shell.css?v=1';
     const table = document.createElement('link');
     table.rel = 'stylesheet';
-    table.href = './src/nexo/mesa.css?v=7';
+    table.href = './src/nexo/mesa.css?v=8';
     document.head.append(stylesheet, table);
 
     const hub = document.createElement('section');
@@ -118,6 +118,7 @@
           <div class="mesa-decor" aria-label="Objetos de la mesa">
             <span class="dc dc-jarra" data-egg="jarra"><span class="jarra"><i class="jarra-handle"></i><i class="jarra-body"></i><i class="jarra-inside"></i><i class="jarra-foam"></i><i class="jarra-band"></i><i class="jarra-rivets"></i></span></span>
             <span class="dc dc-vela" data-egg="vela"><span class="vela"><i class="vela-glow"></i><i class="vela-plate"></i><i class="vela-shadow"></i><i class="vela-wax"></i><i class="vela-pool"></i><i class="vela-wick"></i><i class="vela-flame"></i><i class="vela-smoke"></i></span></span>
+            <span class="dc dc-esferas" data-egg="esferas"><span class="sphere-pouch"><i class="pouch-body"></i><i class="pouch-mouth"></i><i class="pouch-cord cord-left"></i><i class="pouch-cord cord-right"></i><i class="storm-sphere sphere-0" style="--gem:#9be5ff;--phase:0s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-1" style="--gem:#ffd783;--phase:0.23s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-2" style="--gem:#a8f0bf;--phase:0.46s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-3" style="--gem:#c4acff;--phase:0.6900000000000001s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-4" style="--gem:#9be5ff;--phase:0.92s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-5" style="--gem:#ffd783;--phase:1.1500000000000001s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-6" style="--gem:#b2efff;--phase:1.3800000000000001s"><span class="sphere-gem"></span></i><i class="pouch-lip"></i></span></span>
             <span class="dc dc-pergamino" data-egg="pergamino"><span class="pergamino"><i class="pergamino-roll"></i><i class="pergamino-seal"></i></span></span>
             <span class="dc dc-dados" data-egg="dados"><span class="die" data-face="5"></span><span class="die" data-face="3"></span><span class="poly-die poly-d20" data-sides="20"><b>20</b></span><span class="poly-die poly-d8" data-sides="8"><b>8</b></span><span class="poly-die poly-d4" data-sides="4"><b>4</b></span></span>
             <span class="dc dc-planta" data-egg="planta"><span class="planta"><i class="planta-pot"></i><i class="planta-soil"></i><span class="planta-leaves"><i class="hoja" style="--a:0deg;--l:56px"></i><i class="hoja" style="--a:40deg;--l:48px"></i><i class="hoja" style="--a:80deg;--l:60px"></i><i class="hoja" style="--a:120deg;--l:46px"></i><i class="hoja" style="--a:160deg;--l:52px"></i><i class="hoja" style="--a:200deg;--l:56px"></i><i class="hoja" style="--a:240deg;--l:48px"></i><i class="hoja" style="--a:280deg;--l:60px"></i><i class="hoja" style="--a:320deg;--l:46px"></i><i class="hoja hoja-in" style="--a:20deg;--l:36px"></i><i class="hoja hoja-in" style="--a:80deg;--l:30px"></i><i class="hoja hoja-in" style="--a:140deg;--l:40px"></i><i class="hoja hoja-in" style="--a:200deg;--l:36px"></i><i class="hoja hoja-in" style="--a:260deg;--l:30px"></i><i class="hoja hoja-in" style="--a:320deg;--l:40px"></i><i class="planta-bug"></i></span></span></span>
@@ -178,6 +179,11 @@
       table.querySelectorAll('.dc-dados .die').forEach(die => paintDie(die, +die.dataset.face));
       let sips = 0, leaves = 0, rumor = -1;
       const eggs = {
+        esferas(item) {
+          const charged = item.classList.toggle('is-infused');
+          item.setAttribute('aria-pressed', String(charged));
+          say(item, charged ? 'Vida antes que muerte. Fuerza antes que debilidad. Viaje antes que destino.' : 'La luz tormentosa se desvanece…');
+        },
         jarra(item) {
           poke(item);
           if (item.classList.contains('is-empty')) { item.classList.remove('is-empty'); sips = 0; say(item, 'Otra ronda, posadero.'); return; }
@@ -224,10 +230,11 @@
           if (note) note.textContent = pick(NOTES.filter(text => text !== note.textContent));
         }
       };
-      const names = {jarra:'Beber de la jarra', vela:'Encender o apagar la vela', dados:'Lanzar los dados', planta:'Explorar la planta', monedas:'Lanzar una moneda', pergamino:'Leer un rumor', pluma:'Escribir con la pluma'};
+      const names = {esferas:'Infundir luz tormentosa en las esferas', jarra:'Beber de la jarra', vela:'Encender o apagar la vela', dados:'Lanzar los dados', planta:'Explorar la planta', monedas:'Lanzar una moneda', pergamino:'Leer un rumor', pluma:'Escribir con la pluma'};
       table.querySelectorAll('[data-egg]').forEach(item => {
         item.removeAttribute('aria-hidden'); item.tabIndex = 0; item.setAttribute('role', 'button');
         item.setAttribute('aria-label', names[item.dataset.egg]);
+        if (item.dataset.egg === 'esferas') item.setAttribute('aria-pressed', 'false');
         item.addEventListener('click', () => eggs[item.dataset.egg](item));
         item.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); item.click(); } });
       });

@@ -170,3 +170,5 @@ La portada de Traveller usa ahora la identidad visual orbital NEXO (NEXO Travell
 
 ### Mesa de campaña
 Los objetos de los sistemas comparten iluminación lateral y texturas de cuero, papel y metal. La hiedra enmarca la mesa; los adornos admiten ratón y teclado (Enter o espacio). Los dados decorativos incluyen d4, d6, d8 y d20. La vela cambia la iluminación, la pluma escribe notas y la planta esconde una sorpresa. Se respeta la preferencia de movimiento reducido.
+
+El saquito de cuero contiene esferas de vidrio con gemas de colores. Al tocarlo (o usar Enter/espacio) se infunden de luz tormentosa y revelan un guiño al Archivo de las Tormentas; una segunda pulsación las apaga. La jarra medieval muestra cerveza ámbar bajo una espuma irregular y conserva la interacción de beber y rellenar.

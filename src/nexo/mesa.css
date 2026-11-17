@@ -282,3 +282,30 @@
 .nexo-systems :is(.mesa-note,.mesa-tag,.book-cover,.book-strap,.pda,.phone,.codex-page,.reed-paper,.file-cover,.reed,.wf-case,.jarra-body,.vela-plate){background-blend-mode:soft-light,normal}
 .nexo-systems .mesa-ivy-left{left:-70px}.nexo-systems .mesa-ivy-right{right:-75px}
 @media(max-width:560px){.nexo-systems .mesa-ivy-left{left:-54px}.nexo-systems .mesa-ivy-right{right:-56px}}
+
+/* Saquito de esferas: boca hundida, cuero fruncido y vidrio con gema interior. */
+.nexo-systems .dc-esferas{--tilt:9deg;width:204px;height:195px;perspective:700px}
+.nexo-systems .sphere-pouch{width:204px;height:195px;isolation:isolate;transform-style:preserve-3d}
+.pouch-body{inset:28px 33px 10px 15px;border-radius:39% 43% 34% 38%;transform:rotate(-8deg);background:url('../../assets/mesa/cuero.svg'),conic-gradient(from 10deg at 50% 22%,#291c16,#79563a 25deg,#39251b 42deg,#926b45 64deg,#38271d 85deg,#765237 128deg,#3a261b 165deg,#856344 205deg,#352117 245deg,#92724c 285deg,#3b281b 325deg,#291c16);background-blend-mode:soft-light,normal;box-shadow:inset 3px 3px 2px #cbab7555,inset -5px -8px 8px #160f0bc9,5px 8px 2px #1d150e,13px 18px 16px #0007}
+.pouch-body:after{content:'';position:absolute;inset:19px 9px 8px;border:1px dashed #b5935c77;border-radius:42% 40% 32% 36%;transform:rotate(5deg)}
+.pouch-mouth{left:28px;top:26px;width:125px;height:87px;border-radius:48%;transform:rotate(-10deg);background:radial-gradient(ellipse at 48% 62%,#11181a,#090b0c 60%,#38271d 72%,#8c6844 78%,#322117 83%);box-shadow:inset 4px 7px 9px #000,0 -2px 1px #bf9b6888,0 3px 3px #100b08}
+.pouch-lip{left:31px;top:88px;width:127px;height:29px;border-radius:0 0 55% 45%;border-bottom:9px solid #62452e;transform:rotate(-8deg);box-shadow:0 3px 2px #120c0988;pointer-events:none;z-index:3}
+.pouch-cord{width:55px;height:83px;border:3px solid #967750;border-top-color:transparent;border-radius:45%;box-shadow:1px 2px 1px #160f0aaa,inset 1px -1px 1px #dcc19388;z-index:4}
+.cord-left{left:2px;top:66px;transform:rotate(32deg)}
+.cord-right{right:9px;top:56px;transform:rotate(-37deg)}
+.nexo-systems .storm-sphere{width:33px;height:33px;border-radius:50%;background:radial-gradient(ellipse at 29% 22%,#fff 0 3%,#f4fcffb3 4%,transparent 17%),radial-gradient(ellipse at 68% 82%,#b1d8e477,transparent 30%),radial-gradient(circle at 45% 42%,#afccd41a 30%,#7cb6c03b 58%,#d7f0eb9c 70%,#16353e99 77%,#c1e6ef55 85%);box-shadow:inset 1px 2px 2px #e7ffffb3,inset -3px -3px 4px #071820a6,3px 5px 3px #0008;z-index:2;transition:box-shadow .8s,transform .6s}
+.storm-sphere:after{content:'';position:absolute;inset:3px;border-radius:50%;border-top:1px solid #ffffffb0;transform:rotate(-35deg);pointer-events:none}
+.storm-sphere .sphere-gem{position:absolute;inset:9px 10px 10px 9px;clip-path:polygon(30% 0,78% 12%,100% 55%,64% 100%,10% 78%,0 30%);background:conic-gradient(from 20deg,#fff,var(--gem) 60deg,#234253 120deg,var(--gem) 200deg,#ffffffc9 260deg,var(--gem));transform:rotate(15deg);filter:brightness(.8);transition:filter .8s}
+.sphere-0{left:51px;top:34px}.sphere-1{left:84px;top:31px}.sphere-2{left:108px;top:55px}.sphere-3{left:67px;top:65px}.sphere-4{left:39px;top:68px}.sphere-5{left:158px;top:134px}.sphere-6{left:119px;top:161px}
+.nexo-systems .dc-esferas.is-infused .storm-sphere{box-shadow:inset 1px 2px 2px #fff, inset -2px -2px 4px #17384388,0 0 10px var(--gem),0 0 25px color-mix(in srgb,var(--gem) 45%,transparent),3px 5px 4px #0007;animation:sphere-breathe 4s ease-in-out var(--phase) infinite}
+.nexo-systems .dc-esferas.is-infused .sphere-gem{filter:brightness(1.9)}
+.nexo-systems .mesa.is-dark .dc-esferas>span:not(.dc-say){filter:none}
+.nexo-systems .mesa.is-dark .dc-esferas:not(.is-infused)>span:not(.dc-say){filter:brightness(.4)}
+@keyframes sphere-breathe{50%{filter:brightness(1.17)}}
+/* Jarra de roble y hierro: profundidad del recipiente y cerveza visible bajo la espuma. */
+.nexo-systems .jarra-body{box-shadow:inset 3px 4px 2px #e2d5aa66,inset -5px -5px 4px #130e09,1px 3px 0 #493420,2px 6px 0 #392718,3px 9px 0 #291d13,6px 14px 9px #0007}
+.nexo-systems .jarra-inside{background:radial-gradient(ellipse at 30% 25%,#ffc85a99,transparent 30%),radial-gradient(ellipse at 58% 65%,#d78b19,#92500a 55%,#35200a 85%);box-shadow:inset 8px 10px 12px #130b04bb,inset -2px -2px 3px #ffc85b88}
+.nexo-systems .jarra-foam{left:19px;top:18px;width:77px;height:74px;border-radius:42% 48% 38% 45%;clip-path:polygon(0 0,100% 0,100% 65%,88% 78%,77% 70%,65% 83%,48% 78%,36% 91%,20% 83%,0 94%);box-shadow:inset 3px 4px 7px #b09b7480,2px 3px 3px #58350b88}
+.nexo-systems .jarra-handle{background:linear-gradient(120deg,#9b9e97,#555a56 35%,#292e2c 65%,#777a71);transform:translateY(5px)}
+.nexo-systems .dc-jarra.is-empty .jarra-inside{background:radial-gradient(circle,#54391e,#271b10 75%);box-shadow:inset 13px 15px 16px #000d}
+@media(prefers-reduced-motion:reduce){.nexo-systems .dc-esferas .storm-sphere,.nexo-systems .dc-esferas .sphere-gem{animation:none!important;transition:none!important}}
