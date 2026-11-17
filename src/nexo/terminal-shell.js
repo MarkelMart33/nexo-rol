@@ -6,7 +6,7 @@
     stylesheet.href = './src/nexo/terminal-shell.css?v=1';
     const table = document.createElement('link');
     table.rel = 'stylesheet';
-    table.href = './src/nexo/mesa.css?v=4';
+    table.href = './src/nexo/mesa.css?v=5';
     document.head.append(stylesheet, table);
 
     const hub = document.createElement('section');
@@ -75,7 +75,8 @@
         hub.innerHTML = `<div class="mesa">
           <div class="mesa-light" aria-hidden="true"></div>
           <header class="mesa-head">
-            <div class="mesa-note"><span class="mesa-tape" aria-hidden="true"></span><h1>¿A qué jugamos esta noche?</h1><p>Coge uno de la mesa.</p></div>
+            <div class="mesa-note"><span class="mesa-tape" aria-hidden="true"></span><h1>¿A qué jugamos esta noche?</h1><p data-note>Coge uno de la mesa.</p></div>
+            <span class="dc dc-tintero" data-egg="pluma" aria-hidden="true"><span class="tintero"><i class="tintero-glass"></i><i class="tintero-quill"></i><i class="tintero-blot"></i></span></span>
             <button class="mesa-tag" data-profile aria-label="Abrir tu perfil"><span class="mesa-tag-hole" aria-hidden="true"></span><b>${esc(initials)}</b><small>${esc(user ? (name || 'Tu perfil') : 'Sin cuenta')}</small></button>
           </header>
           <div class="mesa-objects">
@@ -114,8 +115,17 @@
                 <span class="wf-chain" aria-hidden="true"></span><span class="wf-case" aria-hidden="true"><span class="wf-face"><span class="wf-needle"></span><span class="wf-stone"></span></span></span></span>
             </button>
           </div>
-          <div class="mesa-props" aria-hidden="true"><span class="die die-a"><i></i><i></i><i></i><i></i><i></i></span><span class="die die-b"><i></i><i></i><i></i></span><span class="mesa-ring"></span></div>
+          <div class="mesa-decor" aria-hidden="true">
+            <span class="dc dc-jarra" data-egg="jarra"><span class="jarra"><i class="jarra-foam"></i><i class="jarra-band"></i><i class="jarra-band jarra-band-low"></i><i class="jarra-handle"></i></span></span>
+            <span class="dc dc-vela" data-egg="vela"><span class="vela"><i class="vela-glow"></i><i class="vela-flame"></i><i class="vela-smoke"></i><i class="vela-wick"></i><i class="vela-wax"></i><i class="vela-plate"></i></span></span>
+            <span class="dc dc-dados" data-egg="dados"><span class="die" data-face="5"></span><span class="die" data-face="3"></span></span>
+            <span class="dc dc-planta" data-egg="planta"><span class="planta"><i class="hoja h1"></i><i class="hoja h2"></i><i class="hoja h3"></i><i class="hoja h4"></i><i class="hoja h5"></i><i class="planta-bug"></i><i class="planta-pot"></i></span></span>
+            <span class="dc dc-monedas" data-egg="monedas"><span class="monedas"><i class="monedas-stack"></i><i class="moneda"></i></span></span>
+            <span class="mesa-eyes"><i></i><i></i></span>
+          </div>
+          <div class="mesa-props" aria-hidden="true"><span class="mesa-ring"></span></div>
         </div>`;
+        decorate(hub.querySelector('.mesa'));
         hub.querySelector('[data-profile]').addEventListener('click', () => {
           away();
           if (window.NEXO_PROFILE) window.NEXO_PROFILE.open({ onExit: openHub });
@@ -142,6 +152,75 @@
       }
       hub.innerHTML = '<header class="sys-top"><button class="sys-brand" data-home aria-label="Volver al selector de universos"><span class="sys-orbit">N</span><span><b>NEXO</b><small>TERMINAL DE SISTEMAS DE ROL</small></span></button><span class="sys-status"><i></i> EN PREPARACIÓN</span></header><main class="sys-main sys-coming"><p class="sys-kicker">NEXO / ' + labels[view] + '</p><span class="sys-icon">⌑</span><h1>' + labels[view] + '</h1><p class="sys-intro">Este módulo aún no está instalado. Aquí añadiremos sus herramientas cuando empecemos ese reglamento.</p><button class="sys-back" data-home>← VOLVER A SISTEMAS</button></main>';
       hub.querySelectorAll('[data-home]').forEach(button => button.addEventListener('click', openHub));
+    }
+
+    // Atrezo de la mesa: objetos de adorno que esconden pequeñas sorpresas al tocarlos.
+    // No abren nada ni salen de la mesa; con movimiento reducido cambian de estado sin animarse.
+    const PIPS = { 1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
+    const pick = list => list[Math.floor(Math.random() * list.length)];
+    const NOTES = ['Coge uno de la mesa.', 'Tira iniciativa.', 'El máster siempre tiene razón.', 'Nadie se separa del grupo.', '¿Quién trae los aperitivos?', 'No abras esa puerta.', 'Un natural 20 lo arregla todo.', 'Las fichas, a lápiz.'];
+    function decorate(table) {
+      const timers = new WeakMap();
+      const say = (item, text) => {
+        let bubble = item.querySelector('.dc-say');
+        if (!bubble) { bubble = document.createElement('span'); bubble.className = 'dc-say'; item.append(bubble); }
+        bubble.textContent = text;
+        bubble.classList.remove('is-on'); void bubble.offsetWidth; bubble.classList.add('is-on');
+        clearTimeout(timers.get(item));
+        timers.set(item, setTimeout(() => bubble.classList.remove('is-on'), 2400));
+      };
+      const poke = item => { item.classList.remove('is-poke'); void item.offsetWidth; item.classList.add('is-poke'); };
+      const paintDie = (die, face) => {
+        die.dataset.face = face;
+        die.innerHTML = PIPS[face].map(n => `<i style="grid-area:${Math.ceil(n / 3)}/${(n - 1) % 3 + 1}"></i>`).join('');
+      };
+      table.querySelectorAll('.dc-dados .die').forEach(die => paintDie(die, +die.dataset.face));
+      let sips = 0, leaves = 0;
+      const eggs = {
+        jarra(item) {
+          poke(item);
+          if (item.classList.contains('is-empty')) { item.classList.remove('is-empty'); sips = 0; say(item, 'Otra ronda, posadero.'); return; }
+          sips += 1;
+          if (sips >= 3) { item.classList.add('is-empty'); say(item, '¡Hip!'); }
+          else say(item, sips === 1 ? '¡Salud!' : '¡Por la compañía!');
+        },
+        vela(item) {
+          const out = item.classList.toggle('is-out');
+          table.classList.toggle('is-dark', out);
+          table.querySelector('.mesa-eyes')?.classList.remove('is-gone');
+          say(item, out ? 'Fuuu…' : 'Que se haga la luz.');
+        },
+        dados(item) {
+          const faces = [1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)];
+          item.querySelectorAll('.die').forEach((die, i) => paintDie(die, faces[i]));
+          poke(item);
+          const [a, b] = faces;
+          say(item, a === 6 && b === 6 ? '¡Doble seis!' : a === 1 && b === 1 ? 'Ojos de serpiente…' : a === b ? `¡Dobles! ${a + b}` : String(a + b));
+        },
+        planta(item) {
+          poke(item);
+          leaves += 1;
+          if (leaves === 3) { item.classList.add('has-bug'); say(item, 'Una mariquita: buena suerte.'); }
+          else if (leaves > 3 && item.classList.contains('has-bug')) { item.classList.remove('has-bug'); say(item, 'Se ha ido volando.'); }
+          else say(item, leaves > 3 ? 'Shhh… ¿Has oído eso?' : 'Frufrú.');
+        },
+        monedas(item) {
+          poke(item);
+          const edge = Math.random() < .05;
+          const side = edge ? 'edge' : pick(['cara', 'cruz']);
+          item.dataset.side = side;
+          say(item, edge ? '¡De canto! Eso no pasa nunca.' : side === 'cara' ? 'Cara.' : 'Cruz.');
+        },
+        pluma(item) {
+          poke(item);
+          const note = table.querySelector('[data-note]');
+          if (note) note.textContent = pick(NOTES.filter(text => text !== note.textContent));
+        }
+      };
+      table.querySelectorAll('[data-egg]').forEach(item => item.addEventListener('click', () => eggs[item.dataset.egg](item)));
+      const eyes = table.querySelector('.mesa-eyes');
+      eyes?.addEventListener('click', () => { eyes.classList.add('is-gone'); say(eyes, '…'); });
+      table.addEventListener('animationend', event => { if (event.animationName.startsWith('dc-')) event.target.closest('.dc')?.classList.remove('is-poke'); });
     }
 
     // La mesa sigue ligeramente al puntero y el reloj del móvil marca la hora real.
