@@ -6,7 +6,7 @@
     stylesheet.href = './src/nexo/terminal-shell.css?v=1';
     const table = document.createElement('link');
     table.rel = 'stylesheet';
-    table.href = './src/nexo/mesa.css?v=5';
+    table.href = './src/nexo/mesa.css?v=6';
     document.head.append(stylesheet, table);
 
     const hub = document.createElement('section');
@@ -76,7 +76,7 @@
           <div class="mesa-light" aria-hidden="true"></div>
           <header class="mesa-head">
             <div class="mesa-note"><span class="mesa-tape" aria-hidden="true"></span><h1>¿A qué jugamos esta noche?</h1><p data-note>Coge uno de la mesa.</p></div>
-            <span class="dc dc-tintero" data-egg="pluma" aria-hidden="true"><span class="tintero"><i class="tintero-glass"></i><i class="tintero-quill"></i><i class="tintero-blot"></i></span></span>
+            <span class="dc dc-tintero" data-egg="pluma" aria-hidden="true"><span class="tintero"><i class="tintero-blot"></i><i class="tintero-bottle"></i><i class="tintero-quill"></i></span></span>
             <button class="mesa-tag" data-profile aria-label="Abrir tu perfil"><span class="mesa-tag-hole" aria-hidden="true"></span><b>${esc(initials)}</b><small>${esc(user ? (name || 'Tu perfil') : 'Sin cuenta')}</small></button>
           </header>
           <div class="mesa-objects">
@@ -116,14 +116,14 @@
             </button>
           </div>
           <div class="mesa-decor" aria-hidden="true">
-            <span class="dc dc-jarra" data-egg="jarra"><span class="jarra"><i class="jarra-foam"></i><i class="jarra-band"></i><i class="jarra-band jarra-band-low"></i><i class="jarra-handle"></i></span></span>
-            <span class="dc dc-vela" data-egg="vela"><span class="vela"><i class="vela-glow"></i><i class="vela-flame"></i><i class="vela-smoke"></i><i class="vela-wick"></i><i class="vela-wax"></i><i class="vela-plate"></i></span></span>
+            <span class="dc dc-jarra" data-egg="jarra"><span class="jarra"><i class="jarra-handle"></i><i class="jarra-body"></i><i class="jarra-inside"></i><i class="jarra-foam"></i><i class="jarra-band"></i><i class="jarra-rivets"></i></span></span>
+            <span class="dc dc-vela" data-egg="vela"><span class="vela"><i class="vela-glow"></i><i class="vela-plate"></i><i class="vela-shadow"></i><i class="vela-wax"></i><i class="vela-pool"></i><i class="vela-wick"></i><i class="vela-flame"></i><i class="vela-smoke"></i></span></span>
+            <span class="dc dc-pergamino" data-egg="pergamino"><span class="pergamino"><i class="pergamino-roll"></i><i class="pergamino-seal"></i></span></span>
             <span class="dc dc-dados" data-egg="dados"><span class="die" data-face="5"></span><span class="die" data-face="3"></span></span>
-            <span class="dc dc-planta" data-egg="planta"><span class="planta"><i class="hoja h1"></i><i class="hoja h2"></i><i class="hoja h3"></i><i class="hoja h4"></i><i class="hoja h5"></i><i class="planta-bug"></i><i class="planta-pot"></i></span></span>
-            <span class="dc dc-monedas" data-egg="monedas"><span class="monedas"><i class="monedas-stack"></i><i class="moneda"></i></span></span>
+            <span class="dc dc-planta" data-egg="planta"><span class="planta"><i class="planta-pot"></i><i class="planta-soil"></i><span class="planta-leaves"><i class="hoja" style="--a:0deg;--l:56px"></i><i class="hoja" style="--a:40deg;--l:48px"></i><i class="hoja" style="--a:80deg;--l:60px"></i><i class="hoja" style="--a:120deg;--l:46px"></i><i class="hoja" style="--a:160deg;--l:52px"></i><i class="hoja" style="--a:200deg;--l:56px"></i><i class="hoja" style="--a:240deg;--l:48px"></i><i class="hoja" style="--a:280deg;--l:60px"></i><i class="hoja" style="--a:320deg;--l:46px"></i><i class="hoja hoja-in" style="--a:20deg;--l:36px"></i><i class="hoja hoja-in" style="--a:80deg;--l:30px"></i><i class="hoja hoja-in" style="--a:140deg;--l:40px"></i><i class="hoja hoja-in" style="--a:200deg;--l:36px"></i><i class="hoja hoja-in" style="--a:260deg;--l:30px"></i><i class="hoja hoja-in" style="--a:320deg;--l:40px"></i><i class="planta-bug"></i></span></span></span>
+            <span class="dc dc-monedas" data-egg="monedas"><span class="monedas"><i class="moneda mon-stack"></i><i class="moneda mon-a"></i><i class="moneda mon-b"></i><i class="moneda mon-flip"></i></span></span>
             <span class="mesa-eyes"><i></i><i></i></span>
           </div>
-          <div class="mesa-props" aria-hidden="true"><span class="mesa-ring"></span></div>
         </div>`;
         decorate(hub.querySelector('.mesa'));
         hub.querySelector('[data-profile]').addEventListener('click', () => {
@@ -159,6 +159,7 @@
     const PIPS = { 1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
     const pick = list => list[Math.floor(Math.random() * list.length)];
     const NOTES = ['Coge uno de la mesa.', 'Tira iniciativa.', 'El máster siempre tiene razón.', 'Nadie se separa del grupo.', '¿Quién trae los aperitivos?', 'No abras esa puerta.', 'Un natural 20 lo arregla todo.', 'Las fichas, a lápiz.'];
+    const RUMORS = ['Dicen que el posadero fue aventurero.', 'Hay un dragón al norte. O eso dicen.', 'No te fíes del bardo.', 'El mapa está mal a propósito.', 'Alguien ha visto luces en la cripta.'];
     function decorate(table) {
       const timers = new WeakMap();
       const say = (item, text) => {
@@ -175,7 +176,7 @@
         die.innerHTML = PIPS[face].map(n => `<i style="grid-area:${Math.ceil(n / 3)}/${(n - 1) % 3 + 1}"></i>`).join('');
       };
       table.querySelectorAll('.dc-dados .die').forEach(die => paintDie(die, +die.dataset.face));
-      let sips = 0, leaves = 0;
+      let sips = 0, leaves = 0, rumor = -1;
       const eggs = {
         jarra(item) {
           poke(item);
@@ -210,6 +211,11 @@
           const side = edge ? 'edge' : pick(['cara', 'cruz']);
           item.dataset.side = side;
           say(item, edge ? '¡De canto! Eso no pasa nunca.' : side === 'cara' ? 'Cara.' : 'Cruz.');
+        },
+        pergamino(item) {
+          poke(item);
+          rumor = (rumor + 1) % RUMORS.length;
+          say(item, RUMORS[rumor]);
         },
         pluma(item) {
           poke(item);
