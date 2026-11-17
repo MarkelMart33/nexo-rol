@@ -84,104 +84,133 @@
 .obj-phone:hover .phone,.obj-phone:focus-visible .phone{animation:phone-buzz .45s linear 2}
 @keyframes phone-buzz{25%{transform:translateX(-2px) rotate(-1deg)}75%{transform:translateX(2px) rotate(1deg)}}
 
-/* Atrezo: la marca de la jarra sobre la madera */
-.mesa-props{position:absolute;inset:0;pointer-events:none}
-.mesa-ring{position:absolute;left:30%;bottom:3%;width:150px;height:150px;border-radius:50%;box-shadow:inset 0 0 0 5px #2a160a55,inset 0 0 0 9px #2a160a1f;transform:rotate(20deg)}
+/* Adornos de la mesa, vistos desde arriba como el resto: una fila propia bajo los sistemas,
+   que envuelve y nunca los pisa. La luz viene de la lámpara (arriba a la izquierda), así que
+   los brillos van arriba a la izquierda y las sombras caen abajo a la derecha.
+   Cada adorno esconde una sorpresa al tocarlo (decorate, en terminal-shell.js). */
+.mesa-decor{position:relative;z-index:0;display:flex;flex-wrap:wrap;justify-content:space-around;align-items:center;gap:26px 34px;margin-top:10px;padding:40px 8px 8px;overflow-x:clip}
+.dc{position:relative;display:block;flex:none;cursor:pointer;transform:translateY(var(--y,0)) rotate(var(--tilt,0deg));transition:transform .4s cubic-bezier(.3,1.5,.5,1);-webkit-tap-highlight-color:transparent;animation:dc-place .8s cubic-bezier(.2,.9,.3,1.1) calc(var(--d,1.1s) + var(--intro-wait,0s)) backwards}
+.dc:hover{transform:translateY(var(--y,0)) rotate(var(--tilt,0deg)) scale(1.035)}
+.dc i{position:absolute;display:block;font-style:normal}
+.dc>span:not(.dc-say){position:relative;display:block}
+/* Caen sobre la mesa desde la cámara */
+@keyframes dc-place{from{opacity:0;transform:translateY(var(--y,0)) rotate(calc(var(--tilt,0deg) - 12deg)) scale(1.35)}}
+.dc-say{position:absolute;left:50%;bottom:calc(100% - 4px);z-index:6;padding:5px 11px 4px;border-radius:3px;background:linear-gradient(#f3e7cb,#e5d3ac);color:#3a2817;font:400 15px/1.15 var(--hand);text-align:center;white-space:nowrap;box-shadow:0 6px 12px -4px #000c;opacity:0;transform:translate(-50%,6px) rotate(calc(-3deg - var(--tilt,0deg)));pointer-events:none;transition:opacity .25s,transform .3s cubic-bezier(.3,1.6,.5,1)}
+.dc-say.is-on{opacity:1;transform:translate(-50%,0) rotate(calc(-3deg - var(--tilt,0deg)))}
 
-/* Adornos de la mesa: una fila propia bajo los sistemas, que envuelve y nunca los pisa.
-   Cada uno esconde una sorpresa al tocarlo (decorate, en terminal-shell.js). */
-.mesa-decor{position:relative;z-index:0;display:flex;flex-wrap:wrap;justify-content:space-around;align-items:flex-end;gap:22px 30px;margin-top:8px;padding:34px 8px 4px;overflow-x:clip}
-.dc{position:relative;display:block;cursor:pointer;filter:drop-shadow(0 10px 8px #0009) drop-shadow(0 2px 2px #0007);transform:rotate(var(--tilt,0deg));transition:transform .35s cubic-bezier(.3,1.6,.5,1);-webkit-tap-highlight-color:transparent;animation:dc-place .9s cubic-bezier(.2,.9,.3,1.1) calc(var(--d,1.1s) + var(--intro-wait,0s)) backwards}
-.dc:hover{transform:rotate(var(--tilt,0deg)) translateY(-4px)}
-.dc i{display:block;font-style:normal}
-@keyframes dc-place{from{opacity:0;transform:translateY(40px) rotate(calc(var(--tilt,0deg) - 10deg))}}
-.dc-say{position:absolute;left:50%;bottom:calc(100% + 6px);z-index:3;padding:5px 10px 4px;border-radius:3px;background:linear-gradient(#f3e7cb,#e5d3ac);color:#3a2817;font:400 15px/1.15 var(--hand);text-align:center;white-space:nowrap;box-shadow:0 6px 12px -4px #000c;opacity:0;transform:translate(-50%,6px) rotate(-3deg);pointer-events:none;transition:opacity .25s,transform .3s cubic-bezier(.3,1.6,.5,1)}
-.dc-say.is-on{opacity:1;transform:translate(-50%,0) rotate(-3deg)}
+/* Jarra de duelas de roble con aro de hierro, vista desde arriba con cerveza y espuma */
+.dc-jarra{--tilt:-14deg;--d:1.1s;--y:-6px}
+/* La marca que ha dejado en la madera al moverla */
+.dc-jarra:before{content:'';position:absolute;left:-30px;top:34px;width:116px;height:116px;border-radius:50%;box-shadow:inset 0 0 0 5px #2a160a55,inset 0 0 0 9px #2a160a1f;pointer-events:none}
+.jarra{width:150px;height:118px}
+.jarra-body{left:0;top:0;width:118px;height:118px;border-radius:50%;
+  background:radial-gradient(circle at 32% 28%,#ffe2b33d,transparent 50%),radial-gradient(circle,transparent 62%,#0007 100%),repeating-conic-gradient(from 6deg,#946035 0 11deg,#7c4c25 11deg 20deg,#a06a3b 20deg 21deg,#3a200d 21deg 22.5deg);
+  box-shadow:9px 16px 18px -2px #000b,3px 5px 4px #0008,inset -6px -8px 12px #0008,inset 3px 4px 6px #ffd9a040}
+.jarra-inside{left:15px;top:15px;width:88px;height:88px;border-radius:50%;background:radial-gradient(circle at 55% 60%,#8a4f12,#5b2e08 60%,#2c1504);box-shadow:inset 11px 13px 14px #000c,inset -2px -2px 3px #ffcf8a40,0 0 0 2px #2b170955}
+.jarra-foam{left:19px;top:19px;width:80px;height:80px;border-radius:50%;
+  background:radial-gradient(circle at 30% 38%,#fffdf8 0 3px,#cdb68a 3.6px,transparent 4.2px),radial-gradient(circle at 62% 28%,#fffdf8 0 2.4px,#cdb68a 3px,transparent 3.5px),radial-gradient(circle at 68% 64%,#fffdf8 0 3.4px,#c9b084 4px,transparent 4.6px),radial-gradient(circle at 38% 70%,#fffdf8 0 2px,#cdb68a 2.6px,transparent 3.1px),radial-gradient(circle at 50% 50%,#fffdf8 0 1.6px,#d2bc92 2.2px,transparent 2.7px),radial-gradient(circle,#fffaf0 0 1.1px,transparent 1.7px) 0 0/6px 6px,radial-gradient(circle,#fff7e8 0 1.6px,#d9c49a 2.1px,transparent 2.6px) 2px 3px/11px 9px,radial-gradient(circle,#e6d2a8 0 .9px,transparent 1.5px) 4px 1px/7px 8px,radial-gradient(circle at 42% 38%,#fbf4e4,#eddcb8 55%,#cfae76);
+  box-shadow:inset 9px 11px 12px #6b4a1e99,inset -2px -3px 4px #fff6;transition:opacity .45s,transform .5s cubic-bezier(.3,1.4,.5,1)}
+.jarra-band{left:-4px;top:-4px;width:126px;height:126px;border-radius:50%;background:conic-gradient(from 210deg,#4a4e50,#e3e6e6 50deg,#8d9193 110deg,#3b3e40 190deg,#5f6365 260deg,#b9bcbd 320deg,#4a4e50);-webkit-mask:radial-gradient(circle,transparent 0 55px,#000 55.5px 62px,transparent 62.5px);mask:radial-gradient(circle,transparent 0 55px,#000 55.5px 62px,transparent 62.5px)}
+.jarra-rivets{left:-4px;top:-4px;width:126px;height:126px;border-radius:50%;background:radial-gradient(circle at 50% 3.2%,#f4f5f5 0 1.2px,#5a5e60 2.6px,transparent 3px),radial-gradient(circle at 96.8% 50%,#f4f5f5 0 1.2px,#5a5e60 2.6px,transparent 3px),radial-gradient(circle at 50% 96.8%,#f4f5f5 0 1.2px,#5a5e60 2.6px,transparent 3px),radial-gradient(circle at 3.2% 50%,#f4f5f5 0 1.2px,#5a5e60 2.6px,transparent 3px),radial-gradient(circle at 16.5% 16.5%,#f4f5f5 0 1.2px,#5a5e60 2.6px,transparent 3px),radial-gradient(circle at 83.5% 83.5%,#f4f5f5 0 1.2px,#5a5e60 2.6px,transparent 3px),radial-gradient(circle at 83.5% 16.5%,#f4f5f5 0 1.2px,#5a5e60 2.6px,transparent 3px),radial-gradient(circle at 16.5% 83.5%,#f4f5f5 0 1.2px,#5a5e60 2.6px,transparent 3px)}
+.jarra-handle{left:104px;top:40px;width:44px;height:38px;border-radius:6px 20px 20px 6px;background:linear-gradient(#e0e3e3,#8b8f91 35%,#4b4f51 70%,#2f3234);box-shadow:10px 14px 12px -2px #000a,2px 4px 3px #0008;-webkit-mask:radial-gradient(ellipse 15px 9px at 24px 50%,transparent 98%,#000);mask:radial-gradient(ellipse 15px 9px at 24px 50%,transparent 98%,#000)}
+.dc-jarra.is-empty .jarra-foam{opacity:0;transform:scale(.6)}
+.dc-jarra.is-empty .jarra-inside{background:radial-gradient(circle at 50% 55%,#5a3418,#3a200d 70%,#24130a);box-shadow:inset 13px 15px 16px #000d}
+.dc-jarra.is-poke>span{animation:dc-sip .8s ease-in-out}
+@keyframes dc-sip{35%{transform:translate(-8px,-16px) scale(1.16) rotate(-10deg)}65%{transform:translate(-6px,-14px) scale(1.14) rotate(-8deg)}}
 
-/* Jarra de madera con aros de hierro */
-.dc-jarra{--tilt:-4deg;--d:1.1s;margin-right:14px}
-.jarra{position:relative;display:block;width:58px;height:74px;margin-top:14px;border-radius:5px 5px 10px 10px/4px 4px 10px 10px;background:linear-gradient(90deg,#0008,transparent 28%,#ffe3b51c 52%,transparent 70%,#0009),repeating-linear-gradient(90deg,#8a5a2e 0 10px,#5a3418 10px 11.5px,#7b4c25 11.5px 21px,#4f2d14 21px 22.5px)}
-.jarra:before{content:'';position:absolute;left:1px;right:1px;top:-4px;height:9px;border-radius:50%;background:radial-gradient(ellipse,#3b1f08,#6a3c12 70%,#2a1608);box-shadow:inset 0 0 0 2px #6f4220}
-.jarra-band{position:absolute;left:-2px;right:-2px;top:9px;height:8px;border-radius:2px;background:radial-gradient(circle at 18% 50%,#e8eaea 0 1.4px,transparent 2px),radial-gradient(circle at 82% 50%,#e8eaea 0 1.4px,transparent 2px),linear-gradient(#c3c6c7,#787c7e 45%,#3b3e40);box-shadow:0 1px 2px #000a}
-.jarra-band-low{top:auto;bottom:8px}
-.jarra-handle{position:absolute;right:-19px;top:15px;width:22px;height:38px;border:6px solid #6f7375;border-left:0;border-radius:0 15px 15px 0;box-shadow:1px 1px 0 #2d3032,inset -1px 0 0 #b5b8b9}
-.jarra-foam{position:absolute;z-index:1;left:-5px;right:-5px;top:-13px;height:20px;transform-origin:50% 100%;background:radial-gradient(circle at 12% 68%,#fff8e8 0 7px,transparent 7.5px),radial-gradient(circle at 35% 42%,#fffaf0 0 9.5px,transparent 10px),radial-gradient(circle at 62% 55%,#fff4de 0 9px,transparent 9.5px),radial-gradient(circle at 88% 66%,#f4e6c8 0 7px,transparent 7.5px),radial-gradient(ellipse 50% 40% at 50% 85%,#efdcb6,transparent);transition:transform .45s cubic-bezier(.3,1.5,.5,1),opacity .3s}
-.jarra-foam:after{content:'';position:absolute;left:18%;top:62%;width:6px;height:14px;border-radius:0 0 4px 4px;background:#f6ead0}
-.dc-jarra.is-empty .jarra-foam{transform:scaleY(0);opacity:0}
-.dc-jarra.is-poke .jarra{animation:dc-sip .7s ease-in-out}
-@keyframes dc-sip{30%{transform:rotate(-22deg) translate(-4px,-10px)}60%{transform:rotate(-18deg) translate(-4px,-10px)}}
-
-/* Vela sobre un platillo de latón: si se apaga, la mesa se queda a oscuras */
-.dc-vela{--tilt:2deg;--d:1.2s}
-.vela{position:relative;display:block;width:64px;height:104px}
-.vela-plate{position:absolute;left:0;bottom:0;width:64px;height:16px;border-radius:50%;background:radial-gradient(ellipse at 45% 35%,#f2cf7c,#b4842f 55%,#6d4c17);box-shadow:inset 0 -2px 0 #4f360d}
-.vela-plate:after{content:'';position:absolute;right:-9px;top:3px;width:12px;height:9px;border:3px solid #a57a2b;border-left:0;border-radius:0 8px 8px 0}
-.vela-wax{position:absolute;left:21px;bottom:7px;width:22px;height:60px;border-radius:4px 4px 2px 2px/3px 3px 2px 2px;background:linear-gradient(90deg,#cdb98e,#f5ecd5 38%,#e4d4ae 70%,#b9a275)}
-.vela-wax:before{content:'';position:absolute;left:3px;top:-1px;width:7px;height:20px;border-radius:0 0 4px 4px;background:#efe3c4;box-shadow:11px 4px 0 -1px #e9dbb8}
-.vela-wick{position:absolute;left:31px;bottom:66px;width:2px;height:7px;border-radius:1px;background:#2a1a0e}
-.vela-flame{position:absolute;left:25px;bottom:70px;width:14px;height:25px;border-radius:50% 50% 45% 45%/62% 62% 38% 38%;transform-origin:50% 92%;background:radial-gradient(ellipse 45% 40% at 50% 78%,#5aa0ff99,transparent 70%),radial-gradient(ellipse at 50% 72%,#fff 0 18%,#ffe9a8 38%,#ffa33a 70%,#ff7a1a00 74%);animation:dc-flame 1.7s ease-in-out infinite;transition:opacity .3s,transform .3s}
-.vela-glow{position:absolute;left:-38px;bottom:30px;width:140px;height:120px;border-radius:50%;background:radial-gradient(closest-side,#ffbf5c44,#ffb54d14 60%,transparent);pointer-events:none;animation:dc-glow 3.1s ease-in-out infinite;transition:opacity .4s}
-.vela-smoke{position:absolute;left:28px;bottom:74px;width:8px;height:22px;border-radius:50%;background:radial-gradient(#d8d2c855,transparent 70%);opacity:0}
-@keyframes dc-flame{0%,100%{transform:rotate(-2deg) scaleY(1)}30%{transform:rotate(3deg) scaleY(1.08)}55%{transform:rotate(-1deg) scaleY(.94)}80%{transform:rotate(2deg) scaleY(1.04)}}
-@keyframes dc-glow{0%,100%{opacity:1}50%{opacity:.8}}
-@keyframes dc-smoke{0%{opacity:.9;transform:translateY(0) scaleX(1)}100%{opacity:0;transform:translate(6px,-34px) scaleX(2.4)}}
+/* Vela de cera sobre una palmatoria de latón: si se apaga, la mesa se queda a oscuras */
+.dc-vela{--tilt:8deg;--d:1.2s;--y:4px}
+.vela{width:128px;height:118px}
+.vela-glow{left:-86px;top:-92px;width:300px;height:300px;border-radius:50%;background:radial-gradient(closest-side,#ffd88a40,#ffb54d1c 45%,transparent);mix-blend-mode:screen;pointer-events:none;animation:dc-glow 3.1s ease-in-out infinite;transition:opacity .5s}
+.vela-plate{left:8px;top:6px;width:106px;height:106px;border-radius:50%;
+  background:radial-gradient(circle at 34% 28%,#fff5c870,transparent 42%),radial-gradient(circle,#a57a2d 0 54%,#6e4c17 57%,#f0d07e 62%,#c99a3f 70%,#8a6421 86%,#5e400f 100%);
+  box-shadow:8px 13px 14px -2px #000b,2px 4px 3px #0008,inset -4px -5px 8px #0007,inset 2px 3px 3px #fff4c055}
+.vela-plate:after{content:'';position:absolute;left:96px;top:38px;width:30px;height:28px;border-radius:4px 14px 14px 4px;background:linear-gradient(#f2d488,#b5862f 45%,#6e4c17);box-shadow:5px 7px 7px -1px #0009;-webkit-mask:radial-gradient(ellipse 8px 6px at 14px 50%,transparent 98%,#000);mask:radial-gradient(ellipse 8px 6px at 14px 50%,transparent 98%,#000)}
+.vela-shadow{left:61px;top:56px;width:62px;height:24px;border-radius:50%;background:#0009;filter:blur(5px);transform:rotate(48deg);transform-origin:0 50%;transition:opacity .5s}
+.vela-wax{left:40px;top:38px;width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 38% 34%,#fffbf2,#f3e8cf 50%,#d9c69f 100%);box-shadow:inset -3px -4px 6px #a8915f88,0 0 0 1px #c7b28766}
+.vela-wax:before{content:'';position:absolute;inset:-7px;border-radius:50%;background:radial-gradient(circle at 92% 64%,#efe2c4 0 5px,transparent 5.5px),radial-gradient(circle at 18% 90%,#efe2c4 0 4px,transparent 4.5px),radial-gradient(circle at 70% 98%,#eadcb9 0 3.5px,transparent 4px),radial-gradient(circle at 4% 40%,#efe2c4 0 3px,transparent 3.5px);z-index:-1}
+.vela-pool{left:51px;top:49px;width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#fff8dc,#f6e2a2 70%,#e4c97a);box-shadow:inset 2px 2px 3px #b4975a88}
+.vela-wick{left:59px;top:57px;width:4px;height:4px;border-radius:50%;background:#1d120a}
+.vela-flame{left:49px;top:45px;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle,#fff 0 18%,#fff2c4 32%,#ffc65a 52%,#ff8f2a99 68%,transparent 72%);filter:blur(.6px);animation:dc-flame 1.6s ease-in-out infinite;transition:opacity .3s,transform .3s}
+.vela-smoke{left:50px;top:40px;width:22px;height:22px;border-radius:50%;background:radial-gradient(#e6e0d688,transparent 70%);opacity:0;filter:blur(2px)}
+@keyframes dc-flame{0%,100%{transform:translate(0,0) scale(1)}30%{transform:translate(1.5px,-1px) scale(1.12)}55%{transform:translate(-1px,.5px) scale(.92)}80%{transform:translate(1px,-.5px) scale(1.05)}}
+@keyframes dc-glow{0%,100%{opacity:1}50%{opacity:.78}}
+@keyframes dc-smoke{0%{opacity:.9;transform:translate(0,0) scale(.6)}100%{opacity:0;transform:translate(16px,-30px) scale(2.6)}}
 .dc-vela.is-out .vela-flame{opacity:0;transform:scale(.2);animation:none}
 .dc-vela.is-out .vela-glow{opacity:0}
 .dc-vela.is-out .vela-smoke{animation:dc-smoke 1.8s ease-out 2}
-.mesa:after{content:'';position:fixed;inset:0;z-index:4;pointer-events:none;background:radial-gradient(ellipse 60% 50% at 50% 100%,#0006,#000c);opacity:0;transition:opacity .6s}
+.mesa:after{content:'';position:fixed;inset:0;z-index:4;pointer-events:none;background:radial-gradient(ellipse 70% 55% at 50% 100%,#000a,#000d);opacity:0;transition:opacity .7s}
 .mesa.is-dark:after{opacity:1}
 .mesa.is-dark .mesa-light{opacity:0;animation:none}
 .mesa.is-dark .mesa-decor{z-index:5}
-.mesa.is-dark .mesa-decor .dc:not(.dc-vela){opacity:.25}
+.mesa.is-dark .dc:not(.dc-vela)>span:not(.dc-say),.mesa.is-dark .dc-dados .die{filter:brightness(.3)}
+.mesa.is-dark .dc-vela>span:not(.dc-say){filter:brightness(.7)}
 /* A oscuras, algo mira desde el borde de la mesa */
 .mesa-eyes{position:absolute;right:4%;top:0;display:flex;gap:9px;padding:6px;opacity:0;pointer-events:none;transition:opacity 1.2s 1.4s}
-.mesa-eyes i{width:9px;height:6px;border-radius:50%;background:radial-gradient(#e9ff9a,#8fd14a 60%,#4b7a1a);box-shadow:0 0 8px #b9ff6a;animation:dc-blink 4s steps(1) infinite}
+.mesa-eyes i{position:static;width:9px;height:6px;border-radius:50%;background:radial-gradient(#e9ff9a,#8fd14a 60%,#4b7a1a);box-shadow:0 0 8px #b9ff6a;animation:dc-blink 4s steps(1) infinite}
 .mesa.is-dark .mesa-eyes{opacity:1;pointer-events:auto;cursor:pointer}
 .mesa.is-dark .mesa-eyes.is-gone{opacity:0;pointer-events:none;transition-delay:0s}
 @keyframes dc-blink{0%,92%,100%{transform:scaleY(1)}94%,97%{transform:scaleY(.1)}}
 
+/* Pergamino enrollado y lacrado: cuenta rumores */
+.dc-pergamino{--tilt:-22deg;--d:1.25s;--y:-10px}
+.pergamino{width:170px;height:46px}
+.pergamino-roll{left:0;top:4px;width:170px;height:38px;border-radius:19px/19px;background:linear-gradient(#a58a5a,#e7d4a6 18%,#fbf0d2 34%,#f2e2ba 55%,#cdb282 80%,#8d7146);box-shadow:8px 13px 12px -3px #000b,2px 4px 3px #0008}
+.pergamino-roll:before,.pergamino-roll:after{content:'';position:absolute;top:0;width:16px;height:38px;border-radius:50%;background:radial-gradient(ellipse at 50% 50%,#6b5330 0 18%,#c8ad7c 22%,#a68a5b 45%,#d9c294 70%,#a38657)}
+.pergamino-roll:before{left:-2px}.pergamino-roll:after{right:-2px}
+.pergamino-roll{background-image:linear-gradient(90deg,transparent 0 72px,#7a1220 72px 84px,transparent 84px),linear-gradient(#a58a5a,#e7d4a6 18%,#fbf0d2 34%,#f2e2ba 55%,#cdb282 80%,#8d7146)}
+.pergamino-seal{left:66px;top:9px;width:28px;height:28px;border-radius:46% 54% 50% 50%/52% 48% 52% 48%;background:radial-gradient(circle at 50% 50%,transparent 0 6px,#5d0a14 6.5px 7.5px,transparent 8px),radial-gradient(circle at 36% 32%,#e2475a,#a3192b 50%,#6b0b17);box-shadow:3px 5px 4px #0009,inset -2px -2px 3px #0006}
+.dc-pergamino.is-poke>span{animation:dc-unroll .7s ease-in-out}
+@keyframes dc-unroll{40%{transform:scale(1.08) rotate(4deg)}}
+
 /* Dados de hueso: se vuelven a tirar */
-.dc-dados{--d:1.3s;display:flex;align-items:flex-end;gap:10px;padding-bottom:4px}
-.die{position:relative;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);width:34px;height:34px;padding:5px;border-radius:7px;background:linear-gradient(145deg,#f4ecdc,#d9ccb2);box-shadow:0 6px 8px -2px #000b,inset 0 -2px 0 #b9a888;transform:rotate(-18deg)}
-.die+.die{transform:rotate(24deg) translateY(6px)}
-.die i{width:6px;height:6px;margin:auto;border-radius:50%;background:#7a0b1d;box-shadow:inset 0 1px 1px #000a}
-.dc-dados.is-poke .die{animation:dc-roll .6s cubic-bezier(.2,.8,.3,1)}
-.dc-dados.is-poke .die+.die{animation-duration:.75s}
-@keyframes dc-roll{0%{transform:translate(-30px,-26px) rotate(-260deg)}60%{transform:translate(4px,0) rotate(20deg)}}
+.dc-dados{--d:1.3s;display:flex;align-items:center;gap:14px;padding:6px}
+.dc.dc-dados .die{position:relative;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);width:42px;height:42px;padding:7px;border-radius:10px;background:radial-gradient(circle at 30% 24%,#fffcf4,#f1e8d4 45%,#d6c7a4 100%);box-shadow:5px 10px 9px -2px #000a,1px 3px 2px #0008,inset 2px 2px 2px #fff,inset -3px -3px 4px #ad9a74;transform:rotate(-24deg)}
+.dc.dc-dados .die+.die{transform:rotate(17deg) translateY(10px)}
+.die i{position:static;width:7px;height:7px;margin:auto;border-radius:50%;background:radial-gradient(circle at 60% 65%,#a0182a,#560611);box-shadow:inset 1.5px 1.5px 2px #000c,0 1px 0 #fff9}
+.dc-dados.is-poke .die{animation:dc-roll .65s cubic-bezier(.2,.8,.3,1)}
+.dc-dados.is-poke .die+.die{animation-duration:.8s}
+@keyframes dc-roll{0%{transform:translate(-50px,-34px) rotate(-320deg) scale(1.4)}60%{transform:translate(4px,2px) rotate(18deg) scale(1)}}
 
-/* Hierbas en una maceta de barro */
-.dc-planta{--tilt:-2deg;--d:1.4s}
-.planta{position:relative;display:block;width:66px;height:96px}
-.planta-pot{position:absolute;left:12px;bottom:0;width:42px;height:38px;clip-path:polygon(0 0,100% 0,88% 100%,12% 100%);background:linear-gradient(90deg,#8e3f1f,#c56a3c 40%,#a7512a 70%,#7a3418)}
-.planta-pot:before{content:'';position:absolute;left:0;right:0;top:0;height:9px;background:linear-gradient(#d07a4a,#9c4826);box-shadow:0 2px 0 #6a2c12}
-.hoja{position:absolute;left:26px;bottom:30px;width:14px;height:44px;border-radius:0 100% 0 100%;transform-origin:50% 100%;background:linear-gradient(110deg,#2f5a1f,#6e9a3a 55%,#3d6b26);box-shadow:inset 2px 0 0 #8db85455}
-.h1{transform:rotate(-38deg);height:40px}.h2{transform:rotate(-12deg);height:54px}.h3{transform:rotate(8deg);height:48px;background:linear-gradient(110deg,#355f22,#7aa645 55%,#44752a)}.h4{transform:rotate(30deg);height:42px}.h5{transform:rotate(52deg);height:30px}
-.dc-planta.is-poke .planta{animation:dc-rustle .6s ease-in-out}
-@keyframes dc-rustle{20%{transform:rotate(-5deg)}45%{transform:rotate(4deg)}70%{transform:rotate(-2deg)}}
-.planta-bug{position:absolute;left:40px;top:22px;width:10px;height:8px;border-radius:50% 50% 45% 45%;background:radial-gradient(circle at 30% 40%,#111 0 1.3px,transparent 1.8px),radial-gradient(circle at 70% 60%,#111 0 1.3px,transparent 1.8px),linear-gradient(90deg,#c41e1e 0 46%,#2a0a0a 46% 54%,#c41e1e 54%);box-shadow:0 0 0 1px #3a0808;opacity:0;transform:translate(-8px,14px) scale(.4);transition:opacity .4s,transform .8s cubic-bezier(.3,1.4,.5,1)}
-.dc-planta.has-bug .planta-bug{opacity:1;transform:rotate(25deg)}
+/* Planta en maceta de barro, una roseta de hojas vista desde arriba */
+.dc-planta{--tilt:0deg;--d:1.4s;--y:-4px}
+.planta{width:156px;height:156px}
+.planta-pot{left:30px;top:30px;width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#ffc79a55,transparent 46%),radial-gradient(circle,#3a2414 0 37px,#6e2d12 38px 39.5px,#b85f32 41px,#e18c58 43.5px,#c56a3c 45px,#8e3f1f 48px);box-shadow:9px 14px 14px -2px #000b,2px 4px 3px #0008}
+.planta-soil{left:40px;top:40px;width:76px;height:76px;border-radius:50%;background:radial-gradient(#6b4a2c 1px,transparent 1.6px) 0 0/7px 7px,radial-gradient(#22130a 1.2px,transparent 1.8px) 3px 4px/9px 9px,radial-gradient(circle at 55% 55%,#4a2f1a,#2c190c);box-shadow:inset 10px 12px 12px #000c}
+.planta-leaves{position:absolute;inset:0;filter:drop-shadow(4px 8px 5px #000a)}
+.hoja{left:64px;top:78px;width:28px;height:var(--l);border-radius:50% 50% 50% 50%/30% 30% 70% 70%;transform-origin:50% 0;transform:rotate(var(--a));background:linear-gradient(#0005,transparent 45%),linear-gradient(90deg,#24481a,#4f7f2c 40%,#a3cc68 49%,#a3cc68 51%,#4f7f2c 60%,#1f3f15)}
+.hoja-in{width:22px;left:67px;background:linear-gradient(#0004,transparent 45%),linear-gradient(90deg,#3a6a22,#6fa23f 40%,#c3e08a 49%,#c3e08a 51%,#6fa23f 60%,#2f5a1c)}
+.dc-planta.is-poke .planta-leaves{animation:dc-rustle .6s ease-in-out}
+@keyframes dc-rustle{20%{transform:rotate(-6deg)}45%{transform:rotate(5deg)}70%{transform:rotate(-2deg)}}
+.planta-bug{left:100px;top:38px;width:13px;height:11px;border-radius:50% 50% 46% 46%;background:radial-gradient(circle at 50% 4%,#111 0 3px,transparent 3.5px),radial-gradient(circle at 30% 48%,#111 0 1.6px,transparent 2.2px),radial-gradient(circle at 70% 48%,#111 0 1.6px,transparent 2.2px),radial-gradient(circle at 34% 78%,#111 0 1.3px,transparent 1.8px),radial-gradient(circle at 66% 78%,#111 0 1.3px,transparent 1.8px),linear-gradient(90deg,#d42a22 0 47%,#2a0a0a 47% 53%,#d42a22 53%);box-shadow:inset 1px 1px 1px #ff9a8a,0 1px 1px #0008;opacity:0;transform:translate(-14px,22px) rotate(-40deg) scale(.5);transition:opacity .4s,transform 1s cubic-bezier(.3,1.3,.5,1)}
+.dc-planta.has-bug .planta-bug{opacity:1;transform:rotate(30deg)}
 
-/* Monedas: un montón y una suelta que se lanza a cara o cruz */
-.dc-monedas{--tilt:3deg;--d:1.5s;padding-bottom:4px}
-.monedas{position:relative;display:block;width:80px;height:50px}
-.monedas-stack{position:absolute;left:0;bottom:22px;width:38px;height:13px;border-radius:50%;background:radial-gradient(ellipse at 40% 40%,#ffe6a0,#d7a63e 60%,#a1731f);box-shadow:0 3px 0 #8a6219,0 6px 0 #c99a3c,0 9px 0 #8a6219,0 12px 0 #c99a3c,0 15px 0 #7a5414,0 18px 0 #b9892f,0 21px 0 #6b4810}
-.moneda{position:absolute;right:2px;bottom:2px;width:28px;height:28px;border-radius:50%;background:radial-gradient(circle,transparent 0 9px,#a1731f 9.5px 10.5px,transparent 11px),radial-gradient(circle at 38% 34%,#ffeab0,#d9a842 55%,#94661a);box-shadow:inset 0 0 0 2px #8a6219,0 2px 0 #6b4810}
-.moneda:after{content:'N';position:absolute;inset:0;display:grid;place-items:center;font:400 13px/1 var(--fell);color:#7a5414;text-shadow:0 1px 0 #ffe9a8}
-.dc-monedas[data-side="cruz"] .moneda:after{content:'✠'}
-.dc-monedas[data-side="edge"] .moneda{transform:scaleX(.18)}
-.dc-monedas.is-poke .moneda{animation:dc-flip .8s cubic-bezier(.3,.7,.4,1)}
-@keyframes dc-flip{0%{transform:translateY(0) rotateX(0)}45%{transform:translateY(-46px) rotateX(900deg)}100%{transform:translateY(0) rotateX(1800deg)}}
+/* Monedas: un montón, dos sueltas y una que se lanza a cara o cruz */
+.dc-monedas{--tilt:0deg;--d:1.5s}
+.monedas{width:122px;height:96px}
+.moneda{width:36px;height:36px;border-radius:50%;background:radial-gradient(circle,transparent 0 11.5px,#94661a 12px 13px,transparent 13.5px),radial-gradient(circle at 34% 28%,#fff3c0,#e9bc58 42%,#b58429 78%,#7e5715);box-shadow:inset 0 0 0 2px #c4943a,inset -2px -3px 4px #6e4a12aa,3px 6px 5px -1px #0009,1px 2px 1px #0007}
+.moneda:after{content:'N';position:absolute;inset:0;display:grid;place-items:center;font:400 14px/1 var(--fell);color:#7e5715;text-shadow:0 1px 0 #fff0b8,0 -1px 0 #6e4a12}
+.mon-stack{left:4px;top:8px;box-shadow:inset 0 0 0 2px #c4943a,inset -2px -3px 4px #6e4a12aa,1px 2px 0 #8a6219,2px 4px 0 #c99a3c,2px 6px 0 #7a5414,3px 8px 0 #c99a3c,3px 10px 0 #6b4810,8px 18px 10px -1px #000a}
+.mon-a{left:46px;top:46px;transform:rotate(40deg);filter:saturate(.8) brightness(.95)}
+.mon-a:after{content:'✠'}
+.mon-b{left:78px;top:18px;width:30px;height:30px;transform:rotate(-20deg);background:radial-gradient(circle,transparent 0 9px,#7a4a22 9.5px 10.5px,transparent 11px),radial-gradient(circle at 34% 28%,#f6d2b4,#c98a5a 42%,#9a5c30 78%,#6a3a18);box-shadow:inset 0 0 0 2px #b0754a,inset -2px -3px 4px #5a2e10aa,3px 6px 5px -1px #0009}
+.mon-b:after{color:#6a3a18;text-shadow:0 1px 0 #f6d2b4;font-size:12px}
+.mon-flip{left:14px;top:58px;transform:rotate(-12deg)}
+.dc-monedas[data-side="cruz"] .mon-flip:after{content:'✠'}
+.dc-monedas[data-side="edge"] .mon-flip{transform:rotate(-12deg) scaleX(.18)}
+.dc-monedas.is-poke .mon-flip{animation:dc-flip .9s cubic-bezier(.3,.7,.4,1)}
+@keyframes dc-flip{0%{transform:rotate(-12deg)}45%{transform:translate(4px,-30px) scale(1.8) rotateX(900deg)}100%{transform:rotate(-12deg) rotateX(1800deg)}}
 
-/* Tintero y pluma junto a la nota: la pluma reescribe la nota */
-.dc-tintero{--tilt:-6deg;--d:.3s;flex:none;align-self:flex-end;margin:0 auto 4px}
-.tintero{position:relative;display:block;width:70px;height:78px}
-.tintero-glass{position:absolute;left:4px;bottom:0;width:38px;height:30px;border-radius:9px 9px 6px 6px;background:radial-gradient(ellipse at 35% 30%,#3c4a66aa,#121826 60%,#05070c);box-shadow:inset 0 0 0 2px #2a3550,inset 3px 3px 0 #ffffff22}
-.tintero-glass:before{content:'';position:absolute;left:11px;top:-7px;width:16px;height:9px;border-radius:3px 3px 0 0;background:linear-gradient(#232d42,#101624)}
-.tintero-quill{position:absolute;left:20px;bottom:24px;width:12px;height:58px;border-radius:100% 0 100% 0;transform:rotate(26deg);transform-origin:20% 100%;background:linear-gradient(100deg,#f3eadb,#d8c8ab 50%,#efe5d2);box-shadow:inset 1px 0 0 #fff8,inset -1px 0 0 #a8946f}
-.tintero-quill:before{content:'';position:absolute;left:5px;top:6px;bottom:-12px;width:1.5px;background:#8a7552}
-.tintero-blot{position:absolute;left:46px;bottom:2px;width:18px;height:9px;border-radius:50% 40% 55% 45%;background:#0e1420cc}
+/* Tintero de vidrio y pluma junto a la nota: la pluma reescribe la nota */
+.dc-tintero{--tilt:-8deg;--d:.3s;align-self:center;margin:0 auto}
+.tintero{width:190px;height:110px}
+.tintero-bottle{left:8px;top:16px;width:70px;height:70px;border-radius:18px;background:radial-gradient(circle,#05070c 0 13px,#3b4a68 14px 17px,#1a2234 18px 20px,transparent 21px),linear-gradient(135deg,#55688f,#1c2539 38%,#0b0f19 60%,#05070c);box-shadow:8px 13px 13px -2px #000b,2px 4px 3px #0008,inset 2px 2px 0 #ffffff40,inset -3px -3px 6px #000}
+.tintero-bottle:after{content:'';position:absolute;left:8px;top:7px;width:16px;height:30px;border-radius:8px;background:linear-gradient(#ffffff55,#ffffff08);transform:rotate(-30deg)}
+.tintero-quill{left:40px;top:44px;width:150px;height:26px;transform:rotate(-14deg);border-radius:100% 6% 100% 6%/100% 50% 100% 50%;background:linear-gradient(transparent 47%,#9c8760 47% 53%,transparent 53%),repeating-linear-gradient(64deg,#00000010 0 1px,transparent 1px 4px),linear-gradient(#fffdf6,#efe5cf 45%,#d6c6a5);filter:drop-shadow(5px 9px 4px #0009);clip-path:polygon(0 50%,22% 18%,60% 0,100% 30%,100% 70%,60% 100%,22% 82%)}
+.tintero-quill:before{content:'';position:absolute;left:-18px;top:11.5px;width:30px;height:3px;border-radius:2px;background:linear-gradient(90deg,#1b1b22,#9c8760)}
+.tintero-blot{left:30px;top:70px;width:26px;height:16px;border-radius:52% 48% 60% 40%/50% 60% 40% 50%;background:radial-gradient(circle at 40% 40%,#1c2438,#0a0e18);box-shadow:16px 4px 0 -5px #0a0e18,inset 1px 1px 2px #ffffff22}
 .dc-tintero.is-poke .tintero-quill{animation:dc-write .7s ease-in-out}
-@keyframes dc-write{25%{transform:rotate(14deg) translate(-3px,-4px)}50%{transform:rotate(30deg) translate(3px,-2px)}75%{transform:rotate(18deg) translate(-2px,-4px)}}
+@keyframes dc-write{25%{transform:rotate(-24deg) translate(-4px,-6px)}50%{transform:rotate(-8deg) translate(4px,-2px)}75%{transform:rotate(-20deg) translate(-2px,-5px)}}
 
 @media(max-width:860px){
   .mesa{padding:22px 16px 40px}
@@ -191,10 +220,12 @@
   .mesa-tag b{font-size:24px}
   .mesa-objects{grid-template-columns:1fr;justify-items:center;gap:30px;padding-top:34px}
   .obj{--r:calc(var(--rest)*.55)}
-  .mesa-ring{display:none}
   .mesa-tag{width:108px}.mesa-tag small{font-size:13px}
-  .mesa-decor{justify-content:center;gap:20px 28px;padding-top:30px}
+  .mesa-decor{justify-content:center;gap:18px 24px;padding-top:34px}
   .dc-tintero{display:none}
+}
+@media(max-width:560px){
+  .mesa-decor{zoom:.72;gap:14px 18px}
 }
 @media(prefers-reduced-motion:reduce){
   .mesa *,.mesa,.mesa:after{animation:none!important;transition:none!important}
