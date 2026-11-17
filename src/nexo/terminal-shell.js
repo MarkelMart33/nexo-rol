@@ -6,7 +6,7 @@
     stylesheet.href = './src/nexo/terminal-shell.css?v=1';
     const table = document.createElement('link');
     table.rel = 'stylesheet';
-    table.href = './src/nexo/mesa.css?v=9';
+    table.href = './src/nexo/mesa.css?v=10';
     document.head.append(stylesheet, table);
 
     const hub = document.createElement('section');
@@ -129,8 +129,12 @@
         [['jarra','dnd'],['vela','vampire-da'],['esferas','tormentas'],['dados','pathfinder'],['pergamino','cthulhu']].forEach(([egg,system]) => {
           layout.querySelector('[data-system="'+system+'"]').after(hub.querySelector('[data-egg="'+egg+'"]'));
         });
-        const currentTable = hub.querySelector('.mesa');
-        import('./mesa-models.js?v=1').then(module => { if (currentTable.isConnected) module.mount(currentTable); }).catch(error => console.warn('Mesa 3D no disponible; se conserva la vista compatible.', error));
+        // Cada objeto conserva un espacio propio, también durante su animación.
+        [...layout.children].forEach(object => {
+          const slot = document.createElement('div');
+          slot.className = 'mesa-slot' + (object.matches('.dc') ? ' mesa-slot-decor' : '');
+          object.before(slot); slot.append(object);
+        });
         hub.querySelector('[data-profile]').addEventListener('click', () => {
           away();
           if (window.NEXO_PROFILE) window.NEXO_PROFILE.open({ onExit: openHub });
