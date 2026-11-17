@@ -230,3 +230,55 @@
 @media(prefers-reduced-motion:reduce){
   .mesa *,.mesa,.mesa:after{animation:none!important;transition:none!important}
 }
+
+/* Dirección material: gabinete de campaña. Luz lateral común y relieve fino. */
+.nexo-systems .mesa{max-width:1320px;padding:48px 76px 72px;isolation:isolate}
+.mesa-ivy{position:absolute;z-index:3;pointer-events:none;width:150px;height:600px;background:url('../../assets/mesa/hiedra.svg') center/contain no-repeat;transform-origin:top center}
+.mesa-ivy-left{left:-37px;top:-40px;transform:rotate(-9deg)}
+.mesa-ivy-right{right:-48px;top:180px;transform:scaleX(-1) rotate(-8deg)}
+.nexo-systems .mesa-light{background:radial-gradient(ellipse at 20% 15%,#ffe5b323,transparent 65%),linear-gradient(115deg,transparent 35%,#080c1040);animation:none}
+.nexo-systems .mesa-note{background-image:url('../../assets/mesa/papel.svg'),linear-gradient(125deg,#eee4c9,#c9b88c);box-shadow:2px 3px 2px #0006,9px 15px 24px #0005;transform:rotate(-1deg);border-radius:1px 2px 14px 1px}
+.nexo-systems .mesa-note h1{font:400 clamp(25px,3vw,35px)/1.2 var(--fell);max-width:340px}
+.nexo-systems .mesa-note p{font-size:17px}
+.nexo-systems .mesa-tape{display:none}
+.nexo-systems .mesa-tag{background-image:url('../../assets/mesa/cuero.svg'),linear-gradient(135deg,#694b32,#30241e);box-shadow:1px 2px 1px #100c09,7px 9px 15px #0006}
+.nexo-systems .mesa .mesa-objects{gap:64px 65px;padding:64px 16px 42px;perspective:1400px}
+.nexo-systems .obj{filter:drop-shadow(3px 5px 2px #0007) drop-shadow(15px 21px 13px #0006);transition:transform .55s cubic-bezier(.2,.7,.2,1),filter .55s;animation:mesa-settle .7s ease both;animation-delay:var(--d);transform:translate(calc(var(--px)*-5px),calc(var(--py)*-4px + var(--lift))) rotate(var(--r))}
+.nexo-systems .obj:hover,.nexo-systems .obj:focus-visible{--lift:-8px;--r:var(--rest);filter:drop-shadow(5px 9px 3px #0006) drop-shadow(21px 29px 18px #0007)}
+@keyframes mesa-settle{from{opacity:0;translate:0 12px}to{opacity:1;translate:0 0}}
+.nexo-systems .book-cover{background-image:url('../../assets/mesa/cuero.svg'),radial-gradient(ellipse at 24% 16%,#786041,#302319 85%);box-shadow:inset 0 0 0 5px #271b14,inset 0 0 0 6px #b2955c66,inset 11px 0 12px #0b0807b0,2px 3px 0 #17100c,4px 6px 0 #392b1d;color:#d8c18d}
+.nexo-systems .book-cover:before{border:1px solid #c4a87570;inset:16px;box-shadow:inset 0 0 0 4px #0002}
+.nexo-systems .book-cover b{text-shadow:0 1px #ffe7ad66,0 -1px #000;font-size:26px}
+.nexo-systems .obj-book:hover .book-cover,.nexo-systems .obj-book:focus-visible .book-cover{transform:rotateY(-22deg)}
+.nexo-systems .book-strap{background-image:url('../../assets/mesa/cuero.svg'),linear-gradient(#48382a,#241a13)}
+.nexo-systems .pda{background-image:url('../../assets/mesa/metal.svg'),linear-gradient(135deg,#596060,#242b2d 55%,#13191b);box-shadow:inset 1px 2px 1px #b7c0bb88,inset -2px -3px 1px #080d0e,inset 0 0 0 5px #24292a,3px 5px 0 #111719}
+.nexo-systems .pda-screen{background:linear-gradient(135deg,#d1e8e513,transparent 50%),radial-gradient(ellipse at 50% 10%,#17403f,#07191a);box-shadow:inset 0 0 0 2px #050a0a,inset 3px 6px 10px #000c}
+.nexo-systems .phone{background-image:url('../../assets/mesa/metal.svg'),linear-gradient(135deg,#727174,#151416 35%,#050405);box-shadow:inset 1px 1px 1px #ddd7, inset -2px -2px 2px #000,3px 5px 0 #080709}
+.nexo-systems .phone-screen:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(125deg,#fff1,transparent 40%,#fff0 64%,#fff1 65%,transparent 67%)}
+.nexo-systems .phone-notif,.nexo-systems .pda-led{animation:none}
+.nexo-systems .obj-phone:hover .phone{animation:none}
+.nexo-systems .codex-page,.nexo-systems .reed-paper,.nexo-systems .file-cover{background-image:url('../../assets/mesa/papel.svg'),linear-gradient(115deg,#e9dfc3,#cbbb94);box-shadow:inset 0 0 35px #77603a44,1px 2px #b5a17e,2px 4px #66523d,3px 6px #bca881}
+.nexo-systems .reed{background-image:url('../../assets/mesa/cuero.svg'),linear-gradient(125deg,#343731,#141c1c);box-shadow:inset 0 0 0 2px #95805b,inset 0 0 0 6px #20201b,3px 5px 0 #141613}
+.nexo-systems .wf-case{background-image:url('../../assets/mesa/metal.svg'),conic-gradient(from 30deg,#79542a,#e6d5a4,#947345,#49331b,#b59760,#f3e0ac,#79542a)}
+.nexo-systems .mesa-decor{z-index:2;overflow:visible;gap:32px 38px;padding:35px 0 20px;justify-content:center;border-top:1px solid #f3d7a412}
+.nexo-systems .dc{filter:drop-shadow(6px 9px 5px #0005);transition:transform .4s ease;animation:none}
+.nexo-systems .dc:focus-visible{outline:2px solid #e3c893;outline-offset:8px;border-radius:8px}
+.nexo-systems .dc-say{font:15px/1.4 Georgia,serif;white-space:normal;min-width:130px;max-width:220px;background:#e9dfc6;color:#30291f;box-shadow:0 5px 20px #0006;border:1px solid #a59168;padding:10px 14px}
+.nexo-systems .jarra-body{background-image:url('../../assets/mesa/cuero.svg'),repeating-conic-gradient(#5e4229 0deg 24deg,#312317 25deg 26deg,#957049 27deg 29deg);box-shadow:inset 3px 4px 2px #e2d5aa66,inset -5px -5px 4px #130e09,2px 4px 1px #18130e}
+.nexo-systems .vela-plate{background-image:url('../../assets/mesa/metal.svg'),radial-gradient(circle,#45301c 0 35%,#b29559 38%,#5b4126 54%,#d8bf82 58%,#745530 64%,#c8af74 68%,#352618 72%)}
+.nexo-systems .vela-wax{background:radial-gradient(circle at 40% 35%,#fff7d7,#d9c89f 65%,#aa946a);box-shadow:inset 3px 4px 3px #fff3,5px 8px 6px #0008}
+.nexo-systems .tintero-bottle{background:radial-gradient(circle at 35% 25%,#879b9477,transparent 22%),radial-gradient(circle,#071315 0 25%,#58706b 26%,#132a2c 34%,#071010 65%,#5b736a 70%,#121d19 76%);box-shadow:3px 7px 3px #0008,inset 2px 2px 2px #a4b3a888}
+.nexo-systems .dc-dados{width:225px;height:145px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px}
+.nexo-systems .dc.dc-dados .poly-die{position:relative;display:grid;place-items:center;width:64px;height:64px;background:conic-gradient(from 30deg at 50% 38%,#a3b5af,#35554e 60deg,#203832 120deg,#627c6c 180deg,#c3c8ab 240deg,#4f756c 300deg,#a3b5af);clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);color:#f0e0b4;font:20px Georgia,serif;text-shadow:0 1px 1px #000}
+.nexo-systems .poly-die:before{content:'';position:absolute;inset:12px;border:1px solid #e2dbb65c;clip-path:polygon(50% 0,100% 100%,0 100%);background:#06181322}
+.nexo-systems .poly-die b{position:relative;font-weight:400}
+.nexo-systems .dc.dc-dados .poly-d8{width:48px;height:64px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);background:conic-gradient(at 50% 50%,#d0bd92,#705a3d,#e2d3ac,#87704c,#d0bd92)}
+.nexo-systems .dc.dc-dados .poly-d4{width:48px;height:51px;clip-path:polygon(50% 0,100% 100%,0 100%);background:conic-gradient(at 50% 65%,#a7a5b8,#444454,#c2bfcd,#666174,#a7a5b8);padding-top:12px}
+.nexo-systems .dc.dc-dados .die{background-image:url('../../assets/mesa/papel.svg'),linear-gradient(135deg,#f3e8cd,#bba884);box-shadow:inset 1px 2px 1px #fff8,inset -2px -3px 1px #6d614c,3px 4px 0 #88775d}
+@media(max-width:860px){.nexo-systems .mesa{padding:32px 32px 64px}.mesa-ivy{opacity:.8;width:95px}.mesa-ivy-left{left:-38px}.mesa-ivy-right{right:-40px}.nexo-systems .mesa .mesa-objects{gap:46px 40px}.nexo-systems .mesa-head{gap:15px}.nexo-systems .mesa-note{padding:20px}.nexo-systems .mesa-note h1{font-size:26px}}
+@media(max-width:560px){.nexo-systems .mesa{padding:24px 20px 60px}.nexo-systems .mesa-head{flex-wrap:wrap}.nexo-systems .mesa-note{max-width:205px;padding:16px}.nexo-systems .mesa-note h1{font-size:23px}.nexo-systems .mesa-tag{width:72px;padding:12px 7px 12px 22px}.nexo-systems .mesa-tag b{font-size:22px}.nexo-systems .mesa-tag small{font-size:11px}.nexo-systems .mesa .mesa-objects{padding-top:46px;gap:42px}.mesa-ivy-right{top:650px}.nexo-systems .mesa-decor{gap:24px}.nexo-systems .dc-tintero{display:block;order:3;margin:20px auto 0}.nexo-systems .mesa-decor{zoom:.8}}
+@media(prefers-reduced-motion:reduce){.nexo-systems .mesa *,.nexo-systems .mesa *:before,.nexo-systems .mesa *:after{animation:none!important;transition:none!important}.nexo-systems .obj{transform:rotate(var(--rest))}}
+/* La microtextura modula el material sin blanquear su pigmento. */
+.nexo-systems :is(.mesa-note,.mesa-tag,.book-cover,.book-strap,.pda,.phone,.codex-page,.reed-paper,.file-cover,.reed,.wf-case,.jarra-body,.vela-plate){background-blend-mode:soft-light,normal}
+.nexo-systems .mesa-ivy-left{left:-70px}.nexo-systems .mesa-ivy-right{right:-75px}
+@media(max-width:560px){.nexo-systems .mesa-ivy-left{left:-54px}.nexo-systems .mesa-ivy-right{right:-56px}}

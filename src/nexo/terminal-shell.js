@@ -6,7 +6,7 @@
     stylesheet.href = './src/nexo/terminal-shell.css?v=1';
     const table = document.createElement('link');
     table.rel = 'stylesheet';
-    table.href = './src/nexo/mesa.css?v=6';
+    table.href = './src/nexo/mesa.css?v=7';
     document.head.append(stylesheet, table);
 
     const hub = document.createElement('section');
@@ -73,7 +73,7 @@
         const clock = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         const date = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
         hub.innerHTML = `<div class="mesa">
-          <div class="mesa-light" aria-hidden="true"></div>
+          <div class="mesa-ivy mesa-ivy-left" aria-hidden="true"></div><div class="mesa-ivy mesa-ivy-right" aria-hidden="true"></div><div class="mesa-light" aria-hidden="true"></div>
           <header class="mesa-head">
             <div class="mesa-note"><span class="mesa-tape" aria-hidden="true"></span><h1>¿A qué jugamos esta noche?</h1><p data-note>Coge uno de la mesa.</p></div>
             <span class="dc dc-tintero" data-egg="pluma" aria-hidden="true"><span class="tintero"><i class="tintero-blot"></i><i class="tintero-bottle"></i><i class="tintero-quill"></i></span></span>
@@ -115,11 +115,11 @@
                 <span class="wf-chain" aria-hidden="true"></span><span class="wf-case" aria-hidden="true"><span class="wf-face"><span class="wf-needle"></span><span class="wf-stone"></span></span></span></span>
             </button>
           </div>
-          <div class="mesa-decor" aria-hidden="true">
+          <div class="mesa-decor" aria-label="Objetos de la mesa">
             <span class="dc dc-jarra" data-egg="jarra"><span class="jarra"><i class="jarra-handle"></i><i class="jarra-body"></i><i class="jarra-inside"></i><i class="jarra-foam"></i><i class="jarra-band"></i><i class="jarra-rivets"></i></span></span>
             <span class="dc dc-vela" data-egg="vela"><span class="vela"><i class="vela-glow"></i><i class="vela-plate"></i><i class="vela-shadow"></i><i class="vela-wax"></i><i class="vela-pool"></i><i class="vela-wick"></i><i class="vela-flame"></i><i class="vela-smoke"></i></span></span>
             <span class="dc dc-pergamino" data-egg="pergamino"><span class="pergamino"><i class="pergamino-roll"></i><i class="pergamino-seal"></i></span></span>
-            <span class="dc dc-dados" data-egg="dados"><span class="die" data-face="5"></span><span class="die" data-face="3"></span></span>
+            <span class="dc dc-dados" data-egg="dados"><span class="die" data-face="5"></span><span class="die" data-face="3"></span><span class="poly-die poly-d20" data-sides="20"><b>20</b></span><span class="poly-die poly-d8" data-sides="8"><b>8</b></span><span class="poly-die poly-d4" data-sides="4"><b>4</b></span></span>
             <span class="dc dc-planta" data-egg="planta"><span class="planta"><i class="planta-pot"></i><i class="planta-soil"></i><span class="planta-leaves"><i class="hoja" style="--a:0deg;--l:56px"></i><i class="hoja" style="--a:40deg;--l:48px"></i><i class="hoja" style="--a:80deg;--l:60px"></i><i class="hoja" style="--a:120deg;--l:46px"></i><i class="hoja" style="--a:160deg;--l:52px"></i><i class="hoja" style="--a:200deg;--l:56px"></i><i class="hoja" style="--a:240deg;--l:48px"></i><i class="hoja" style="--a:280deg;--l:60px"></i><i class="hoja" style="--a:320deg;--l:46px"></i><i class="hoja hoja-in" style="--a:20deg;--l:36px"></i><i class="hoja hoja-in" style="--a:80deg;--l:30px"></i><i class="hoja hoja-in" style="--a:140deg;--l:40px"></i><i class="hoja hoja-in" style="--a:200deg;--l:36px"></i><i class="hoja hoja-in" style="--a:260deg;--l:30px"></i><i class="hoja hoja-in" style="--a:320deg;--l:40px"></i><i class="planta-bug"></i></span></span></span>
             <span class="dc dc-monedas" data-egg="monedas"><span class="monedas"><i class="moneda mon-stack"></i><i class="moneda mon-a"></i><i class="moneda mon-b"></i><i class="moneda mon-flip"></i></span></span>
             <span class="mesa-eyes"><i></i><i></i></span>
@@ -164,7 +164,7 @@
       const timers = new WeakMap();
       const say = (item, text) => {
         let bubble = item.querySelector('.dc-say');
-        if (!bubble) { bubble = document.createElement('span'); bubble.className = 'dc-say'; item.append(bubble); }
+        if (!bubble) { bubble = document.createElement('span'); bubble.className = 'dc-say'; bubble.setAttribute('role', 'status'); item.append(bubble); }
         bubble.textContent = text;
         bubble.classList.remove('is-on'); void bubble.offsetWidth; bubble.classList.add('is-on');
         clearTimeout(timers.get(item));
@@ -195,6 +195,7 @@
           const faces = [1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)];
           item.querySelectorAll('.die').forEach((die, i) => paintDie(die, faces[i]));
           poke(item);
+          item.querySelectorAll('[data-sides]').forEach(die => { die.querySelector('b').textContent = 1 + Math.floor(Math.random() * Number(die.dataset.sides)); });
           const [a, b] = faces;
           say(item, a === 6 && b === 6 ? '¡Doble seis!' : a === 1 && b === 1 ? 'Ojos de serpiente…' : a === b ? `¡Dobles! ${a + b}` : String(a + b));
         },
@@ -223,7 +224,13 @@
           if (note) note.textContent = pick(NOTES.filter(text => text !== note.textContent));
         }
       };
-      table.querySelectorAll('[data-egg]').forEach(item => item.addEventListener('click', () => eggs[item.dataset.egg](item)));
+      const names = {jarra:'Beber de la jarra', vela:'Encender o apagar la vela', dados:'Lanzar los dados', planta:'Explorar la planta', monedas:'Lanzar una moneda', pergamino:'Leer un rumor', pluma:'Escribir con la pluma'};
+      table.querySelectorAll('[data-egg]').forEach(item => {
+        item.removeAttribute('aria-hidden'); item.tabIndex = 0; item.setAttribute('role', 'button');
+        item.setAttribute('aria-label', names[item.dataset.egg]);
+        item.addEventListener('click', () => eggs[item.dataset.egg](item));
+        item.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); item.click(); } });
+      });
       const eyes = table.querySelector('.mesa-eyes');
       eyes?.addEventListener('click', () => { eyes.classList.add('is-gone'); say(eyes, '…'); });
       table.addEventListener('animationend', event => { if (event.animationName.startsWith('dc-')) event.target.closest('.dc')?.classList.remove('is-poke'); });
@@ -232,7 +239,7 @@
     // La mesa sigue ligeramente al puntero y el reloj del móvil marca la hora real.
     hub.addEventListener('pointermove', event => {
       const table = hub.querySelector('.mesa');
-      if (!table || event.pointerType !== 'mouse') return;
+      if (!table || event.pointerType !== 'mouse' || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       table.style.setProperty('--px', (event.clientX / innerWidth - .5).toFixed(3));
       table.style.setProperty('--py', (event.clientY / innerHeight - .5).toFixed(3));
     });

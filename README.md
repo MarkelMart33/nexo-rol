@@ -167,3 +167,6 @@ Las instrucciones para asistentes de IA que trabajen en el código están en `AG
 
 
 La portada de Traveller usa ahora la identidad visual orbital NEXO (NEXO Traveller RPG, Bienvenido, explorador y accesos con iconos ilustrados). El resto del terminal multisistema mantiene sus apartados D&D y Vampiro.
+
+### Mesa de campaña
+Los objetos de los sistemas comparten iluminación lateral y texturas de cuero, papel y metal. La hiedra enmarca la mesa; los adornos admiten ratón y teclado (Enter o espacio). Los dados decorativos incluyen d4, d6, d8 y d20. La vela cambia la iluminación, la pluma escribe notas y la planta esconde una sorpresa. Se respeta la preferencia de movimiento reducido.
