@@ -310,18 +310,26 @@
 .nexo-systems .dc-jarra.is-empty .jarra-inside{background:radial-gradient(circle,#54391e,#271b10 75%);box-shadow:inset 13px 15px 16px #000d}
 @media(prefers-reduced-motion:reduce){.nexo-systems .dc-esferas .storm-sphere,.nexo-systems .dc-esferas .sphere-gem{animation:none!important;transition:none!important}}
 
-/* Objetos tridimensionales repartidos en la misma superficie, sin fila de adornos. */
-.nexo-systems .mesa .mesa-objects{gap:24px 30px;align-items:center;justify-content:center;padding:32px 0}
-.nexo-systems .mesa-objects>.dc{flex:0 0 174px;width:174px;height:190px;margin:0 8px;transform:rotate(var(--tilt,0deg))}
-.nexo-systems .obj.has-model{width:242px;height:310px;filter:none;transform:rotate(var(--rest));animation:none;transition:transform .4s}
-.nexo-systems .obj.has-model:hover,.nexo-systems .obj.has-model:focus-visible{transform:translateY(-5px) rotate(var(--rest));filter:none}
-.nexo-systems .has-model>span:not(.dc-say){visibility:hidden;pointer-events:none}
-.nexo-systems .has-model .mesa-model{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
-.nexo-systems .dc.has-model{filter:none}
-.nexo-systems .dc-jarra.has-model:before{display:none}
-.nexo-systems .mesa-decor{padding:0;margin:0;border:0;min-height:0;zoom:1}
-.nexo-systems .dc-tintero.has-model{width:180px;height:150px;flex:none}
-.nexo-systems .dc.has-model .dc-say{bottom:90%;width:190px;max-width:190px;z-index:9}
-.nexo-systems .mesa-objects>.dc:hover,.nexo-systems .mesa-objects>.dc:focus-visible{z-index:4}
-@media(max-width:560px){.nexo-systems .mesa .mesa-objects{gap:12px}.nexo-systems .obj.has-model{width:230px;height:300px}.nexo-systems .mesa-objects>.dc{flex-basis:135px;width:135px;height:155px;margin:0}.nexo-systems .dc-tintero.has-model{height:110px;width:145px;margin:0 auto}.nexo-systems .dc.has-model .dc-say{width:140px;min-width:100px;font-size:13px;left:50%;transform:translateX(-50%)}}
-@media(prefers-reduced-motion:reduce){.nexo-systems .obj.has-model{transition:none}}
+/* Espacio físico reservado: los movimientos no alteran el flujo ni invaden al vecino. */
+.nexo-systems .mesa .mesa-objects{gap:24px 28px;align-items:center;justify-content:center;padding:36px 0}
+.mesa-slot{position:relative;flex:0 0 294px;width:294px;min-height:400px;display:flex;align-items:center;justify-content:center;isolation:isolate}
+.mesa-slot-decor{flex-basis:230px;width:230px;min-height:280px}
+.mesa-slot:focus-within,.mesa-slot:hover{z-index:5}
+.nexo-systems .mesa .obj{--lift:0px;transform:translate(calc(var(--px)*-5px),calc(var(--py)*-4px + var(--lift))) rotate(var(--r));animation:mesa-place .9s cubic-bezier(.2,.9,.3,1.1) calc(var(--d) + var(--intro-wait,0s)) backwards}
+.nexo-systems .mesa .obj:hover,.nexo-systems .mesa .obj:focus-visible{--lift:-10px;--r:0deg}
+.nexo-systems .mesa .obj.is-picked{animation:mesa-pick .55s cubic-bezier(.5,0,.7,.4) forwards;z-index:6}
+.nexo-systems .mesa .obj-book:hover .book-cover,.nexo-systems .mesa .obj-book:focus-visible .book-cover{transform:rotateY(-58deg)}
+.nexo-systems .mesa .obj-phone:hover .phone,.nexo-systems .mesa .obj-phone:focus-visible .phone{animation:phone-buzz .45s linear 2}
+.nexo-systems .mesa .phone-notif{animation:phone-ping 9s ease-in-out 1.6s infinite}
+.nexo-systems .mesa .pda-led{animation:pda-blink 2.4s steps(1) infinite}
+.nexo-systems .mesa-light{animation:mesa-flicker 7s ease-in-out infinite}
+.nexo-systems .dc-dados{width:200px;height:100px;justify-content:center;gap:14px;padding:10px;flex-wrap:nowrap}
+.nexo-systems .dc-dados.is-poke .poly-die{animation:dc-poly-roll .75s cubic-bezier(.2,.8,.3,1)}
+@keyframes dc-poly-roll{0%{transform:translateY(-16px) rotate(-160deg) scale(1.12)}55%{transform:translateY(3px) rotate(15deg)}78%{transform:translateY(-3px) rotate(-5deg)}100%{transform:none}}
+.nexo-systems .mesa-decor{margin:0;padding:0;border:0;zoom:1}
+.nexo-systems .dc-say{width:200px;min-width:0;max-width:200px;box-sizing:border-box;left:50%;bottom:calc(100% + 12px);transform:translate(-50%,6px);z-index:10}
+.nexo-systems .dc-say.is-on{transform:translate(-50%,0)}
+.nexo-systems .dc-tintero{flex:none;width:190px;margin:0 12px}
+@media(max-width:860px){.nexo-systems .mesa-head{flex-wrap:wrap}.nexo-systems .dc-tintero{display:block;order:3;margin:10px auto}.nexo-systems .mesa-note{flex:1}.nexo-systems .mesa-slot{flex-basis:294px}}
+@media(max-width:560px){.nexo-systems .mesa{padding-left:16px;padding-right:16px}.nexo-systems .mesa .mesa-objects{gap:8px;padding-top:18px}.nexo-systems .mesa-slot{flex-basis:294px;min-height:396px}.nexo-systems .mesa-slot-decor{flex-basis:260px;min-height:270px}.nexo-systems .mesa-note{max-width:205px}.nexo-systems .dc-tintero{width:190px;margin:24px auto 8px}.nexo-systems .mesa .obj{--r:calc(var(--rest)*.55)}}
+@media(prefers-reduced-motion:reduce){.nexo-systems .mesa,.nexo-systems .mesa *,.nexo-systems .mesa *:before,.nexo-systems .mesa *:after{animation:none!important;transition:none!important}.nexo-systems .mesa .obj{transform:rotate(var(--rest))}}
