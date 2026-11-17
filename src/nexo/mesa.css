@@ -309,3 +309,19 @@
 .nexo-systems .jarra-handle{background:linear-gradient(120deg,#9b9e97,#555a56 35%,#292e2c 65%,#777a71);transform:translateY(5px)}
 .nexo-systems .dc-jarra.is-empty .jarra-inside{background:radial-gradient(circle,#54391e,#271b10 75%);box-shadow:inset 13px 15px 16px #000d}
 @media(prefers-reduced-motion:reduce){.nexo-systems .dc-esferas .storm-sphere,.nexo-systems .dc-esferas .sphere-gem{animation:none!important;transition:none!important}}
+
+/* Objetos tridimensionales repartidos en la misma superficie, sin fila de adornos. */
+.nexo-systems .mesa .mesa-objects{gap:24px 30px;align-items:center;justify-content:center;padding:32px 0}
+.nexo-systems .mesa-objects>.dc{flex:0 0 174px;width:174px;height:190px;margin:0 8px;transform:rotate(var(--tilt,0deg))}
+.nexo-systems .obj.has-model{width:242px;height:310px;filter:none;transform:rotate(var(--rest));animation:none;transition:transform .4s}
+.nexo-systems .obj.has-model:hover,.nexo-systems .obj.has-model:focus-visible{transform:translateY(-5px) rotate(var(--rest));filter:none}
+.nexo-systems .has-model>span:not(.dc-say){visibility:hidden;pointer-events:none}
+.nexo-systems .has-model .mesa-model{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.nexo-systems .dc.has-model{filter:none}
+.nexo-systems .dc-jarra.has-model:before{display:none}
+.nexo-systems .mesa-decor{padding:0;margin:0;border:0;min-height:0;zoom:1}
+.nexo-systems .dc-tintero.has-model{width:180px;height:150px;flex:none}
+.nexo-systems .dc.has-model .dc-say{bottom:90%;width:190px;max-width:190px;z-index:9}
+.nexo-systems .mesa-objects>.dc:hover,.nexo-systems .mesa-objects>.dc:focus-visible{z-index:4}
+@media(max-width:560px){.nexo-systems .mesa .mesa-objects{gap:12px}.nexo-systems .obj.has-model{width:230px;height:300px}.nexo-systems .mesa-objects>.dc{flex-basis:135px;width:135px;height:155px;margin:0}.nexo-systems .dc-tintero.has-model{height:110px;width:145px;margin:0 auto}.nexo-systems .dc.has-model .dc-say{width:140px;min-width:100px;font-size:13px;left:50%;transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.nexo-systems .obj.has-model{transition:none}}
