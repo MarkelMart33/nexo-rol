@@ -1060,7 +1060,7 @@
     document.head.append(fonts);
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/dnd/dnd.css?v=7';
+    stylesheet.href = './src/dnd/dnd.css?v=8';
     document.head.append(stylesheet);
     host = document.createElement('section');
     host.id = 'nexoDnd';

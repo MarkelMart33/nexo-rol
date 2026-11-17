@@ -113,3 +113,28 @@
   .fx :is(.dnd-stats,.vtm-stats,.tor-stats,.cth-stats,.pf-stats)>*:hover,
   .fx :is(.dnd-button,.vtm-button,.tor-button,.cth-button,.pf-button,.confirm-button,.small-action):is(:hover,:active){transform:none}
 }
+
+/* ───── Traveller: marcos de visor, barrido de escáner y cifras con brillo de fósforo ───── */
+@keyframes fx-scan{from{transform:translateY(-100%)}to{transform:translateY(100%)}}
+.fx #gameApp .panel{position:relative}
+.fx #gameApp .panel::before{content:'';position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;background:linear-gradient(#75e7df,#75e7df) 0 0/16px 1px,linear-gradient(#75e7df,#75e7df) 0 0/1px 16px,linear-gradient(#75e7df,#75e7df) 100% 100%/16px 1px,linear-gradient(#75e7df,#75e7df) 100% 100%/1px 16px;background-repeat:no-repeat;opacity:.7}
+.fx #appHome .app-tile{overflow:hidden}
+.fx #appHome .app-tile::after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(transparent 40%,#75e7df1f 50%,transparent 60%);transform:translateY(-100%)}
+.fx #appHome .app-tile:hover::after{animation:fx-scan .9s cubic-bezier(.4,0,.6,1)}
+.fx .workspace-bar{box-shadow:0 12px 20px -18px #75e7dfaa}
+.fx .game-selector h1 em,.fx #gameApp .hero h1 em{text-shadow:0 0 22px #75e7df88}
+
+/* ───── Perfil: papel y cuero con relieve ───── */
+.fx .prf-panel{box-shadow:var(--fx-e2),var(--fx-top);transition:box-shadow .3s var(--fx-ease)}
+.fx .prf-panel:focus-within{box-shadow:var(--fx-e3),0 0 0 2px rgb(var(--fx-g)/.35),var(--fx-top)}
+.fx .prf-seal{box-shadow:0 3px 0 #3c1b0b,0 10px 18px -6px #000c,inset 0 1px 0 #ffffff33}
+.fx .prf-button{position:relative;overflow:hidden;transition:transform .2s var(--fx-ease),box-shadow .25s,filter .2s}
+.fx .prf-button:hover{transform:translateY(-1px);box-shadow:0 10px 16px -8px #000c}
+.fx .prf-button:active{transform:translateY(1px) scale(.985)}
+.fx .prf-go{transition:transform .25s var(--fx-ease),box-shadow .3s var(--fx-ease)}
+.fx .prf-go:hover{transform:translateY(-2px);box-shadow:var(--fx-e2)}
+
+/* ───── Mesa: los objetos proyectan sombra hacia donde no está la lámpara ───── */
+.fx .obj{transition:transform .45s cubic-bezier(.2,.9,.3,1.15),filter .45s}
+.fx .obj:hover,.fx .obj:focus-visible{filter:drop-shadow(0 40px 30px #000b) drop-shadow(0 10px 8px #0007) brightness(1.06)}
+@media(prefers-reduced-motion:reduce){.fx #appHome .app-tile::after{display:none}.fx .prf-button:hover,.fx .prf-button:active,.fx .prf-go:hover{transform:none}}

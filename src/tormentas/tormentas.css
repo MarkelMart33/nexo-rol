@@ -217,3 +217,17 @@ html.nexo-tormentas-open,html.nexo-tormentas-open body{overflow:hidden}
 .ap-tor .ap-appbar-home{border-radius:4px;border-color:var(--tor-brass-dim);color:var(--tor-brass);background:linear-gradient(#1c2e49,#0f1a2b)}
 .ap-tor .ap-appbar-home:hover{border-color:var(--tor-brass);background:linear-gradient(#24395a,#132035)}
 @media(prefers-reduced-motion:reduce){.tor-list>.tor-card,.ap-tor .ap-hero-mark{animation:none!important}.tor-card{transition:none}.tor-card:hover,.tor-card:active{transform:none}}
+
+/* ───── Rediseño detallado: relámpagos lejanos, luz tormentosa viva y latón ───── */
+@keyframes tor-flash{0%,93%,100%{opacity:0}94%{opacity:.55}95%{opacity:.1}96.5%{opacity:.4}98%{opacity:0}}
+@keyframes tor-shimmer{to{background-position:-200% 0}}
+.tor-storm::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 40% at 70% 0,#dff7ff44,transparent 70%);opacity:0;animation:tor-flash 17s linear 4s infinite}
+.tor-main h1 em{background:linear-gradient(100deg,var(--tor-light-dim) 0%,var(--tor-light) 35%,#fff 50%,var(--tor-light) 65%,var(--tor-light-dim) 100%) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:tor-shimmer 7s linear infinite}
+.tor-panel:before,.tor-panel:after{transition:border-color .3s,box-shadow .3s,width .4s cubic-bezier(.16,.84,.24,1),height .4s cubic-bezier(.16,.84,.24,1)}
+.tor-panel:focus-within:before,.tor-panel:focus-within:after,.tor-panel:hover:before,.tor-panel:hover:after{width:26px;height:26px;border-color:var(--tor-brass);box-shadow:0 0 10px -2px #d4b06a88}
+.tor-panel h2{border-bottom:0;background:linear-gradient(90deg,var(--tor-brass-dim),var(--tor-light-dim) 40%,transparent) 0 100%/100% 1px no-repeat}
+.tor-stats div{background:radial-gradient(ellipse at 50% 120%,#1d4a6e88,transparent 70%),#0c1626;box-shadow:inset 0 1px 0 #a6e6ff1a,inset 0 -1px 0 #d4b06a33}
+.tor-stats b{text-shadow:0 0 14px #a6e6ff66}
+.tor-pips i{transition:transform .18s cubic-bezier(.3,1.6,.5,1),box-shadow .2s}
+.tor-pips i.is-on{box-shadow:0 0 8px #a6e6ffaa}
+@media(prefers-reduced-motion:reduce){.tor-storm::after,.tor-main h1 em{animation:none!important}.tor-main h1 em{background-position:50% 0}.tor-panel:before,.tor-panel:after,.tor-pips i{transition:none}}

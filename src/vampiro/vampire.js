@@ -922,7 +922,7 @@
     document.head.append(fonts);
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './src/vampiro/vampire.css?v=6';
+    stylesheet.href = './src/vampiro/vampire.css?v=7';
     document.head.append(stylesheet);
     host = document.createElement('section');
     host.id = 'nexoVampire';

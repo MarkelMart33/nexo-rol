@@ -285,3 +285,16 @@ html.nexo-dnd-open,html.nexo-dnd-open body{overflow:hidden}
 .ap-dnd .ap-appbar-copy b{color:var(--dnd-amber)}
 .ap-dnd .ap-hero-premise{font-family:var(--dnd-hand);font-size:18px}
 @media(prefers-reduced-motion:reduce){.dnd-list>.dnd-card{animation:none}.dnd-card,.dnd-button{transition:none}.dnd-card:hover,.dnd-card:active,.ap-dnd .ap-tile:active{transform:none}}
+
+/* ───── Rediseño detallado: pan de oro, medallones y cuero repujado ───── */
+@keyframes dnd-leaf{from{background-position:120% 0}to{background-position:-20% 0}}
+.dnd-main h1 em{background:linear-gradient(100deg,#8a5a0b 0%,#b8862f 30%,#f3d98a 46%,#d1a92e 54%,#8a5a0b 80%) 0 0/260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 1px 0 #fff8e0) drop-shadow(0 2px 2px #6b450833);animation:dnd-leaf 2.4s cubic-bezier(.16,.84,.24,1) .2s both}
+.dnd-panel h2 span{display:inline-grid;place-items:center;min-width:38px;height:38px;padding:0 4px;border-radius:50%;background:radial-gradient(circle at 35% 28%,#f3d98a,#c79a4a 45%,#8a5a0b 90%);color:#3e1f0e;font-size:17px;box-shadow:0 2px 0 #4f3306,inset 0 0 0 2px #6b4508,inset 0 0 0 3px #f3d98a88,0 6px 10px -4px #3e1f0e88}
+.dnd-panel h2:after{background:linear-gradient(90deg,var(--dnd-tool),#f3d98a 50%,var(--dnd-tool)) 0 0/100% 1px no-repeat,linear-gradient(90deg,transparent,#c79a4a99 15%,#c79a4a99 85%,transparent) 0 4px/100% 1px no-repeat}
+.dnd-chip.is-on{background:linear-gradient(#a8730f,#8a5a0b);border-color:#4f3306;color:#fbefd6;box-shadow:inset 0 1px 0 #f3d98a66,0 2px 0 #4f3306,0 6px 10px -6px #3e1f0e}
+.dnd-stepper button{border-radius:50%;background:radial-gradient(circle at 40% 30%,#fbf5e3,#e6d6ac);box-shadow:inset 0 0 0 1px #c79a4a,0 2px 0 #b08a3e,0 4px 6px -3px #3e1f0e66;transition:transform .15s,box-shadow .15s}
+.dnd-stepper button:hover{background:radial-gradient(circle at 40% 30%,#fff8e6,#efdfb4)}
+.dnd-stepper button:active{transform:translateY(2px);box-shadow:inset 0 0 0 1px #c79a4a}
+.dnd-ability-score{text-shadow:0 1px 0 #fff,0 2px 4px #8a5a0b33}
+.dnd-empty{background:radial-gradient(ellipse at 50% 0,#fff8e6,transparent 70%);border-style:double;border-width:3px}
+@media(prefers-reduced-motion:reduce){.dnd-main h1 em{animation:none;background-position:50% 0}.dnd-stepper button{transition:none}}
