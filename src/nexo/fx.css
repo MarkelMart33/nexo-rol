@@ -1,0 +1,115 @@
+/*
+ * NEXO · Profundidad y movimiento comunes (lo activa src/nexo/fx.js con la clase «fx» en <html>).
+ * Cada sistema tiñe las sombras y el brillo con tres variables:
+ *   --fx-s  color de la sombra (r g b)      --fx-g  color del brillo y del foco (r g b)
+ *   --fx-h  luz del canto superior (r g b)  --fx-ha su intensidad
+ * Los selectores llevan «.fx» delante para ganar a los CSS de cada sistema, que se cargan después.
+ */
+.fx{--fx-s:0 0 0;--fx-g:246 199 125;--fx-h:255 255 255;--fx-ha:.08;--fx-ease:cubic-bezier(.16,.84,.24,1);
+  --fx-e1:0 1px 1px rgb(var(--fx-s)/.22),0 3px 6px -1px rgb(var(--fx-s)/.2),0 10px 18px -8px rgb(var(--fx-s)/.34);
+  --fx-e2:0 1px 1px rgb(var(--fx-s)/.2),0 5px 10px -2px rgb(var(--fx-s)/.2),0 18px 30px -12px rgb(var(--fx-s)/.38),0 36px 56px -30px rgb(var(--fx-s)/.42);
+  --fx-e3:0 2px 3px rgb(var(--fx-s)/.24),0 12px 22px -6px rgb(var(--fx-s)/.3),0 30px 50px -16px rgb(var(--fx-s)/.46),0 60px 90px -40px rgb(var(--fx-s)/.55);
+  --fx-top:inset 0 1px 0 rgb(var(--fx-h)/var(--fx-ha))}
+.fx .dnd{--fx-s:52 26 10;--fx-g:209 169 46;--fx-h:255 248 226;--fx-ha:.75}
+.fx .vtm{--fx-s:0 0 0;--fx-g:224 33 63;--fx-h:255 190 200;--fx-ha:.07}
+.fx .vtm.vtm-da{--fx-s:78 48 20;--fx-g:142 20 20;--fx-h:255 250 232;--fx-ha:.7}
+.fx .tor{--fx-s:1 5 12;--fx-g:166 230 255;--fx-h:190 232 255;--fx-ha:.1}
+.fx .cth{--fx-s:0 0 0;--fx-g:127 209 168;--fx-h:255 250 236;--fx-ha:.5}
+.fx .pf{--fx-s:5 1 10;--fx-g:95 214 198;--fx-h:255 246 224;--fx-ha:.55}
+.fx #gameApp,.fx .game-selector,.fx .topbar{--fx-s:0 0 0;--fx-g:117 231 223;--fx-h:160 255 245;--fx-ha:.07}
+.fx .nexo-systems,.fx .nexo-profile,.fx .auth-gate{--fx-s:10 5 2;--fx-g:246 199 125;--fx-h:255 248 226;--fx-ha:.6}
+
+/* ───── Brillo bajo el puntero y onda al pulsar (los pone fx.js) ───── */
+.fx-glare{position:absolute;inset:0;z-index:1;border-radius:inherit;pointer-events:none;background:radial-gradient(240px circle at var(--gx,50%) var(--gy,50%),rgb(var(--fx-g)/.2),rgb(var(--fx-h)/.07) 38%,transparent 66%);mix-blend-mode:screen;animation:fx-fade .25s ease-out}
+.fx .dnd .fx-glare,.fx .vtm-da .fx-glare,.fx .nexo-systems .fx-glare,.fx .nexo-profile .fx-glare{background:radial-gradient(240px circle at var(--gx,50%) var(--gy,50%),rgb(255 250 232/.42),rgb(255 250 232/.1) 40%,transparent 66%);mix-blend-mode:soft-light}
+.fx-ripple{position:absolute;inset:0;z-index:1;border-radius:inherit;overflow:hidden;pointer-events:none}
+.fx-ripple::before{content:'';position:absolute;left:var(--rx);top:var(--ry);width:var(--rs);height:var(--rs);margin:calc(var(--rs)/-2) 0 0 calc(var(--rs)/-2);border-radius:50%;background:radial-gradient(circle,rgb(var(--fx-h)/.34),rgb(var(--fx-g)/.16) 45%,transparent 70%);animation:fx-ripple .6s var(--fx-ease) forwards}
+@keyframes fx-fade{from{opacity:0}}
+@keyframes fx-ripple{from{transform:scale(0);opacity:1}to{transform:scale(1);opacity:0}}
+@keyframes fx-modal{from{opacity:0;transform:translateY(26px) scale(.94)}}
+@keyframes fx-veil{from{opacity:0;backdrop-filter:blur(0)}}
+@keyframes fx-toast{from{opacity:0;transform:translateY(18px) scale(.96)}}
+@keyframes fx-float{50%{transform:translateY(-7px)}}
+@keyframes fx-breathe{50%{box-shadow:var(--fx-e3),0 0 0 7px rgb(var(--fx-g)/.14),0 0 34px rgb(var(--fx-g)/.4)}}
+@keyframes fx-roll{0%,86%,100%{transform:none}90%{transform:rotate(-16deg) scale(1.12)}95%{transform:rotate(12deg) scale(1.08)}}
+/* fx.js escalona las piezas de cada vista; la entrada en bloque de los apartados sobra. */
+.fx .ap-in,.fx .ap-tile,.fx :is(.dnd-list,.vtm-list,.tor-list,.cth-list,.pf-list)>*{animation:none}
+
+/* ───── Paneles, tarjetas y casillas: sombra en capas y canto iluminado ───── */
+.fx :is(.vtm-panel,.tor-panel,.pf-panel){box-shadow:var(--fx-e2),var(--fx-top)}
+/* D&D: las secciones son páginas del cuaderno; el relieve va en sus piezas. */
+.fx .dnd-ability{box-shadow:inset 0 0 0 3px #f7f3e6,inset 0 0 0 4px #c79a4a66,inset 0 -10px 18px -12px #8a5a0b55,var(--fx-e1);transition:transform .25s var(--fx-ease),box-shadow .25s}
+.fx .dnd-ability:hover{transform:translateY(-3px);box-shadow:inset 0 0 0 3px #f7f3e6,inset 0 0 0 4px #d1a92e,inset 0 -10px 18px -12px #8a5a0b55,var(--fx-e2),0 0 22px -6px rgb(var(--fx-g)/.6)}
+.fx .cth-panel{box-shadow:var(--fx-e2),inset 0 0 40px #9b7f4a40}
+.fx .vtm.vtm-da .vtm-panel{box-shadow:var(--fx-e2),inset 0 1px 0 #fff8}
+.fx :is(.dnd-card,.vtm-card,.tor-card,.pf-card,.trv-card){box-shadow:var(--fx-e1),var(--fx-top);transition:transform .28s var(--fx-ease),box-shadow .32s var(--fx-ease),border-color .2s;transform-style:preserve-3d;will-change:transform}
+.fx .cth-card{box-shadow:var(--fx-e1),inset 0 0 30px #8a6b3433;transition:transform .28s var(--fx-ease),box-shadow .32s var(--fx-ease)}
+.fx :is(.dnd-card,.vtm-card,.tor-card,.pf-card,.cth-card,.trv-card):hover{box-shadow:var(--fx-e3),0 0 0 1px rgb(var(--fx-g)/.5),0 0 30px -6px rgb(var(--fx-g)/.45),var(--fx-top)}
+.fx .ap-tile{transition:transform .28s var(--fx-ease),box-shadow .32s var(--fx-ease),border-color .2s;transform-style:preserve-3d}
+.fx .ap-appbar,.fx .ap-tabs{box-shadow:var(--fx-e1),var(--fx-top)}
+.fx .ap-tab.is-active{box-shadow:0 1px 0 rgb(var(--fx-h)/.35) inset,0 4px 10px -3px rgb(var(--fx-s)/.6),0 0 16px -4px rgb(var(--fx-g)/.6)}
+.fx :is(.dnd-stats,.vtm-stats,.tor-stats,.cth-stats,.pf-stats,.dnd-pools,.vtm-pools,.tor-pools,.cth-pools,.pf-pools)>*{box-shadow:0 1px 1px rgb(var(--fx-s)/.14),0 6px 12px -8px rgb(var(--fx-s)/.4),var(--fx-top);transition:transform .25s var(--fx-ease),box-shadow .25s}
+.fx :is(.dnd-stats,.vtm-stats,.tor-stats,.cth-stats,.pf-stats)>*:hover{transform:translateY(-2px);box-shadow:0 2px 2px rgb(var(--fx-s)/.16),0 14px 20px -12px rgb(var(--fx-s)/.5),0 0 0 1px rgb(var(--fx-g)/.35),var(--fx-top)}
+
+/* ───── Botones y fichas de elección ───── */
+.fx :is(.dnd-button,.vtm-button,.tor-button,.cth-button,.pf-button){overflow:hidden;transition:transform .2s var(--fx-ease),box-shadow .25s var(--fx-ease),filter .2s,background .2s,border-color .2s,color .2s}
+.fx :is(.dnd-button,.vtm-button,.tor-button,.cth-button,.pf-button):not(.ghost,.danger){box-shadow:0 1px 0 rgb(var(--fx-h)/.28) inset,0 2px 0 rgb(var(--fx-s)/.7),0 8px 14px -6px rgb(var(--fx-s)/.6)}
+.fx :is(.dnd-button,.vtm-button,.tor-button,.cth-button,.pf-button):not(.ghost,.danger):hover{transform:translateY(-2px);box-shadow:0 1px 0 rgb(var(--fx-h)/.36) inset,0 4px 0 rgb(var(--fx-s)/.7),0 16px 22px -8px rgb(var(--fx-s)/.65),0 0 22px -4px rgb(var(--fx-g)/.55)}
+.fx :is(.dnd-button,.vtm-button,.tor-button,.cth-button,.pf-button):is(.ghost,.danger):hover{transform:translateY(-1px);box-shadow:0 8px 14px -8px rgb(var(--fx-s)/.5)}
+.fx :is(.dnd-button,.vtm-button,.tor-button,.cth-button,.pf-button):active{transform:translateY(1px) scale(.985);box-shadow:0 1px 0 rgb(var(--fx-s)/.7),0 2px 4px -2px rgb(var(--fx-s)/.6);transition-duration:.06s}
+.fx :is(.dnd-chip,.tor-chip,.cth-chip){transition:transform .2s var(--fx-ease),box-shadow .2s,background .2s,border-color .2s,color .2s}
+.fx :is(.dnd-chip,.tor-chip,.cth-chip):hover{transform:translateY(-1px);box-shadow:0 6px 10px -6px rgb(var(--fx-s)/.55)}
+.fx :is(.dnd-chip,.tor-chip,.cth-chip):active{transform:scale(.94)}
+
+/* ───── Campos: hundidos en el papel y con halo al escribir ───── */
+.fx :is(.dnd-field,.vtm-field,.tor-field,.pf-field) :is(input,select,textarea){box-shadow:inset 0 2px 4px -2px rgb(var(--fx-s)/.35);transition:box-shadow .25s var(--fx-ease),border-color .2s,background .2s}
+.fx :is(.dnd-field,.vtm-field,.tor-field,.pf-field) :is(input,select,textarea):focus{box-shadow:inset 0 2px 4px -2px rgb(var(--fx-s)/.25),0 0 0 3px rgb(var(--fx-g)/.24),0 8px 18px -10px rgb(var(--fx-g)/.7)}
+.fx .cth-field :is(input,select,textarea){transition:box-shadow .25s var(--fx-ease),border-color .2s,background .2s}
+.fx .cth-field :is(input,select,textarea):focus{box-shadow:0 10px 14px -12px rgb(142 42 28/.9)}
+
+/* ───── Cabeceras: se despegan del fondo al desplazar ───── */
+.fx :is(.dnd-top,.vtm-top,.tor-top,.cth-top,.pf-top){transition:box-shadow .35s var(--fx-ease),height .35s var(--fx-ease)}
+.fx .fx-scrolled>:is(.dnd-top,.vtm-top,.tor-top,.cth-top,.pf-top){box-shadow:0 1px 0 rgb(var(--fx-g)/.3),0 14px 28px -10px rgb(var(--fx-s)/.75),0 30px 44px -30px rgb(var(--fx-s)/.8)}
+.fx :is(.dnd-brand,.vtm-brand,.tor-brand,.cth-brand,.pf-brand)>:first-child{transition:transform .5s var(--fx-ease),box-shadow .3s}
+.fx :is(.dnd-brand,.tor-brand,.cth-brand,.pf-brand):hover>:first-child{transform:rotate(-14deg) scale(1.07)}
+
+/* ───── Ventanas, avisos y estados vacíos ───── */
+.fx :is(.dnd-modal,.vtm-modal,.tor-modal,.cth-modal,.pf-modal):not([hidden]){backdrop-filter:blur(7px) saturate(.85);-webkit-backdrop-filter:blur(7px) saturate(.85);animation:fx-veil .3s ease-out}
+.fx :is(.dnd-modal-card,.vtm-modal-card,.tor-modal-card,.cth-modal-card,.pf-modal-card){box-shadow:var(--fx-e3),0 0 0 1px rgb(var(--fx-g)/.25),var(--fx-top);animation:fx-modal .42s var(--fx-ease) backwards}
+.fx :is(.dnd-flash,.vtm-flash,.tor-flash,.cth-flash,.pf-flash):not([hidden]){box-shadow:var(--fx-e3);animation:fx-toast .4s var(--fx-ease)}
+.fx :is(.dnd-empty,.vtm-empty,.tor-empty,.cth-empty,.pf-empty)>span:first-child{display:inline-block;animation:fx-float 4.5s ease-in-out infinite;filter:drop-shadow(0 10px 8px rgb(var(--fx-s)/.45))}
+
+/* ───── Botón de dados: late despacio y el dado da un toque de vez en cuando ───── */
+.fx .nd-fab{color:var(--fab-ink,#fff)}
+.fx .nd-fab{overflow:hidden;box-shadow:var(--fx-e3),inset 0 1px 0 #ffffff26;animation:fx-breathe 5s ease-in-out infinite;transition:transform .25s var(--fx-ease)}
+.fx .nd-fab>span{display:inline-block;animation:fx-roll 7s ease-in-out infinite}
+.fx .nd-fab:hover{transform:translateY(-3px) scale(1.04)}
+.fx .nd-fab:active{transform:scale(.95)}
+
+/* ───── Barras de desplazamiento y selección con el color del sistema ───── */
+.fx :is(.dnd,.vtm,.tor,.cth,.pf){scrollbar-color:rgb(var(--fx-g)/.55) transparent;scrollbar-width:thin}
+.fx :is(.dnd,.vtm,.tor,.cth,.pf) ::selection{background:rgb(var(--fx-g)/.38)}
+
+/* ───── Mesa, cuenta y perfil ───── */
+.fx .mesa-light{background:radial-gradient(ellipse 46% 40% at var(--fx-lx,30%) var(--fx-ly,14%),#ffd99a30,transparent 70%),radial-gradient(ellipse 45% 38% at 30% 14%,#ffd99a14,transparent 70%);transition:background .2s}
+.fx .mesa-note{box-shadow:0 1px 0 #fff8 inset,0 2px 3px #0005,0 16px 26px -10px #000c,0 40px 50px -30px #000}
+.fx .mesa-tag{box-shadow:0 2px 3px #0006,0 14px 22px -8px #000d,0 30px 40px -24px #000,inset 0 0 0 1px #3c1b0b,inset 0 1px 0 #ffffff2e}
+.fx html .auth-card,.fx .auth-card{box-shadow:0 1px 0 #fff8 inset,0 3px 5px #0005,0 24px 40px -14px #000d,0 60px 80px -40px #000}
+
+/* ───── Traveller: cristal con profundidad ───── */
+.fx #gameApp .panel{box-shadow:var(--fx-e2),inset 0 1px 0 #75e7df14}
+.fx #appHome .app-tile{transform-style:preserve-3d;transition:transform .28s var(--fx-ease),border-color .2s,box-shadow .3s var(--fx-ease),background .2s}
+.fx #appHome .app-tile:hover{box-shadow:var(--fx-e3),0 0 0 1px #75e7df88,0 0 34px -6px #75e7df88,inset 0 0 28px #75e7df14}
+.fx :is(.confirm-button,.cancel-button,.small-action){position:relative;overflow:hidden;transition:transform .2s var(--fx-ease),box-shadow .25s,filter .2s,border-color .2s,background .2s}
+.fx :is(.confirm-button,.small-action):hover{transform:translateY(-1px);box-shadow:0 10px 18px -8px #000c,0 0 20px -6px rgb(var(--fx-g)/.6)}
+.fx :is(.confirm-button,.cancel-button,.small-action):active{transform:translateY(1px) scale(.985)}
+.fx .game-selector .field input,.fx #gameApp :is(input,select,textarea){transition:box-shadow .25s var(--fx-ease),border-color .2s}
+.fx .game-selector .field input:focus,.fx #gameApp :is(input,select,textarea):focus{box-shadow:0 0 0 3px #75e7df2e,0 8px 18px -10px #75e7dfaa}
+
+@media(prefers-reduced-motion:reduce){
+  .fx-glare,.fx-ripple{display:none}
+  .fx *,.fx *::before,.fx *::after{animation:none!important;transition:none!important}
+  .fx :is(.dnd-card,.vtm-card,.tor-card,.pf-card,.cth-card,.trv-card,.ap-tile,.app-tile,.nd-fab,.dnd-ability):hover,
+  .fx :is(.dnd-stats,.vtm-stats,.tor-stats,.cth-stats,.pf-stats)>*:hover,
+  .fx :is(.dnd-button,.vtm-button,.tor-button,.cth-button,.pf-button,.confirm-button,.small-action):is(:hover,:active){transform:none}
+}
