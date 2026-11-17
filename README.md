@@ -167,3 +167,6 @@ Las instrucciones para asistentes de IA que trabajen en el código están en `AG
 
 
 La portada de Traveller usa ahora la identidad visual orbital NEXO (NEXO Traveller RPG, Bienvenido, explorador y accesos con iconos ilustrados). El resto del terminal multisistema mantiene sus apartados D&D y Vampiro.
+
+### Mesa de campaña
+La mesa utiliza modelos tridimensionales locales con materiales, iluminación y sombras comunes. La jarra medieval, la vela, el saquito de esferas, el pergamino y los dados d4/d8/d20 se distribuyen entre los accesos a los sistemas. No hay plantas, monedas ni dados d6 decorativos. La pluma cambia la nota; las esferas se infunden de luz tormentosa y la jarra se vacía y rellena. Los adornos funcionan con teclado. Se respeta el movimiento reducido y se conserva una vista compatible si WebGL no está disponible. Three.js se distribuye localmente bajo licencia MIT, en assets/vendor/three-LICENSE.txt.

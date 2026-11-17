@@ -6,7 +6,7 @@
     stylesheet.href = './src/nexo/terminal-shell.css?v=1';
     const table = document.createElement('link');
     table.rel = 'stylesheet';
-    table.href = './src/nexo/mesa.css?v=6';
+    table.href = './src/nexo/mesa.css?v=9';
     document.head.append(stylesheet, table);
 
     const hub = document.createElement('section');
@@ -115,17 +115,22 @@
                 <span class="wf-chain" aria-hidden="true"></span><span class="wf-case" aria-hidden="true"><span class="wf-face"><span class="wf-needle"></span><span class="wf-stone"></span></span></span></span>
             </button>
           </div>
-          <div class="mesa-decor" aria-hidden="true">
+          <div class="mesa-decor" aria-label="Objetos de la mesa">
             <span class="dc dc-jarra" data-egg="jarra"><span class="jarra"><i class="jarra-handle"></i><i class="jarra-body"></i><i class="jarra-inside"></i><i class="jarra-foam"></i><i class="jarra-band"></i><i class="jarra-rivets"></i></span></span>
             <span class="dc dc-vela" data-egg="vela"><span class="vela"><i class="vela-glow"></i><i class="vela-plate"></i><i class="vela-shadow"></i><i class="vela-wax"></i><i class="vela-pool"></i><i class="vela-wick"></i><i class="vela-flame"></i><i class="vela-smoke"></i></span></span>
+            <span class="dc dc-esferas" data-egg="esferas"><span class="sphere-pouch"><i class="pouch-body"></i><i class="pouch-mouth"></i><i class="pouch-cord cord-left"></i><i class="pouch-cord cord-right"></i><i class="storm-sphere sphere-0" style="--gem:#9be5ff;--phase:0s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-1" style="--gem:#ffd783;--phase:0.23s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-2" style="--gem:#a8f0bf;--phase:0.46s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-3" style="--gem:#c4acff;--phase:0.6900000000000001s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-4" style="--gem:#9be5ff;--phase:0.92s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-5" style="--gem:#ffd783;--phase:1.1500000000000001s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-6" style="--gem:#b2efff;--phase:1.3800000000000001s"><span class="sphere-gem"></span></i><i class="pouch-lip"></i></span></span>
             <span class="dc dc-pergamino" data-egg="pergamino"><span class="pergamino"><i class="pergamino-roll"></i><i class="pergamino-seal"></i></span></span>
-            <span class="dc dc-dados" data-egg="dados"><span class="die" data-face="5"></span><span class="die" data-face="3"></span></span>
-            <span class="dc dc-planta" data-egg="planta"><span class="planta"><i class="planta-pot"></i><i class="planta-soil"></i><span class="planta-leaves"><i class="hoja" style="--a:0deg;--l:56px"></i><i class="hoja" style="--a:40deg;--l:48px"></i><i class="hoja" style="--a:80deg;--l:60px"></i><i class="hoja" style="--a:120deg;--l:46px"></i><i class="hoja" style="--a:160deg;--l:52px"></i><i class="hoja" style="--a:200deg;--l:56px"></i><i class="hoja" style="--a:240deg;--l:48px"></i><i class="hoja" style="--a:280deg;--l:60px"></i><i class="hoja" style="--a:320deg;--l:46px"></i><i class="hoja hoja-in" style="--a:20deg;--l:36px"></i><i class="hoja hoja-in" style="--a:80deg;--l:30px"></i><i class="hoja hoja-in" style="--a:140deg;--l:40px"></i><i class="hoja hoja-in" style="--a:200deg;--l:36px"></i><i class="hoja hoja-in" style="--a:260deg;--l:30px"></i><i class="hoja hoja-in" style="--a:320deg;--l:40px"></i><i class="planta-bug"></i></span></span></span>
-            <span class="dc dc-monedas" data-egg="monedas"><span class="monedas"><i class="moneda mon-stack"></i><i class="moneda mon-a"></i><i class="moneda mon-b"></i><i class="moneda mon-flip"></i></span></span>
+            <span class="dc dc-dados" data-egg="dados"><span class="poly-die poly-d20" data-sides="20"><b>20</b></span><span class="poly-die poly-d8" data-sides="8"><b>8</b></span><span class="poly-die poly-d4" data-sides="4"><b>4</b></span></span>
             <span class="mesa-eyes"><i></i><i></i></span>
           </div>
         </div>`;
         decorate(hub.querySelector('.mesa'));
+        const layout = hub.querySelector('.mesa-objects');
+        [['jarra','dnd'],['vela','vampire-da'],['esferas','tormentas'],['dados','pathfinder'],['pergamino','cthulhu']].forEach(([egg,system]) => {
+          layout.querySelector('[data-system="'+system+'"]').after(hub.querySelector('[data-egg="'+egg+'"]'));
+        });
+        const currentTable = hub.querySelector('.mesa');
+        import('./mesa-models.js?v=1').then(module => { if (currentTable.isConnected) module.mount(currentTable); }).catch(error => console.warn('Mesa 3D no disponible; se conserva la vista compatible.', error));
         hub.querySelector('[data-profile]').addEventListener('click', () => {
           away();
           if (window.NEXO_PROFILE) window.NEXO_PROFILE.open({ onExit: openHub });
@@ -156,7 +161,6 @@
 
     // Atrezo de la mesa: objetos de adorno que esconden pequeñas sorpresas al tocarlos.
     // No abren nada ni salen de la mesa; con movimiento reducido cambian de estado sin animarse.
-    const PIPS = { 1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
     const pick = list => list[Math.floor(Math.random() * list.length)];
     const NOTES = ['Coge uno de la mesa.', 'Tira iniciativa.', 'El máster siempre tiene razón.', 'Nadie se separa del grupo.', '¿Quién trae los aperitivos?', 'No abras esa puerta.', 'Un natural 20 lo arregla todo.', 'Las fichas, a lápiz.'];
     const RUMORS = ['Dicen que el posadero fue aventurero.', 'Hay un dragón al norte. O eso dicen.', 'No te fíes del bardo.', 'El mapa está mal a propósito.', 'Alguien ha visto luces en la cripta.'];
@@ -164,20 +168,20 @@
       const timers = new WeakMap();
       const say = (item, text) => {
         let bubble = item.querySelector('.dc-say');
-        if (!bubble) { bubble = document.createElement('span'); bubble.className = 'dc-say'; item.append(bubble); }
+        if (!bubble) { bubble = document.createElement('span'); bubble.className = 'dc-say'; bubble.setAttribute('role', 'status'); item.append(bubble); }
         bubble.textContent = text;
         bubble.classList.remove('is-on'); void bubble.offsetWidth; bubble.classList.add('is-on');
         clearTimeout(timers.get(item));
         timers.set(item, setTimeout(() => bubble.classList.remove('is-on'), 2400));
       };
       const poke = item => { item.classList.remove('is-poke'); void item.offsetWidth; item.classList.add('is-poke'); };
-      const paintDie = (die, face) => {
-        die.dataset.face = face;
-        die.innerHTML = PIPS[face].map(n => `<i style="grid-area:${Math.ceil(n / 3)}/${(n - 1) % 3 + 1}"></i>`).join('');
-      };
-      table.querySelectorAll('.dc-dados .die').forEach(die => paintDie(die, +die.dataset.face));
-      let sips = 0, leaves = 0, rumor = -1;
+      let sips = 0, rumor = -1;
       const eggs = {
+        esferas(item) {
+          const charged = item.classList.toggle('is-infused');
+          item.setAttribute('aria-pressed', String(charged));
+          say(item, charged ? 'Vida antes que muerte. Fuerza antes que debilidad. Viaje antes que destino.' : 'La luz tormentosa se desvanece…');
+        },
         jarra(item) {
           poke(item);
           if (item.classList.contains('is-empty')) { item.classList.remove('is-empty'); sips = 0; say(item, 'Otra ronda, posadero.'); return; }
@@ -192,25 +196,12 @@
           say(item, out ? 'Fuuu…' : 'Que se haga la luz.');
         },
         dados(item) {
-          const faces = [1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)];
-          item.querySelectorAll('.die').forEach((die, i) => paintDie(die, faces[i]));
-          poke(item);
-          const [a, b] = faces;
-          say(item, a === 6 && b === 6 ? '¡Doble seis!' : a === 1 && b === 1 ? 'Ojos de serpiente…' : a === b ? `¡Dobles! ${a + b}` : String(a + b));
-        },
-        planta(item) {
-          poke(item);
-          leaves += 1;
-          if (leaves === 3) { item.classList.add('has-bug'); say(item, 'Una mariquita: buena suerte.'); }
-          else if (leaves > 3 && item.classList.contains('has-bug')) { item.classList.remove('has-bug'); say(item, 'Se ha ido volando.'); }
-          else say(item, leaves > 3 ? 'Shhh… ¿Has oído eso?' : 'Frufrú.');
-        },
-        monedas(item) {
-          poke(item);
-          const edge = Math.random() < .05;
-          const side = edge ? 'edge' : pick(['cara', 'cruz']);
-          item.dataset.side = side;
-          say(item, edge ? '¡De canto! Eso no pasa nunca.' : side === 'cara' ? 'Cara.' : 'Cruz.');
+          const results = [...item.querySelectorAll('[data-sides]')].map(die => {
+            const result = 1 + Math.floor(Math.random() * Number(die.dataset.sides));
+            die.querySelector('b').textContent = result;
+            return 'd' + die.dataset.sides + ': ' + result;
+          });
+          poke(item); say(item, results.join(' · '));
         },
         pergamino(item) {
           poke(item);
@@ -223,7 +214,14 @@
           if (note) note.textContent = pick(NOTES.filter(text => text !== note.textContent));
         }
       };
-      table.querySelectorAll('[data-egg]').forEach(item => item.addEventListener('click', () => eggs[item.dataset.egg](item)));
+      const names = {esferas:'Infundir luz tormentosa en las esferas', jarra:'Beber de la jarra', vela:'Encender o apagar la vela', dados:'Lanzar los dados', planta:'Explorar la planta', monedas:'Lanzar una moneda', pergamino:'Leer un rumor', pluma:'Escribir con la pluma'};
+      table.querySelectorAll('[data-egg]').forEach(item => {
+        item.removeAttribute('aria-hidden'); item.tabIndex = 0; item.setAttribute('role', 'button');
+        item.setAttribute('aria-label', names[item.dataset.egg]);
+        if (item.dataset.egg === 'esferas') item.setAttribute('aria-pressed', 'false');
+        item.addEventListener('click', () => eggs[item.dataset.egg](item));
+        item.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); item.click(); } });
+      });
       const eyes = table.querySelector('.mesa-eyes');
       eyes?.addEventListener('click', () => { eyes.classList.add('is-gone'); say(eyes, '…'); });
       table.addEventListener('animationend', event => { if (event.animationName.startsWith('dc-')) event.target.closest('.dc')?.classList.remove('is-poke'); });
@@ -232,7 +230,7 @@
     // La mesa sigue ligeramente al puntero y el reloj del móvil marca la hora real.
     hub.addEventListener('pointermove', event => {
       const table = hub.querySelector('.mesa');
-      if (!table || event.pointerType !== 'mouse') return;
+      if (!table || event.pointerType !== 'mouse' || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       table.style.setProperty('--px', (event.clientX / innerWidth - .5).toFixed(3));
       table.style.setProperty('--py', (event.clientY / innerHeight - .5).toFixed(3));
     });

@@ -230,3 +230,98 @@
 @media(prefers-reduced-motion:reduce){
   .mesa *,.mesa,.mesa:after{animation:none!important;transition:none!important}
 }
+
+/* Dirección material: gabinete de campaña. Luz lateral común y relieve fino. */
+.nexo-systems .mesa{max-width:1320px;padding:48px 76px 72px;isolation:isolate}
+.mesa-ivy{position:absolute;z-index:3;pointer-events:none;width:150px;height:600px;background:url('../../assets/mesa/hiedra.svg') center/contain no-repeat;transform-origin:top center}
+.mesa-ivy-left{left:-37px;top:-40px;transform:rotate(-9deg)}
+.mesa-ivy-right{right:-48px;top:180px;transform:scaleX(-1) rotate(-8deg)}
+.nexo-systems .mesa-light{background:radial-gradient(ellipse at 20% 15%,#ffe5b323,transparent 65%),linear-gradient(115deg,transparent 35%,#080c1040);animation:none}
+.nexo-systems .mesa-note{background-image:url('../../assets/mesa/papel.svg'),linear-gradient(125deg,#eee4c9,#c9b88c);box-shadow:2px 3px 2px #0006,9px 15px 24px #0005;transform:rotate(-1deg);border-radius:1px 2px 14px 1px}
+.nexo-systems .mesa-note h1{font:400 clamp(25px,3vw,35px)/1.2 var(--fell);max-width:340px}
+.nexo-systems .mesa-note p{font-size:17px}
+.nexo-systems .mesa-tape{display:none}
+.nexo-systems .mesa-tag{background-image:url('../../assets/mesa/cuero.svg'),linear-gradient(135deg,#694b32,#30241e);box-shadow:1px 2px 1px #100c09,7px 9px 15px #0006}
+.nexo-systems .mesa .mesa-objects{gap:64px 65px;padding:64px 16px 42px;perspective:1400px}
+.nexo-systems .obj{filter:drop-shadow(3px 5px 2px #0007) drop-shadow(15px 21px 13px #0006);transition:transform .55s cubic-bezier(.2,.7,.2,1),filter .55s;animation:mesa-settle .7s ease both;animation-delay:var(--d);transform:translate(calc(var(--px)*-5px),calc(var(--py)*-4px + var(--lift))) rotate(var(--r))}
+.nexo-systems .obj:hover,.nexo-systems .obj:focus-visible{--lift:-8px;--r:var(--rest);filter:drop-shadow(5px 9px 3px #0006) drop-shadow(21px 29px 18px #0007)}
+@keyframes mesa-settle{from{opacity:0;translate:0 12px}to{opacity:1;translate:0 0}}
+.nexo-systems .book-cover{background-image:url('../../assets/mesa/cuero.svg'),radial-gradient(ellipse at 24% 16%,#786041,#302319 85%);box-shadow:inset 0 0 0 5px #271b14,inset 0 0 0 6px #b2955c66,inset 11px 0 12px #0b0807b0,2px 3px 0 #17100c,4px 6px 0 #392b1d;color:#d8c18d}
+.nexo-systems .book-cover:before{border:1px solid #c4a87570;inset:16px;box-shadow:inset 0 0 0 4px #0002}
+.nexo-systems .book-cover b{text-shadow:0 1px #ffe7ad66,0 -1px #000;font-size:26px}
+.nexo-systems .obj-book:hover .book-cover,.nexo-systems .obj-book:focus-visible .book-cover{transform:rotateY(-22deg)}
+.nexo-systems .book-strap{background-image:url('../../assets/mesa/cuero.svg'),linear-gradient(#48382a,#241a13)}
+.nexo-systems .pda{background-image:url('../../assets/mesa/metal.svg'),linear-gradient(135deg,#596060,#242b2d 55%,#13191b);box-shadow:inset 1px 2px 1px #b7c0bb88,inset -2px -3px 1px #080d0e,inset 0 0 0 5px #24292a,3px 5px 0 #111719}
+.nexo-systems .pda-screen{background:linear-gradient(135deg,#d1e8e513,transparent 50%),radial-gradient(ellipse at 50% 10%,#17403f,#07191a);box-shadow:inset 0 0 0 2px #050a0a,inset 3px 6px 10px #000c}
+.nexo-systems .phone{background-image:url('../../assets/mesa/metal.svg'),linear-gradient(135deg,#727174,#151416 35%,#050405);box-shadow:inset 1px 1px 1px #ddd7, inset -2px -2px 2px #000,3px 5px 0 #080709}
+.nexo-systems .phone-screen:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(125deg,#fff1,transparent 40%,#fff0 64%,#fff1 65%,transparent 67%)}
+.nexo-systems .phone-notif,.nexo-systems .pda-led{animation:none}
+.nexo-systems .obj-phone:hover .phone{animation:none}
+.nexo-systems .codex-page,.nexo-systems .reed-paper,.nexo-systems .file-cover{background-image:url('../../assets/mesa/papel.svg'),linear-gradient(115deg,#e9dfc3,#cbbb94);box-shadow:inset 0 0 35px #77603a44,1px 2px #b5a17e,2px 4px #66523d,3px 6px #bca881}
+.nexo-systems .reed{background-image:url('../../assets/mesa/cuero.svg'),linear-gradient(125deg,#343731,#141c1c);box-shadow:inset 0 0 0 2px #95805b,inset 0 0 0 6px #20201b,3px 5px 0 #141613}
+.nexo-systems .wf-case{background-image:url('../../assets/mesa/metal.svg'),conic-gradient(from 30deg,#79542a,#e6d5a4,#947345,#49331b,#b59760,#f3e0ac,#79542a)}
+.nexo-systems .mesa-decor{z-index:2;overflow:visible;gap:32px 38px;padding:35px 0 20px;justify-content:center;border-top:1px solid #f3d7a412}
+.nexo-systems .dc{filter:drop-shadow(6px 9px 5px #0005);transition:transform .4s ease;animation:none}
+.nexo-systems .dc:focus-visible{outline:2px solid #e3c893;outline-offset:8px;border-radius:8px}
+.nexo-systems .dc-say{font:15px/1.4 Georgia,serif;white-space:normal;min-width:130px;max-width:220px;background:#e9dfc6;color:#30291f;box-shadow:0 5px 20px #0006;border:1px solid #a59168;padding:10px 14px}
+.nexo-systems .jarra-body{background-image:url('../../assets/mesa/cuero.svg'),repeating-conic-gradient(#5e4229 0deg 24deg,#312317 25deg 26deg,#957049 27deg 29deg);box-shadow:inset 3px 4px 2px #e2d5aa66,inset -5px -5px 4px #130e09,2px 4px 1px #18130e}
+.nexo-systems .vela-plate{background-image:url('../../assets/mesa/metal.svg'),radial-gradient(circle,#45301c 0 35%,#b29559 38%,#5b4126 54%,#d8bf82 58%,#745530 64%,#c8af74 68%,#352618 72%)}
+.nexo-systems .vela-wax{background:radial-gradient(circle at 40% 35%,#fff7d7,#d9c89f 65%,#aa946a);box-shadow:inset 3px 4px 3px #fff3,5px 8px 6px #0008}
+.nexo-systems .tintero-bottle{background:radial-gradient(circle at 35% 25%,#879b9477,transparent 22%),radial-gradient(circle,#071315 0 25%,#58706b 26%,#132a2c 34%,#071010 65%,#5b736a 70%,#121d19 76%);box-shadow:3px 7px 3px #0008,inset 2px 2px 2px #a4b3a888}
+.nexo-systems .dc-dados{width:225px;height:145px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px}
+.nexo-systems .dc.dc-dados .poly-die{position:relative;display:grid;place-items:center;width:64px;height:64px;background:conic-gradient(from 30deg at 50% 38%,#a3b5af,#35554e 60deg,#203832 120deg,#627c6c 180deg,#c3c8ab 240deg,#4f756c 300deg,#a3b5af);clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);color:#f0e0b4;font:20px Georgia,serif;text-shadow:0 1px 1px #000}
+.nexo-systems .poly-die:before{content:'';position:absolute;inset:12px;border:1px solid #e2dbb65c;clip-path:polygon(50% 0,100% 100%,0 100%);background:#06181322}
+.nexo-systems .poly-die b{position:relative;font-weight:400}
+.nexo-systems .dc.dc-dados .poly-d8{width:48px;height:64px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);background:conic-gradient(at 50% 50%,#d0bd92,#705a3d,#e2d3ac,#87704c,#d0bd92)}
+.nexo-systems .dc.dc-dados .poly-d4{width:48px;height:51px;clip-path:polygon(50% 0,100% 100%,0 100%);background:conic-gradient(at 50% 65%,#a7a5b8,#444454,#c2bfcd,#666174,#a7a5b8);padding-top:12px}
+.nexo-systems .dc.dc-dados .die{background-image:url('../../assets/mesa/papel.svg'),linear-gradient(135deg,#f3e8cd,#bba884);box-shadow:inset 1px 2px 1px #fff8,inset -2px -3px 1px #6d614c,3px 4px 0 #88775d}
+@media(max-width:860px){.nexo-systems .mesa{padding:32px 32px 64px}.mesa-ivy{opacity:.8;width:95px}.mesa-ivy-left{left:-38px}.mesa-ivy-right{right:-40px}.nexo-systems .mesa .mesa-objects{gap:46px 40px}.nexo-systems .mesa-head{gap:15px}.nexo-systems .mesa-note{padding:20px}.nexo-systems .mesa-note h1{font-size:26px}}
+@media(max-width:560px){.nexo-systems .mesa{padding:24px 20px 60px}.nexo-systems .mesa-head{flex-wrap:wrap}.nexo-systems .mesa-note{max-width:205px;padding:16px}.nexo-systems .mesa-note h1{font-size:23px}.nexo-systems .mesa-tag{width:72px;padding:12px 7px 12px 22px}.nexo-systems .mesa-tag b{font-size:22px}.nexo-systems .mesa-tag small{font-size:11px}.nexo-systems .mesa .mesa-objects{padding-top:46px;gap:42px}.mesa-ivy-right{top:650px}.nexo-systems .mesa-decor{gap:24px}.nexo-systems .dc-tintero{display:block;order:3;margin:20px auto 0}.nexo-systems .mesa-decor{zoom:.8}}
+@media(prefers-reduced-motion:reduce){.nexo-systems .mesa *,.nexo-systems .mesa *:before,.nexo-systems .mesa *:after{animation:none!important;transition:none!important}.nexo-systems .obj{transform:rotate(var(--rest))}}
+/* La microtextura modula el material sin blanquear su pigmento. */
+.nexo-systems :is(.mesa-note,.mesa-tag,.book-cover,.book-strap,.pda,.phone,.codex-page,.reed-paper,.file-cover,.reed,.wf-case,.jarra-body,.vela-plate){background-blend-mode:soft-light,normal}
+.nexo-systems .mesa-ivy-left{left:-70px}.nexo-systems .mesa-ivy-right{right:-75px}
+@media(max-width:560px){.nexo-systems .mesa-ivy-left{left:-54px}.nexo-systems .mesa-ivy-right{right:-56px}}
+
+/* Saquito de esferas: boca hundida, cuero fruncido y vidrio con gema interior. */
+.nexo-systems .dc-esferas{--tilt:9deg;width:204px;height:195px;perspective:700px}
+.nexo-systems .sphere-pouch{width:204px;height:195px;isolation:isolate;transform-style:preserve-3d}
+.pouch-body{inset:28px 33px 10px 15px;border-radius:39% 43% 34% 38%;transform:rotate(-8deg);background:url('../../assets/mesa/cuero.svg'),conic-gradient(from 10deg at 50% 22%,#291c16,#79563a 25deg,#39251b 42deg,#926b45 64deg,#38271d 85deg,#765237 128deg,#3a261b 165deg,#856344 205deg,#352117 245deg,#92724c 285deg,#3b281b 325deg,#291c16);background-blend-mode:soft-light,normal;box-shadow:inset 3px 3px 2px #cbab7555,inset -5px -8px 8px #160f0bc9,5px 8px 2px #1d150e,13px 18px 16px #0007}
+.pouch-body:after{content:'';position:absolute;inset:19px 9px 8px;border:1px dashed #b5935c77;border-radius:42% 40% 32% 36%;transform:rotate(5deg)}
+.pouch-mouth{left:28px;top:26px;width:125px;height:87px;border-radius:48%;transform:rotate(-10deg);background:radial-gradient(ellipse at 48% 62%,#11181a,#090b0c 60%,#38271d 72%,#8c6844 78%,#322117 83%);box-shadow:inset 4px 7px 9px #000,0 -2px 1px #bf9b6888,0 3px 3px #100b08}
+.pouch-lip{left:31px;top:88px;width:127px;height:29px;border-radius:0 0 55% 45%;border-bottom:9px solid #62452e;transform:rotate(-8deg);box-shadow:0 3px 2px #120c0988;pointer-events:none;z-index:3}
+.pouch-cord{width:55px;height:83px;border:3px solid #967750;border-top-color:transparent;border-radius:45%;box-shadow:1px 2px 1px #160f0aaa,inset 1px -1px 1px #dcc19388;z-index:4}
+.cord-left{left:2px;top:66px;transform:rotate(32deg)}
+.cord-right{right:9px;top:56px;transform:rotate(-37deg)}
+.nexo-systems .storm-sphere{width:33px;height:33px;border-radius:50%;background:radial-gradient(ellipse at 29% 22%,#fff 0 3%,#f4fcffb3 4%,transparent 17%),radial-gradient(ellipse at 68% 82%,#b1d8e477,transparent 30%),radial-gradient(circle at 45% 42%,#afccd41a 30%,#7cb6c03b 58%,#d7f0eb9c 70%,#16353e99 77%,#c1e6ef55 85%);box-shadow:inset 1px 2px 2px #e7ffffb3,inset -3px -3px 4px #071820a6,3px 5px 3px #0008;z-index:2;transition:box-shadow .8s,transform .6s}
+.storm-sphere:after{content:'';position:absolute;inset:3px;border-radius:50%;border-top:1px solid #ffffffb0;transform:rotate(-35deg);pointer-events:none}
+.storm-sphere .sphere-gem{position:absolute;inset:9px 10px 10px 9px;clip-path:polygon(30% 0,78% 12%,100% 55%,64% 100%,10% 78%,0 30%);background:conic-gradient(from 20deg,#fff,var(--gem) 60deg,#234253 120deg,var(--gem) 200deg,#ffffffc9 260deg,var(--gem));transform:rotate(15deg);filter:brightness(.8);transition:filter .8s}
+.sphere-0{left:51px;top:34px}.sphere-1{left:84px;top:31px}.sphere-2{left:108px;top:55px}.sphere-3{left:67px;top:65px}.sphere-4{left:39px;top:68px}.sphere-5{left:158px;top:134px}.sphere-6{left:119px;top:161px}
+.nexo-systems .dc-esferas.is-infused .storm-sphere{box-shadow:inset 1px 2px 2px #fff, inset -2px -2px 4px #17384388,0 0 10px var(--gem),0 0 25px color-mix(in srgb,var(--gem) 45%,transparent),3px 5px 4px #0007;animation:sphere-breathe 4s ease-in-out var(--phase) infinite}
+.nexo-systems .dc-esferas.is-infused .sphere-gem{filter:brightness(1.9)}
+.nexo-systems .mesa.is-dark .dc-esferas>span:not(.dc-say){filter:none}
+.nexo-systems .mesa.is-dark .dc-esferas:not(.is-infused)>span:not(.dc-say){filter:brightness(.4)}
+@keyframes sphere-breathe{50%{filter:brightness(1.17)}}
+/* Jarra de roble y hierro: profundidad del recipiente y cerveza visible bajo la espuma. */
+.nexo-systems .jarra-body{box-shadow:inset 3px 4px 2px #e2d5aa66,inset -5px -5px 4px #130e09,1px 3px 0 #493420,2px 6px 0 #392718,3px 9px 0 #291d13,6px 14px 9px #0007}
+.nexo-systems .jarra-inside{background:radial-gradient(ellipse at 30% 25%,#ffc85a99,transparent 30%),radial-gradient(ellipse at 58% 65%,#d78b19,#92500a 55%,#35200a 85%);box-shadow:inset 8px 10px 12px #130b04bb,inset -2px -2px 3px #ffc85b88}
+.nexo-systems .jarra-foam{left:19px;top:18px;width:77px;height:74px;border-radius:42% 48% 38% 45%;clip-path:polygon(0 0,100% 0,100% 65%,88% 78%,77% 70%,65% 83%,48% 78%,36% 91%,20% 83%,0 94%);box-shadow:inset 3px 4px 7px #b09b7480,2px 3px 3px #58350b88}
+.nexo-systems .jarra-handle{background:linear-gradient(120deg,#9b9e97,#555a56 35%,#292e2c 65%,#777a71);transform:translateY(5px)}
+.nexo-systems .dc-jarra.is-empty .jarra-inside{background:radial-gradient(circle,#54391e,#271b10 75%);box-shadow:inset 13px 15px 16px #000d}
+@media(prefers-reduced-motion:reduce){.nexo-systems .dc-esferas .storm-sphere,.nexo-systems .dc-esferas .sphere-gem{animation:none!important;transition:none!important}}
+
+/* Objetos tridimensionales repartidos en la misma superficie, sin fila de adornos. */
+.nexo-systems .mesa .mesa-objects{gap:24px 30px;align-items:center;justify-content:center;padding:32px 0}
+.nexo-systems .mesa-objects>.dc{flex:0 0 174px;width:174px;height:190px;margin:0 8px;transform:rotate(var(--tilt,0deg))}
+.nexo-systems .obj.has-model{width:242px;height:310px;filter:none;transform:rotate(var(--rest));animation:none;transition:transform .4s}
+.nexo-systems .obj.has-model:hover,.nexo-systems .obj.has-model:focus-visible{transform:translateY(-5px) rotate(var(--rest));filter:none}
+.nexo-systems .has-model>span:not(.dc-say){visibility:hidden;pointer-events:none}
+.nexo-systems .has-model .mesa-model{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.nexo-systems .dc.has-model{filter:none}
+.nexo-systems .dc-jarra.has-model:before{display:none}
+.nexo-systems .mesa-decor{padding:0;margin:0;border:0;min-height:0;zoom:1}
+.nexo-systems .dc-tintero.has-model{width:180px;height:150px;flex:none}
+.nexo-systems .dc.has-model .dc-say{bottom:90%;width:190px;max-width:190px;z-index:9}
+.nexo-systems .mesa-objects>.dc:hover,.nexo-systems .mesa-objects>.dc:focus-visible{z-index:4}
+@media(max-width:560px){.nexo-systems .mesa .mesa-objects{gap:12px}.nexo-systems .obj.has-model{width:230px;height:300px}.nexo-systems .mesa-objects>.dc{flex-basis:135px;width:135px;height:155px;margin:0}.nexo-systems .dc-tintero.has-model{height:110px;width:145px;margin:0 auto}.nexo-systems .dc.has-model .dc-say{width:140px;min-width:100px;font-size:13px;left:50%;transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.nexo-systems .obj.has-model{transition:none}}
