@@ -6,7 +6,7 @@
     stylesheet.href = './src/nexo/terminal-shell.css?v=1';
     const table = document.createElement('link');
     table.rel = 'stylesheet';
-    table.href = './src/nexo/mesa.css?v=14';
+    table.href = './src/nexo/mesa.css?v=15';
     document.head.append(stylesheet, table);
 
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -68,8 +68,9 @@
         const icons = window.NEXO_ICONS || {};
         const esc = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const user = window.NEXO_CLOUD?.user;
-        const name = user?.user_metadata?.display_name || '';
-        const initials = (name || user?.email || 'N').trim().slice(0, 2).toLocaleUpperCase('es');
+        const name = String(user?.user_metadata?.display_name || '').trim();
+        const profileName = user ? name || 'Tu perfil' : 'Sin cuenta';
+        const initials = Array.from((name || user?.email?.trim() || 'N').toLocaleUpperCase('es')).slice(0, 2).join('');
         const now = new Date();
         const clock = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         const date = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -78,7 +79,12 @@
           <header class="mesa-head">
             <div class="mesa-note"><span class="mesa-tape" aria-hidden="true"></span><h1>¿A qué jugamos esta noche?</h1><p data-note>Coge uno de la mesa.</p></div>
             <span class="dc dc-tintero" data-egg="pluma" aria-hidden="true"><span class="tintero"><i class="tintero-blot"></i><i class="tintero-bottle"></i><i class="tintero-quill"></i></span></span>
-            <button class="mesa-tag" data-profile aria-label="Abrir tu perfil"><span class="mesa-tag-hole" aria-hidden="true"></span><b>${esc(initials)}</b><small>${esc(user ? (name || 'Tu perfil') : 'Sin cuenta')}</small></button>
+            <button class="mesa-tag" type="button" data-profile aria-label="Abrir tu perfil">
+              <span class="mesa-tag-hole" aria-hidden="true"></span>
+              <b class="mesa-tag-monogram" aria-hidden="true">${esc(initials)}</b>
+              <span class="mesa-tag-copy"><span class="mesa-tag-name" dir="auto">${esc(profileName)}</span><small class="mesa-tag-caption">Perfil</small></span>
+              <span class="mesa-tag-arrow" aria-hidden="true"></span>
+            </button>
           </header>
           <div class="mesa-objects">
             <button class="obj obj-pda" data-system="traveller" style="--rest:-7deg;--d:0s" aria-label="Abrir Traveller">
