@@ -170,3 +170,5 @@ La portada de Traveller usa ahora la identidad visual orbital NEXO (NEXO Travell
 
 ### Mesa de campaña
 La mesa recupera sus objetos de cuero, papel, metal y vidrio con relieve CSS, texturas e iluminación común. Cada objeto dispone de un espacio reservado para evitar solapamientos durante sus movimientos. La jarra, vela, saquito de esferas, pergamino y dados d4/d8/d20 se reparten entre los accesos a los sistemas; no hay plantas, monedas ni d6 decorativos. Vuelven la apertura del libro, la vibración del móvil, los movimientos de la pluma y la jarra y la tirada de dados. Los adornos admiten teclado y respetan el movimiento reducido. La mesa no necesita WebGL.
+
+La hiedra recorre los bordes de la mesa sin tapar los accesos. Los dados decorativos forman un pequeño montón; el saquito descansa abierto con esferas derramadas, la jarra lleva vetas de roble y el pergamino muestra una hoja parcialmente desplegada. Los accesos a sistemas conservan su diseño y animaciones.
