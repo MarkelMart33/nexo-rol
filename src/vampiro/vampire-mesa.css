@@ -1,20 +1,102 @@
-/* Manuscrito de Vampiro: Edad Oscura sobre la mesa del selector, junto al móvil de las noches modernas. */
-@media(min-width:861px){.nexo-systems .mesa-objects{grid-template-columns:repeat(4,auto);gap:28px}}
-.codex{position:relative;display:block;width:214px;height:296px}
-.codex-page{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding:30px 22px 22px;border-radius:3px 6px 4px 8px;color:#3b2412;text-align:center;overflow:hidden;
+/* Edad Oscura: vitela manchada, capital iluminada y lacre sobre la cinta. */
+.codex{position:relative;display:block;width:214px;height:296px;perspective:800px}
+.codex::before{
+  content:'';
+  position:absolute;
+  inset:4px 2px -5px 4px;
+  border-radius:4px 6px 6px 4px;
+  background:repeating-linear-gradient(178deg,#b29a6a 0 1px,#c9b68a 1px 3px);
+  box-shadow:0 3px 0 #75593a,2px 4px 2px #3d2a19ac;
+}
+.codex-page{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:30px 22px 22px;
+  border-radius:3px 6px 4px 3px;
+  color:#382515;
+  text-align:center;
+  overflow:hidden;
   background:
-    radial-gradient(ellipse at 18% 12%,#fff5d855,transparent 45%),
-    radial-gradient(ellipse at 85% 92%,#8a5a2a55,transparent 50%),
-    radial-gradient(ellipse at 50% 50%,transparent 60%,#7a4e2466 100%),
-    linear-gradient(170deg,#ecdcb2,#dcc48f 60%,#cfb27a);
-  box-shadow:inset 0 0 0 8px #e9d6a600,inset 0 0 30px #7a4e2455;clip-path:polygon(0 1%,4% 0,30% 1.2%,62% 0,96% .8%,100% 3%,99.4% 40%,100% 78%,98.6% 100%,62% 99.2%,30% 100%,2% 99%,0 70%,.8% 34%)}
-.codex-page:before{content:'';position:absolute;inset:12px;border:1px solid #8a1a1a88;outline:1px solid #8a1a1a44;outline-offset:3px;pointer-events:none}
-.codex-cap{display:grid;place-items:center;width:58px;height:58px;margin-bottom:12px;border:2px solid #9c7a2c;background:radial-gradient(circle,#8e1414,#5a0909);color:#f1d27a;font:400 40px/1 'UnifrakturMaguntia','IM Fell English',Georgia,serif;box-shadow:inset 0 0 0 3px #5a0909,inset 0 0 0 4px #c9a24a}
-.codex-page b{font:400 30px/1.05 'UnifrakturMaguntia','IM Fell English',Georgia,serif;color:#7d0f0f;letter-spacing:.01em}
-.codex-page small{margin-top:6px;font:italic 14px 'IM Fell English',Georgia,serif;color:#5b3a1c}
-.codex-lines{flex:1;width:100%;margin-top:14px;background:repeating-linear-gradient(transparent 0 9px,#5b3a1c40 9px 10px);-webkit-mask:linear-gradient(90deg,#000 0 82%,transparent 82% 86%,#000 86%);mask:linear-gradient(90deg,#000 0 82%,transparent 82% 86%,#000 86%);opacity:.9}
-.codex-seal{position:absolute;right:-10px;bottom:34px;width:58px;height:58px;padding:13px;border-radius:47% 53% 50% 50%/52% 48% 52% 48%;background:radial-gradient(circle at 38% 32%,#c0242b,#7a0b12 70%);color:#f3c9b8;box-shadow:0 4px 6px #0008,inset 0 -3px 6px #3d0306,inset 0 2px 3px #ff8f8f66;transition:transform .45s cubic-bezier(.3,1.6,.5,1),filter .45s}
-.codex-seal svg{width:100%;height:100%;display:block}
-.codex-ribbon{position:absolute;left:36px;bottom:-26px;width:16px;height:46px;background:linear-gradient(90deg,#5c0a0e,#8e1418,#5c0a0e);clip-path:polygon(0 0,100% 0,100% 100%,50% 82%,0 100%)}
-.obj-codex:hover .codex-seal,.obj-codex:focus-visible .codex-seal{transform:rotate(-14deg) scale(1.08);filter:drop-shadow(0 0 10px #e0213f88)}
-.obj-codex:hover .codex-page,.obj-codex:focus-visible .codex-page{filter:brightness(1.06)}
+    radial-gradient(ellipse at 15% 86%,#97642b3b,transparent 36%),
+    radial-gradient(ellipse at 91% 18%,#86532642,transparent 33%),
+    linear-gradient(92deg,#7f562c4f,transparent 14% 92%,#7e512943),
+    var(--mesa-papel) center/162px 162px,
+    radial-gradient(ellipse at var(--glint-x) var(--glint-y),#f3e6c6,#deca9f 61%,#bfa779 100%);
+  background-blend-mode:normal,normal,normal,soft-light,normal;
+  clip-path:polygon(0 1%,4% 0,30% 1.2%,62% 0,96% .8%,100% 3%,99.4% 40%,100% 78%,98.6% 100%,62% 99.2%,30% 100%,2% 99%,0 70%,.8% 34%);
+  box-shadow:inset 0 0 18px #6942224f,inset 0 1px #fff7d4d1;
+  transform-origin:50% 5%;
+  transition:transform .48s cubic-bezier(.22,.71,.26,1),filter .42s;
+}
+.codex-page::before{
+  content:'';
+  position:absolute;
+  inset:12px;
+  border:1px solid #8a1a1a88;
+  outline:1px solid #8a1a1a44;
+  outline-offset:3px;
+  pointer-events:none;
+}
+.codex-cap{
+  display:grid;
+  place-items:center;
+  width:58px;
+  height:58px;
+  flex:none;
+  margin-bottom:12px;
+  border:2px solid #9c7a2c;
+  background:var(--mesa-metal) center/104px 104px,radial-gradient(circle at 36% 23%,#ab392e,#741c20 59%,#480f16);
+  background-blend-mode:soft-light,normal;
+  color:#f0d690;
+  font:400 40px/1 'UnifrakturMaguntia','IM Fell English',Georgia,serif;
+  box-shadow:inset 0 0 0 3px #5a0909,inset 0 0 0 4px #c9a24a,0 2px 2px #60431945;
+  text-shadow:0 -1px #ffe7ae,0 2px 1px #400e14;
+}
+.codex-page b{font:400 30px/1.05 'UnifrakturMaguntia','IM Fell English',Georgia,serif;color:#741419;letter-spacing:.01em}
+.codex-page small{margin-top:6px;font:italic 14px 'IM Fell English',Georgia,serif;color:#533719}
+.codex-lines{
+  flex:1;
+  width:100%;
+  margin-top:14px;
+  background:repeating-linear-gradient(0deg,transparent 0 8px,#5b3a1c55 9px 10px);
+  mask-image:linear-gradient(90deg,#000 0 68%,#000b 82%,transparent 99%);
+  opacity:.83;
+}
+.codex-seal{
+  position:absolute;
+  right:-10px;
+  bottom:34px;
+  width:58px;
+  height:58px;
+  padding:14px;
+  border-radius:45% 53% 50% 51%/53% 45% 55% 48%;
+  background:
+    radial-gradient(ellipse at 35% 24%,#f4a18d75,transparent 37%),
+    var(--mesa-papel) center/78px 78px,
+    radial-gradient(circle at 36% 24%,#af463c,#81222a 60%,#491119);
+  background-blend-mode:normal,soft-light,normal;
+  color:#f4c3ac;
+  box-shadow:3px 5px 5px #34171aa0,inset -2px -4px 4px #400c17,inset 1px 2px 1px #c66b5f94;
+  transform-origin:32% 28%;
+  transition:transform .46s cubic-bezier(.24,1.23,.37,1);
+}
+.codex-seal::before{content:'';position:absolute;inset:8px;border:1px solid #4f1117;border-radius:50%;box-shadow:0 1px #d4756380}
+.codex-seal svg{position:relative;width:100%;height:100%;display:block;filter:drop-shadow(0 1px #55141c)}
+.codex-ribbon{
+  position:absolute;
+  left:36px;
+  bottom:-26px;
+  width:16px;
+  height:46px;
+  background:repeating-linear-gradient(0deg,transparent 0 2px,#ce75722b 2px 3px),linear-gradient(90deg,#50141c,#8f2633 47%,#5b1420);
+  clip-path:polygon(0 0,100% 0,100% 100%,50% 82%,0 100%);
+  transform-origin:top center;
+  transition:transform .53s cubic-bezier(.19,1.21,.42,1);
+}
+.obj-codex:is(:hover,:focus-visible,.is-picked) .codex-page{transform:rotateX(-7deg) translateY(-2px);filter:brightness(1.06)}
+.obj-codex:is(:hover,:focus-visible,.is-picked) .codex-seal{transform:translateY(-3px) rotate(-8deg)}
+.obj-codex:is(:hover,:focus-visible,.is-picked) .codex-ribbon{transform:rotate(-7deg) scaleY(.94)}
+@media(prefers-reduced-motion:reduce){.codex *{transition:none}}

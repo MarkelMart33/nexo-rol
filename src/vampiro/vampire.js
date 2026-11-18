@@ -969,7 +969,7 @@
   // El manuscrito de Edad Oscura vive en la mesa del selector: sus estilos se cargan desde el inicio.
   const tableStyles = document.createElement('link');
   tableStyles.rel = 'stylesheet';
-  tableStyles.href = './src/vampiro/vampire-mesa.css?v=1';
+  tableStyles.href = './src/vampiro/vampire-mesa.css?v=2';
   const tableFonts = document.createElement('link');
   tableFonts.rel = 'stylesheet';
   tableFonts.href = 'https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=UnifrakturMaguntia&display=swap';

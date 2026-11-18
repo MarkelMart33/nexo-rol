@@ -2,7 +2,7 @@
 .nexo-systems{--walnut:#4a2d1a;--walnut-dark:#24150c;--seam:#2e1b0f;--lamp:#f6c77d;--paper:#efe2c4;--ink:#3a2817;--hand:'Kalam','Segoe Print','Bradley Hand',cursive;--fell:'IM Fell English SC','Palatino Linotype',Georgia,serif;
   background:var(--nexo-wood);
   color:var(--paper)}
-.mesa{--px:0;--py:0;position:relative;min-height:100%;max-width:1180px;margin:auto;padding:34px 28px 56px;display:flex;flex-direction:column;overflow-x:clip}
+.mesa{position:relative;min-height:100%;max-width:1180px;margin:auto;padding:34px 28px 56px;display:flex;flex-direction:column;overflow-x:clip}
 .mesa-light{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 45% 38% at 30% 14%,#ffd99a22,transparent 70%);animation:mesa-flicker 7s ease-in-out infinite}
 @keyframes mesa-flicker{0%,100%{opacity:1}46%{opacity:.86}52%{opacity:.97}}
 
@@ -19,70 +19,389 @@
 .mesa-tag small{display:block;margin-top:6px;font:400 15px/1.1 var(--hand);color:#ecc9a2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mesa-tag:hover,.mesa-tag:focus-visible{transform:rotate(-3deg)}
 
-/* Objetos sobre la mesa */
-.mesa-objects{position:relative;z-index:1;flex:1;display:grid;grid-template-columns:repeat(3,auto);justify-content:space-evenly;align-items:center;gap:36px;padding:48px 0 24px}
-.obj{--rest:0deg;--r:var(--rest);--d:0s;--lift:0px;position:relative;padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer;transform:translate(calc(var(--px)*-14px),calc(var(--py)*-10px + var(--lift))) rotate(var(--r));transition:transform .45s cubic-bezier(.2,.9,.3,1.15),filter .45s;filter:drop-shadow(0 18px 14px #0009) drop-shadow(0 4px 3px #0007);animation:mesa-place .9s cubic-bezier(.2,.9,.3,1.1) calc(var(--d) + var(--intro-wait,0s)) backwards}
-.obj:hover,.obj:focus-visible{z-index:2;--lift:-16px;--r:0deg;filter:drop-shadow(0 34px 26px #000a) drop-shadow(0 8px 6px #0006)}
-.obj:focus-visible{outline:2px dashed var(--lamp);outline-offset:14px}
-@keyframes mesa-place{from{opacity:0;transform:translate(0,90px) rotate(calc(var(--r) - 14deg)) scale(1.06)}}
+/* Cada acceso conserva su espacio, con una luz común de arriba a la izquierda. */
+.mesa-objects{position:relative;z-index:1;flex:1}
+.mesa .mesa-objects{display:flex;flex-wrap:wrap;justify-content:center;align-items:center}
+.mesa .obj{
+  --rest:0deg;
+  --r:var(--rest);
+  --d:0s;
+  --lift:0px;
+  --tilt-x:0deg;
+  --tilt-y:0deg;
+  --glint-x:26%;
+  --glint-y:17%;
+  --mesa-cuero:url('../../assets/mesa/grano-cuero.png');
+  --mesa-papel:url('../../assets/mesa/fibra-papel.png');
+  --mesa-metal:url('../../assets/mesa/metal-cepillado.png');
+  position:relative;
+  padding:0;
+  border:0;
+  background:none;
+  color:inherit;
+  font:inherit;
+  cursor:pointer;
+  transform:translateY(var(--lift)) perspective(880px) rotate(var(--r)) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+  filter:drop-shadow(2px 5px 3px #17100bb0) drop-shadow(11px 16px 11px #0a07054f);
+  transition:transform .34s cubic-bezier(.2,.72,.3,1), filter .34s, opacity .26s;
+  animation:mesa-place .62s cubic-bezier(.18,.72,.32,1) calc(var(--d) + var(--intro-wait,0s)) backwards;
+}
+.mesa .obj:is(:hover,:focus-visible){
+  --lift:-6px;
+  z-index:2;
+  filter:drop-shadow(3px 8px 5px #1c130bb3) drop-shadow(14px 23px 15px #08060465);
+}
+.mesa .obj:active{--lift:1px}
+.mesa .obj:focus-visible{outline:2px dashed var(--lamp);outline-offset:12px}
+.mesa.is-picking .obj:not(.is-picked){opacity:.46}
+.mesa .obj.is-picked{
+  --tilt-x:0deg;
+  --tilt-y:0deg;
+  animation:mesa-pick .48s cubic-bezier(.25,.65,.32,1) forwards;
+  z-index:6;
+}
+@keyframes mesa-place{
+  0%{opacity:0;translate:0 -22px;scale:1.015}
+  67%{opacity:1;translate:0 1px;scale:1}
+  100%{opacity:1;translate:0 0;scale:1}
+}
+@keyframes mesa-pick{
+  0%{opacity:1;translate:0 0;scale:1}
+  25%{opacity:1;translate:0 2px;scale:.988}
+  70%{opacity:1}
+  100%{opacity:0;translate:0 -17px;scale:1.072}
+}
 @keyframes mesa-drop{from{opacity:0;transform:translateY(-30px) rotate(-6deg)}}
-/* Los objetos se reparten en filas que se ajustan al ancho, sin salirse de la mesa ni pisarse. */
-.nexo-systems .mesa .mesa-objects{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:40px 48px}
-.mesa.is-picking .obj:not(.is-picked){opacity:.35;transition:opacity .4s,transform .45s}
-.obj.is-picked{animation:mesa-pick .55s cubic-bezier(.5,0,.7,.4) forwards}
-@keyframes mesa-pick{to{transform:translateY(-30px) rotate(0) scale(1.35);opacity:0}}
 
-/* PDA de Traveller: carcasa rugerizada y pantalla de fósforo */
-.pda{position:relative;display:block;width:212px;height:318px;padding:20px 16px 18px;border-radius:22px 22px 28px 28px;background:linear-gradient(160deg,#5d6553,#3f463a 55%,#30362c);box-shadow:inset 0 2px 0 #889177,inset 0 -3px 0 #1d211a,inset 0 0 0 5px #2b3027}
-.pda-antenna{position:absolute;top:-22px;right:30px;width:10px;height:28px;border-radius:5px 5px 0 0;background:linear-gradient(90deg,#2a2e25,#4c5444,#2a2e25)}
-.pda-led{position:absolute;top:9px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#7dffb0;box-shadow:0 0 8px #7dffb0;animation:pda-blink 2.4s steps(1) infinite}
-@keyframes pda-blink{50%{opacity:.25}}
-.pda-screen{position:relative;display:flex;flex-direction:column;align-items:flex-start;height:198px;padding:18px 16px;border-radius:8px;background:radial-gradient(ellipse at 50% 30%,#123b38,#07191a 80%);box-shadow:inset 0 0 0 2px #0a0f0b,inset 0 0 24px #000c;color:#7ee8d6;font-family:var(--mono,ui-monospace,monospace);text-align:left;overflow:hidden;transition:filter .4s}
-.pda-screen:after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(transparent 0 2px,#0004 2px 3px);pointer-events:none}
-.pda-emblem{width:42px;height:42px;margin-bottom:auto;filter:drop-shadow(0 0 6px #7ee8d688)}
+/* Traveller: chasis de aleación con juntas de goma y fósforo bajo el cristal. */
+.pda{
+  --pda-screw:radial-gradient(circle at 34% 29%,#acafa2 0 9%,#696e63 16% 32%,#313833 52%,#0e1615 58%,transparent 70%);
+  position:relative;
+  display:block;
+  width:212px;
+  height:318px;
+  padding:20px 16px 18px;
+  border-radius:21px 21px 26px 26px;
+  background:
+    radial-gradient(90% 78% at var(--glint-x) var(--glint-y),#cee0cd27,transparent 67%),
+    var(--mesa-metal) center/165px 165px,
+    linear-gradient(142deg,#48534c,#323f3a 38%,#202c29 72%,#172120);
+  background-blend-mode:normal,soft-light,normal;
+  box-shadow:inset 1px 2px 1px #bdc8b685,inset -2px -3px 1px #101819,
+    inset 0 0 0 5px #202724,inset 0 0 0 6px #71796667,3px 5px 0 #131a18;
+}
+.pda::before{
+  content:'';
+  position:absolute;
+  inset:7px;
+  border-radius:14px 14px 20px 20px;
+  border:1px solid #9ca79a36;
+  pointer-events:none;
+}
+.pda::after{
+  content:'';
+  position:absolute;
+  inset:11px 10px 13px;
+  pointer-events:none;
+  background:
+    var(--pda-screw) left top/7px 7px no-repeat,
+    var(--pda-screw) right top/7px 7px no-repeat,
+    var(--pda-screw) left bottom/7px 7px no-repeat,
+    var(--pda-screw) right bottom/7px 7px no-repeat;
+}
+.pda-antenna{
+  position:absolute;
+  top:-22px;
+  right:30px;
+  width:10px;
+  height:28px;
+  border-radius:5px 5px 0 0;
+  background:repeating-linear-gradient(180deg,transparent 0 3px,#080e0d33 4px 5px),
+    linear-gradient(90deg,#222921,#6d7566 35%,#37443b 74%,#15201a);
+  box-shadow:2px 3px 4px #080e0c80;
+}
+.pda-led{
+  position:absolute;
+  top:9px;
+  left:calc(50% - 3px);
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,#a8edbd,#4ea878 63%,#254939);
+  box-shadow:0 0 4px #70f6b080,0 0 0 1px #0a211d;
+  transition:box-shadow .3s;
+}
+.pda-screen{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  height:198px;
+  padding:18px 16px 12px;
+  overflow:hidden;
+  isolation:isolate;
+  border-radius:8px;
+  background:radial-gradient(ellipse at var(--glint-x) var(--glint-y),#8cbeba25,transparent 49%),
+    radial-gradient(ellipse at 50% 6%,#1b4847,#071e21 69%,#081618);
+  box-shadow:0 1px 0 #c2cdb17d,0 0 0 2px #101814,inset 0 0 0 3px #050e0e,
+    inset 3px 5px 13px #0009;
+  color:#9ce9da;
+  font-family:var(--mono,ui-monospace,monospace);
+  text-align:left;
+  transition:filter .28s;
+}
+.pda-screen::before,.pda-screen::after{content:'';position:absolute;inset:0;pointer-events:none}
+.pda-screen::before{
+  background:linear-gradient(transparent,#9cffe725 47%,#b0fff045 50%,transparent 58%);
+  opacity:0;
+}
+.pda-screen::after{
+  background:linear-gradient(129deg,#ecfffb22,transparent 24% 64%,#c0e7e814 65%,transparent 67%),
+    repeating-linear-gradient(transparent 0 2px,#02131449 2px 3px);
+}
+.pda-emblem{width:42px;height:42px;margin-bottom:auto;filter:drop-shadow(0 0 5px #7ee8d690)}
 .pda-emblem svg{width:100%;height:100%}
-.pda-screen b{font-size:18px;letter-spacing:.14em;text-shadow:0 0 10px #7ee8d688}
-.pda-screen small{margin-top:6px;font-size:10.5px;line-height:1.45;color:#5fb7a9}
-.pda-prompt{margin-top:12px;font-size:11px;color:#9ff5e6}
-.pda-prompt i{font-style:normal;animation:pda-blink 1s steps(1) infinite}
+.pda-screen b{font-size:18px;letter-spacing:.14em;text-shadow:0 0 8px #7ee8d67a}
+.pda-screen small{margin-top:6px;font-size:10.5px;line-height:1.45;color:#9edbd1}
+.pda-prompt{margin-top:12px;font-size:11px;color:#b8f4e7}
+.pda-prompt i{font-style:normal}
 .pda-keys{display:flex;justify-content:center;gap:16px;margin-top:20px}
-.pda-keys i{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#59614f,#2d3229);box-shadow:0 3px 0 #1c2018,inset 0 1px 0 #7c866c}
+.pda-keys i{
+  position:relative;
+  width:30px;
+  height:30px;
+  border-radius:50%;
+  background:var(--mesa-cuero) center/130px 130px,radial-gradient(circle at 37% 29%,#606b5c,#303d35 82%);
+  background-blend-mode:soft-light,normal;
+  box-shadow:0 3px 2px #111914,inset 0 1px 1px #a2af94aa,inset 0 -2px 3px #1a221e;
+  transition:translate .16s,box-shadow .16s;
+}
 .pda-keys i:nth-child(2){border-radius:8px;width:44px}
-.obj-pda:hover .pda-screen,.obj-pda:focus-visible .pda-screen{filter:brightness(1.35) saturate(1.2)}
+.pda-keys i::after{
+  content:'';
+  position:absolute;
+  inset:calc(50% - 1px) 34% auto;
+  height:2px;
+  border-radius:1px;
+  background:#98a598a0;
+  box-shadow:0 1px #101a16;
+}
+.pda-keys i:nth-child(2)::after{background:#bedeabbb}
+.obj-pda:is(:hover,:focus-visible,.is-picked) .pda-screen{filter:brightness(1.15)}
+.obj-pda:is(:hover,:focus-visible,.is-picked) .pda-screen::before{animation:pda-sweep .60s ease-out both}
+.obj-pda:is(:hover,:focus-visible,.is-picked) .pda-led{box-shadow:0 0 8px #85ffd4e0,0 0 0 1px #0a211d}
+.obj-pda:is(:hover,:focus-visible) .pda-prompt i{animation:pda-cursor 1s steps(1,end) 2}
+.obj-pda:is(:active,.is-picked) .pda-keys i:nth-child(2){translate:0 2px;box-shadow:0 1px #0d160f,inset 0 1px 2px #141e17}
+@keyframes pda-sweep{0%{transform:translateY(-55%);opacity:0}37%{opacity:1}100%{transform:translateY(68%);opacity:0}}
+@keyframes pda-cursor{50%{opacity:.2}}
 
-/* Cuaderno medieval de D&D: cubierta de cuero que se entreabre */
-.book{position:relative;display:block;width:246px;height:322px;perspective:900px}
-.book-pages{position:absolute;inset:6px 0 6px 10px;border-radius:2px 8px 8px 2px;background:repeating-linear-gradient(90deg,#e9dcbc 0 1px,#d8c79f 1px 3px);box-shadow:inset 6px 0 10px #0004}
-.book-pages:before{content:'';position:absolute;inset:0 6px 0 0;border-radius:2px 6px 6px 2px;background:linear-gradient(90deg,#d9c79d,#f1e6c9 18%,#efe2c2);}
-.book-pages span{position:absolute;right:16px;width:96px;top:96px;font:400 16px/1.3 var(--hand);color:#5a3e23;transform:rotate(-3deg)}
-.book-cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;border-radius:4px 12px 12px 4px;background:radial-gradient(ellipse at 40% 30%,#8a3d24,#5e2414 75%);color:#e7c27a;text-align:center;transform-origin:left center;transition:transform .7s cubic-bezier(.3,.8,.3,1);box-shadow:inset 0 0 0 9px #4a1b0e,inset 0 0 0 10px #c79a4a88,inset 0 0 0 16px #4a1b0e00,inset 14px 0 18px -10px #0009}
-.book-cover:before{content:'';position:absolute;inset:18px;border:1px solid #c79a4a66;border-radius:3px 8px 8px 3px}
-.book-cover:after{content:'';position:absolute;top:-2px;right:-2px;width:34px;height:34px;border-radius:0 12px 0 0;background:linear-gradient(225deg,#d6a95a 0 45%,transparent 46%);box-shadow:0 0 0 0 transparent}
-.book-emblem{width:70px;height:70px;color:#e2b765;filter:drop-shadow(0 1px 0 #2d0e05)}
+/* D&D: piel repujada, lomo reforzado y cantos de papel cosido. */
+.book{position:relative;display:block;width:246px;height:322px;perspective:920px}
+.book::before{
+  content:'';
+  position:absolute;
+  inset:4px -1px -4px 4px;
+  border-radius:6px 12px 12px 6px;
+  background:#2b1c10;
+  box-shadow:inset 0 -2px #4d3823,1px 1px 0 #1d140c;
+}
+.book-pages{
+  position:absolute;
+  inset:6px 1px 5px 8px;
+  border-radius:2px 8px 8px 2px;
+  background:repeating-linear-gradient(178deg,#cab795 0 1px,#947b53 1px 2px,#e4d0ab 2px 4px);
+  box-shadow:2px 2px 0 #7c6040,inset 7px 0 11px #452a1760;
+}
+.book-pages::before{
+  content:'';
+  position:absolute;
+  inset:0 6px 0 0;
+  border-radius:2px 6px 6px 2px;
+  background:var(--mesa-papel) center/165px 165px,
+    linear-gradient(90deg,#9b7d55,#c7b08b 6%,#eddebb 16%,#e7d2a8 85%,#f4e6c8);
+  background-blend-mode:soft-light,normal;
+  box-shadow:inset 0 0 13px #593a244a;
+}
+.book-pages span{
+  position:absolute;
+  right:17px;
+  width:84px;
+  top:98px;
+  padding-bottom:36px;
+  font:400 15px/1.35 var(--hand);
+  color:#4d3824;
+  text-align:left;
+  transform:rotate(-3deg);
+}
+.book-pages span::after{
+  content:'';
+  position:absolute;
+  inset:auto 10px 2px 0;
+  height:28px;
+  background:repeating-linear-gradient(transparent 0 6px,#6b4e352e 7px 8px);
+  mask-image:linear-gradient(90deg,#000 60%,transparent);
+}
+.book-cover{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:24px;
+  border-radius:5px 11px 11px 5px;
+  background:
+    linear-gradient(90deg,#1d110b77,transparent 3%,#c4965c21 5%,#1d100a4f 7%,transparent 13%),
+    var(--mesa-cuero) center/143px 143px,
+    radial-gradient(ellipse at var(--glint-x) var(--glint-y),#856544,#553d28 58%,#312215);
+  background-blend-mode:normal,soft-light,normal;
+  color:#e7cb87;
+  text-align:center;
+  transform-origin:9px center;
+  backface-visibility:hidden;
+  transition:transform .56s cubic-bezier(.2,.71,.27,1);
+  box-shadow:inset 1px 2px 1px #dab17e89,inset -1px -2px 1px #201409,
+    inset 0 0 0 6px #3b271c7a,inset 0 0 23px #20150d66,2px 3px 1px #23160f;
+}
+.book-cover::before{
+  content:'';
+  position:absolute;
+  inset:17px 17px 17px 20px;
+  border:1px solid #c49f55ac;
+  border-radius:4px 8px 8px 4px;
+  box-shadow:0 1px 1px #1b0f08,inset 0 0 0 3px #25180e69,inset 0 0 0 4px #bc954747;
+}
+.book-cover::after{
+  content:'';
+  position:absolute;
+  top:0;
+  right:0;
+  width:33px;
+  height:33px;
+  border-radius:0 11px 0 0;
+  clip-path:polygon(0 0,100% 0,100% 100%,69% 91%,59% 62%,28% 47%);
+  background:var(--mesa-metal) center/95px 95px,linear-gradient(128deg,#d1ad65,#795121 58%,#e2c27f 80%,#82613b);
+  background-blend-mode:soft-light,normal;
+  box-shadow:inset 0 1px 1px #ffe6aa;
+}
+.book-emblem{width:70px;height:70px;color:#e3bd75;filter:drop-shadow(0 -1px 0 #f4d3988f) drop-shadow(1px 1px 1px #2d190d)}
 .book-emblem svg{width:100%;height:100%}
-.book-cover b{font:400 25px/1.05 var(--fell);letter-spacing:.03em;text-shadow:0 1px 0 #2d0e05}
-.book-cover small{font:400 13px var(--fell);color:#d4a865;letter-spacing:.08em}
-.book-strap{position:absolute;right:-8px;top:50%;width:46px;height:30px;margin-top:-15px;border-radius:4px;background:linear-gradient(#4b1c0e,#3a150a);box-shadow:0 2px 3px #0008}
-.book-strap:after{content:'';position:absolute;left:8px;top:7px;width:16px;height:16px;border-radius:3px;border:3px solid #c79a4a}
-.obj-book:hover .book-cover,.obj-book:focus-visible .book-cover{transform:rotateY(-58deg)}
-.obj-book:hover .book-strap,.obj-book:focus-visible .book-strap{opacity:0;transition:opacity .2s}
+.book-cover b{font:400 26px/1.05 var(--fell);letter-spacing:.03em;text-shadow:0 -1px #fee9b375,0 2px 2px #2e1c10}
+.book-cover small{font:400 13px var(--fell);color:#e1bd78;letter-spacing:.08em}
+.book-strap{
+  position:absolute;
+  right:-8px;
+  top:calc(50% - 15px);
+  width:46px;
+  height:30px;
+  border-radius:4px;
+  background:var(--mesa-cuero) center/126px 126px,linear-gradient(#59422e,#2b1b11);
+  background-blend-mode:soft-light,normal;
+  box-shadow:inset 0 1px #a8845c8c,2px 3px 4px #0009;
+  transform-origin:right center;
+  transition:transform .35s cubic-bezier(.21,.74,.34,1),opacity .26s;
+}
+.book-strap::after{
+  content:'';
+  position:absolute;
+  inset:7px auto auto 8px;
+  width:16px;
+  height:16px;
+  border-radius:3px;
+  border:3px solid #b9904e;
+  box-shadow:inset 0 1px #e9c6748f,1px 2px #2f2014;
+}
+.obj-book:is(:hover,:focus-visible,.is-picked) .book-strap{transform:rotateY(62deg) translateX(5px);opacity:0}
+.obj-book:is(:hover,:focus-visible,.is-picked) .book-cover{transform:rotateY(-63deg);transition-delay:.055s}
 
-/* Móvil de Vampiro: pantalla de bloqueo con una notificación */
-.phone{position:relative;display:block;width:172px;height:344px;padding:10px;border-radius:32px;background:linear-gradient(145deg,#2a2629,#0c0a0b);box-shadow:inset 0 0 0 2px #3d373a,inset 0 0 0 4px #060506}
-.phone-notch{position:absolute;z-index:2;top:17px;left:50%;width:56px;height:15px;margin-left:-28px;border-radius:10px;background:#050405}
-.phone-screen{position:relative;display:flex;flex-direction:column;align-items:center;height:100%;padding:44px 10px 12px;border-radius:24px;background:radial-gradient(ellipse at 50% 0,#5a0a1b,#1d050b 55%,#0b0306);color:#f2dfe2;overflow:hidden;transition:filter .4s}
+/* Vampiro moderno: aluminio oscuro, cristal y una notificación al despertar. */
+.phone{
+  position:relative;
+  display:block;
+  width:172px;
+  height:344px;
+  padding:10px;
+  border-radius:32px;
+  background:
+    radial-gradient(80% 110% at var(--glint-x) var(--glint-y),#d4cbd64a,transparent 74%),
+    var(--mesa-metal) center/136px 176px,
+    linear-gradient(135deg,#45444c,#222229 29%,#16141a 63%,#060509);
+  background-blend-mode:normal,soft-light,normal;
+  box-shadow:inset 0 0 0 1px #151019,inset 1px 2px 1px #dfdce09c,
+    inset -1px -3px 2px #070509,inset 0 0 0 4px #18131a,2px 5px 1px #0a0a0d;
+}
+.phone::before,.phone::after{
+  content:'';
+  position:absolute;
+  width:3px;
+  border-radius:2px 1px 1px 2px;
+  background:linear-gradient(90deg,#48474e,#19171d);
+  pointer-events:none;
+}
+.phone::before{left:-2px;top:60px;height:27px;box-shadow:0 36px #3d3b43,1px 37px #0c090e}
+.phone::after{right:-2px;top:96px;height:43px}
+.phone-notch{
+  position:absolute;
+  z-index:2;
+  top:17px;
+  left:calc(50% - 28px);
+  width:56px;
+  height:15px;
+  border-radius:10px;
+  background:radial-gradient(circle at 83% 50%,#1e2537 0 3%,#0e121c 4% 8%,transparent 9%),#050407;
+  box-shadow:0 1px 1px #74435452;
+}
+.phone-screen{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  height:100%;
+  padding:44px 10px 12px;
+  border-radius:24px;
+  background:radial-gradient(ellipse at 72% 5%,#571632,#1a0816 57%,#0e0a11 84%);
+  box-shadow:0 0 0 2px #050409,inset 0 0 1px #b798aa;
+  color:#f4e7ed;
+  overflow:hidden;
+  transition:filter .3s;
+}
+.phone-screen::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:radial-gradient(ellipse 58% 49% at var(--glint-x) var(--glint-y),#e0c9df21,transparent 76%),
+    linear-gradient(133deg,#ffeff815 9%,transparent 27% 63%,#f7e0ed15 64%,transparent 65% 94%,#d1cde112);
+  opacity:.84;
+  transition:opacity .3s;
+}
 .phone-time{font:200 46px/1 system-ui,-apple-system,'Segoe UI',sans-serif;letter-spacing:-.02em}
-.phone-date{margin-top:4px;font:400 11px system-ui,sans-serif;color:#d6aeb6}.phone-date:first-letter{text-transform:uppercase}
-.phone-notif{display:flex;gap:8px;align-items:center;width:100%;margin-top:28px;padding:9px;border-radius:14px;background:#ffffff1c;backdrop-filter:blur(6px);text-align:left;animation:phone-ping 9s ease-in-out 1.6s infinite}
-.phone-app{flex:none;width:28px;height:28px;padding:5px;border-radius:8px;background:linear-gradient(#c3153a,#7a0b1d);color:#fbe5e9}
+.phone-date{margin-top:4px;font:400 11px system-ui,sans-serif;color:#ead3df}
+.phone-date:first-letter{text-transform:uppercase}
+.phone-notif{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  width:100%;
+  margin-top:28px;
+  padding:9px;
+  border-radius:13px;
+  background:linear-gradient(135deg,#ae879b39,#a384a12a);
+  box-shadow:inset 0 1px #f9e0eb35,0 3px 8px #08070a39;
+  text-align:left;
+  transition:translate .32s cubic-bezier(.2,.8,.28,1),background-color .32s,box-shadow .32s;
+}
+.phone-app{flex:none;width:28px;height:28px;padding:5px;border-radius:8px;background:linear-gradient(#b72c4f,#74142e);color:#fbe5e9}
 .phone-app svg{width:100%;height:100%;display:block}
-.phone-notif b{display:block;font:600 10px/1.2 system-ui,sans-serif}
-.phone-notif small{display:block;margin-top:2px;font:400 10px/1.3 system-ui,sans-serif;color:#e8c4cb}
-.phone-bar{position:absolute;bottom:8px;width:56px;height:4px;border-radius:2px;background:#f2dfe299}
-@keyframes phone-ping{0%,86%,100%{transform:none}88%{transform:translateX(-3px) rotate(-1deg)}90%{transform:translateX(3px) rotate(1deg)}92%{transform:translateX(-2px)}94%{transform:translateX(2px)}}
-.obj-phone:hover .phone-screen,.obj-phone:focus-visible .phone-screen{filter:brightness(1.25)}
-.obj-phone:hover .phone,.obj-phone:focus-visible .phone{animation:phone-buzz .45s linear 2}
-@keyframes phone-buzz{25%{transform:translateX(-2px) rotate(-1deg)}75%{transform:translateX(2px) rotate(1deg)}}
+.phone-notif b{display:block;font:650 10px/1.2 system-ui,sans-serif}
+.phone-notif small{display:block;margin-top:2px;font:400 10px/1.3 system-ui,sans-serif;color:#efd5e0}
+.phone-bar{position:absolute;bottom:8px;width:56px;height:4px;border-radius:2px;background:#f2dfe2ac}
+.obj-phone:is(:hover,:focus-visible,.is-picked) .phone{animation:phone-wake .34s ease-out}
+.obj-phone:is(:hover,:focus-visible,.is-picked) .phone-screen{filter:brightness(1.14)}
+.obj-phone:is(:hover,:focus-visible,.is-picked) .phone-screen::after{opacity:1}
+.obj-phone:is(:hover,:focus-visible,.is-picked) .phone-notif{translate:0 -4px;background-color:#ba819425;box-shadow:inset 0 1px #f9e0eb50,0 6px 10px #08070a65}
+@keyframes phone-wake{22%{transform:translateX(-1.8px) rotate(-.6deg)}43%{transform:translateX(1.3px) rotate(.4deg)}65%{transform:translateX(-.7px)}}
 
 /* Adornos de la mesa, vistos desde arriba como el resto: una fila propia bajo los sistemas,
    que envuelve y nunca los pisa. La luz viene de la lámpara (arriba a la izquierda), así que
@@ -243,23 +562,6 @@
 .nexo-systems .mesa-tape{display:none}
 .nexo-systems .mesa-tag{background-image:url('../../assets/mesa/cuero.svg'),linear-gradient(135deg,#694b32,#30241e);box-shadow:1px 2px 1px #100c09,7px 9px 15px #0006}
 .nexo-systems .mesa .mesa-objects{gap:64px 65px;padding:64px 16px 42px;perspective:1400px}
-.nexo-systems .obj{filter:drop-shadow(3px 5px 2px #0007) drop-shadow(15px 21px 13px #0006);transition:transform .55s cubic-bezier(.2,.7,.2,1),filter .55s;animation:mesa-settle .7s ease both;animation-delay:var(--d);transform:translate(calc(var(--px)*-5px),calc(var(--py)*-4px + var(--lift))) rotate(var(--r))}
-.nexo-systems .obj:hover,.nexo-systems .obj:focus-visible{--lift:-8px;--r:var(--rest);filter:drop-shadow(5px 9px 3px #0006) drop-shadow(21px 29px 18px #0007)}
-@keyframes mesa-settle{from{opacity:0;translate:0 12px}to{opacity:1;translate:0 0}}
-.nexo-systems .book-cover{background-image:url('../../assets/mesa/cuero.svg'),radial-gradient(ellipse at 24% 16%,#786041,#302319 85%);box-shadow:inset 0 0 0 5px #271b14,inset 0 0 0 6px #b2955c66,inset 11px 0 12px #0b0807b0,2px 3px 0 #17100c,4px 6px 0 #392b1d;color:#d8c18d}
-.nexo-systems .book-cover:before{border:1px solid #c4a87570;inset:16px;box-shadow:inset 0 0 0 4px #0002}
-.nexo-systems .book-cover b{text-shadow:0 1px #ffe7ad66,0 -1px #000;font-size:26px}
-.nexo-systems .obj-book:hover .book-cover,.nexo-systems .obj-book:focus-visible .book-cover{transform:rotateY(-22deg)}
-.nexo-systems .book-strap{background-image:url('../../assets/mesa/cuero.svg'),linear-gradient(#48382a,#241a13)}
-.nexo-systems .pda{background-image:url('../../assets/mesa/metal.svg'),linear-gradient(135deg,#596060,#242b2d 55%,#13191b);box-shadow:inset 1px 2px 1px #b7c0bb88,inset -2px -3px 1px #080d0e,inset 0 0 0 5px #24292a,3px 5px 0 #111719}
-.nexo-systems .pda-screen{background:linear-gradient(135deg,#d1e8e513,transparent 50%),radial-gradient(ellipse at 50% 10%,#17403f,#07191a);box-shadow:inset 0 0 0 2px #050a0a,inset 3px 6px 10px #000c}
-.nexo-systems .phone{background-image:url('../../assets/mesa/metal.svg'),linear-gradient(135deg,#727174,#151416 35%,#050405);box-shadow:inset 1px 1px 1px #ddd7, inset -2px -2px 2px #000,3px 5px 0 #080709}
-.nexo-systems .phone-screen:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(125deg,#fff1,transparent 40%,#fff0 64%,#fff1 65%,transparent 67%)}
-.nexo-systems .phone-notif,.nexo-systems .pda-led{animation:none}
-.nexo-systems .obj-phone:hover .phone{animation:none}
-.nexo-systems .codex-page,.nexo-systems .reed-paper,.nexo-systems .file-cover{background-image:url('../../assets/mesa/papel.svg'),linear-gradient(115deg,#e9dfc3,#cbbb94);box-shadow:inset 0 0 35px #77603a44,1px 2px #b5a17e,2px 4px #66523d,3px 6px #bca881}
-.nexo-systems .reed{background-image:url('../../assets/mesa/cuero.svg'),linear-gradient(125deg,#343731,#141c1c);box-shadow:inset 0 0 0 2px #95805b,inset 0 0 0 6px #20201b,3px 5px 0 #141613}
-.nexo-systems .wf-case{background-image:url('../../assets/mesa/metal.svg'),conic-gradient(from 30deg,#79542a,#e6d5a4,#947345,#49331b,#b59760,#f3e0ac,#79542a)}
 .nexo-systems .mesa-decor{z-index:2;overflow:visible;gap:32px 38px;padding:35px 0 20px;justify-content:center;border-top:1px solid #f3d7a412}
 .nexo-systems .dc{filter:drop-shadow(6px 9px 5px #0005);transition:transform .4s ease;animation:none}
 .nexo-systems .dc:focus-visible{outline:2px solid #e3c893;outline-offset:8px;border-radius:8px}
@@ -279,7 +581,7 @@
 @media(max-width:560px){.nexo-systems .mesa{padding:24px 20px 60px}.nexo-systems .mesa-head{flex-wrap:wrap}.nexo-systems .mesa-note{max-width:205px;padding:16px}.nexo-systems .mesa-note h1{font-size:23px}.nexo-systems .mesa-tag{width:72px;padding:12px 7px 12px 22px}.nexo-systems .mesa-tag b{font-size:22px}.nexo-systems .mesa-tag small{font-size:11px}.nexo-systems .mesa .mesa-objects{padding-top:46px;gap:42px}.mesa-ivy-right{top:650px}.nexo-systems .mesa-decor{gap:24px}.nexo-systems .dc-tintero{display:block;order:3;margin:20px auto 0}.nexo-systems .mesa-decor{zoom:.8}}
 @media(prefers-reduced-motion:reduce){.nexo-systems .mesa *,.nexo-systems .mesa *:before,.nexo-systems .mesa *:after{animation:none!important;transition:none!important}.nexo-systems .obj{transform:rotate(var(--rest))}}
 /* La microtextura modula el material sin blanquear su pigmento. */
-.nexo-systems :is(.mesa-note,.mesa-tag,.book-cover,.book-strap,.pda,.phone,.codex-page,.reed-paper,.file-cover,.reed,.wf-case,.jarra-body,.vela-plate){background-blend-mode:soft-light,normal}
+.nexo-systems :is(.mesa-note,.mesa-tag,.jarra-body,.vela-plate){background-blend-mode:soft-light,normal}
 .nexo-systems .mesa-ivy-left{left:-70px}.nexo-systems .mesa-ivy-right{right:-75px}
 @media(max-width:560px){.nexo-systems .mesa-ivy-left{left:-54px}.nexo-systems .mesa-ivy-right{right:-56px}}
 
@@ -315,13 +617,6 @@
 .mesa-slot{position:relative;flex:0 0 294px;width:294px;min-height:400px;display:flex;align-items:center;justify-content:center;isolation:isolate}
 .mesa-slot-decor{flex-basis:230px;width:230px;min-height:280px}
 .mesa-slot:focus-within,.mesa-slot:hover{z-index:5}
-.nexo-systems .mesa .obj{--lift:0px;transform:translate(calc(var(--px)*-5px),calc(var(--py)*-4px + var(--lift))) rotate(var(--r));animation:mesa-place .9s cubic-bezier(.2,.9,.3,1.1) calc(var(--d) + var(--intro-wait,0s)) backwards}
-.nexo-systems .mesa .obj:hover,.nexo-systems .mesa .obj:focus-visible{--lift:-10px;--r:0deg}
-.nexo-systems .mesa .obj.is-picked{animation:mesa-pick .55s cubic-bezier(.5,0,.7,.4) forwards;z-index:6}
-.nexo-systems .mesa .obj-book:hover .book-cover,.nexo-systems .mesa .obj-book:focus-visible .book-cover{transform:rotateY(-58deg)}
-.nexo-systems .mesa .obj-phone:hover .phone,.nexo-systems .mesa .obj-phone:focus-visible .phone{animation:phone-buzz .45s linear 2}
-.nexo-systems .mesa .phone-notif{animation:phone-ping 9s ease-in-out 1.6s infinite}
-.nexo-systems .mesa .pda-led{animation:pda-blink 2.4s steps(1) infinite}
 .nexo-systems .mesa-light{animation:mesa-flicker 7s ease-in-out infinite}
 .nexo-systems .dc-dados{width:200px;height:100px;justify-content:center;gap:14px;padding:10px;flex-wrap:nowrap}
 .nexo-systems .dc-dados.is-poke .poly-die{animation:dc-poly-roll .75s cubic-bezier(.2,.8,.3,1)}
