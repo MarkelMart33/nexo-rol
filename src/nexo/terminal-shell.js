@@ -6,7 +6,7 @@
     stylesheet.href = './src/nexo/terminal-shell.css?v=1';
     const table = document.createElement('link');
     table.rel = 'stylesheet';
-    table.href = './src/nexo/mesa.css?v=10';
+    table.href = './src/nexo/mesa.css?v=11';
     document.head.append(stylesheet, table);
 
     const hub = document.createElement('section');
@@ -73,7 +73,7 @@
         const clock = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         const date = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
         hub.innerHTML = `<div class="mesa">
-          <div class="mesa-light" aria-hidden="true"></div>
+          <div class="mesa-vine vine-left" aria-hidden="true"></div><div class="mesa-vine vine-right" aria-hidden="true"></div><div class="mesa-light" aria-hidden="true"></div>
           <header class="mesa-head">
             <div class="mesa-note"><span class="mesa-tape" aria-hidden="true"></span><h1>¿A qué jugamos esta noche?</h1><p data-note>Coge uno de la mesa.</p></div>
             <span class="dc dc-tintero" data-egg="pluma" aria-hidden="true"><span class="tintero"><i class="tintero-blot"></i><i class="tintero-bottle"></i><i class="tintero-quill"></i></span></span>
@@ -119,7 +119,7 @@
             <span class="dc dc-jarra" data-egg="jarra"><span class="jarra"><i class="jarra-handle"></i><i class="jarra-body"></i><i class="jarra-inside"></i><i class="jarra-foam"></i><i class="jarra-band"></i><i class="jarra-rivets"></i></span></span>
             <span class="dc dc-vela" data-egg="vela"><span class="vela"><i class="vela-glow"></i><i class="vela-plate"></i><i class="vela-shadow"></i><i class="vela-wax"></i><i class="vela-pool"></i><i class="vela-wick"></i><i class="vela-flame"></i><i class="vela-smoke"></i></span></span>
             <span class="dc dc-esferas" data-egg="esferas"><span class="sphere-pouch"><i class="pouch-body"></i><i class="pouch-mouth"></i><i class="pouch-cord cord-left"></i><i class="pouch-cord cord-right"></i><i class="storm-sphere sphere-0" style="--gem:#9be5ff;--phase:0s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-1" style="--gem:#ffd783;--phase:0.23s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-2" style="--gem:#a8f0bf;--phase:0.46s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-3" style="--gem:#c4acff;--phase:0.6900000000000001s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-4" style="--gem:#9be5ff;--phase:0.92s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-5" style="--gem:#ffd783;--phase:1.1500000000000001s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-6" style="--gem:#b2efff;--phase:1.3800000000000001s"><span class="sphere-gem"></span></i><i class="pouch-lip"></i></span></span>
-            <span class="dc dc-pergamino" data-egg="pergamino"><span class="pergamino"><i class="pergamino-roll"></i><i class="pergamino-seal"></i></span></span>
+            <span class="dc dc-pergamino" data-egg="pergamino"><span class="pergamino"><i class="pergamino-sheet"></i><i class="pergamino-roll"></i><i class="pergamino-seal"></i></span></span>
             <span class="dc dc-dados" data-egg="dados"><span class="poly-die poly-d20" data-sides="20"><b>20</b></span><span class="poly-die poly-d8" data-sides="8"><b>8</b></span><span class="poly-die poly-d4" data-sides="4"><b>4</b></span></span>
             <span class="mesa-eyes"><i></i><i></i></span>
           </div>
