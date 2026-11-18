@@ -1,22 +1,108 @@
-/* Expediente de La llamada de Cthulhu sobre la mesa: carpeta de cartón, sello rojo y una fotografía que asoma. */
+/* Expediente de cartón, fotografía envejecida y sujeción de acero. */
 .file{position:relative;display:block;width:236px;height:316px}
-.file-photo{position:absolute;top:26px;right:-10px;width:118px;height:132px;padding:7px 7px 22px;background:#f1ead8;box-shadow:0 4px 8px #0007;transform:rotate(9deg);transition:transform .55s cubic-bezier(.3,1.3,.5,1)}
-.file-photo i{display:grid;place-items:center;width:100%;height:100%;background:radial-gradient(ellipse at 50% 40%,#6e6250,#2c261d 80%);color:#d6c9a6;filter:sepia(.6)}
+.file::before{
+  content:'';
+  position:absolute;
+  inset:4px -2px -5px 5px;
+  border-radius:3px 6px 8px 5px;
+  background:repeating-linear-gradient(0deg,#bdab84 0 1px,#ded1b1 1px 2px,#9f8a62 2px 3px);
+  box-shadow:0 2px #836b48,2px 4px 3px #33251285;
+}
+.file-photo{
+  position:absolute;
+  top:26px;
+  right:-10px;
+  width:118px;
+  height:132px;
+  padding:7px 7px 22px;
+  background:var(--mesa-papel) center/153px 153px,linear-gradient(130deg,#eee6d4,#bcab87);
+  background-blend-mode:soft-light,normal;
+  box-shadow:1px 3px 6px #20180aa3;
+  transform:rotate(9deg);
+  transition:transform .54s cubic-bezier(.22,.75,.3,1.10);
+}
+.file-photo i{
+  display:grid;
+  place-items:center;
+  width:100%;
+  height:100%;
+  color:#d3c7a7;
+  background:linear-gradient(145deg,#efe0bd20,transparent 42%),
+    var(--mesa-papel) center/91px 91px,radial-gradient(ellipse at 46% 40%,#74695a,#27221d 82%);
+  background-blend-mode:normal,soft-light,normal;
+  box-shadow:inset 0 0 11px #24170eaa;
+  filter:sepia(.32);
+}
 .file-photo i svg{width:54px;height:54px;opacity:.85}
-.file-photo:after{content:'¿R\'lyeh?';position:absolute;left:8px;bottom:3px;font:400 12px var(--hand);color:#4a3a28}
-.file-cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:flex-start;padding:30px 18px 18px;border-radius:0 6px 6px 6px;background:radial-gradient(ellipse at 30% 20%,#dcc48e,#c3a66a 70%,#b0915a);color:#3a2c1a;box-shadow:inset 0 0 0 1px #8f7344,inset 0 0 26px #7a5c2c55}
-.file-cover:before{content:'';position:absolute;inset:9px 9px 9px 9px;border:1px dashed #7a5c2c66;border-radius:2px;pointer-events:none}
-.file-tab{position:absolute;left:0;top:-17px;padding:3px 14px 2px;border-radius:5px 5px 0 0;background:#d3b97f;box-shadow:inset 0 1px 0 #ead6a4;font:400 11px 'Courier New',Courier,monospace;letter-spacing:.12em;color:#5a4527}
-.file-label{display:block;padding:8px 10px 9px;background:#f1e9d4;box-shadow:0 1px 2px #0003;transform:rotate(-1.5deg)}
+.file-photo::after{content:'¿R\27 lyeh?';position:absolute;left:8px;bottom:3px;font:400 12px var(--hand);color:#4a3a28}
+.file-cover{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  padding:30px 18px 18px;
+  border-radius:0 6px 6px 6px;
+  color:#3a2c1a;
+  background:
+    radial-gradient(ellipse at 7% 96%,#795d352e,transparent 29%),
+    linear-gradient(90deg,#6b583040 0%,#fff4d738 3%,transparent 6%),
+    var(--mesa-papel) center/155px 155px,
+    radial-gradient(ellipse at var(--glint-x) var(--glint-y),#ddd1ac,#bcaa81 82%);
+  background-blend-mode:normal,normal,soft-light,normal;
+  box-shadow:inset 1px 1px #fff2ce80,inset -1px -2px #7a65419c,inset 0 0 16px #78684630;
+}
+.file-cover::before{
+  content:'';
+  position:absolute;
+  inset:9px;
+  border:1px dashed #7a5c2c66;
+  border-radius:2px;
+  pointer-events:none;
+}
+.file-tab{
+  position:absolute;
+  left:0;
+  top:-17px;
+  padding:3px 14px 2px;
+  border-radius:5px 5px 0 0;
+  background:var(--mesa-papel) top/160px 160px,linear-gradient(135deg,#d9c494,#ae955d);
+  background-blend-mode:soft-light,normal;
+  box-shadow:inset 0 1px #efdbb4;
+  font:400 11px 'Courier New',Courier,monospace;
+  letter-spacing:.12em;
+  color:#453421;
+}
+.file-label{
+  display:block;
+  padding:8px 10px 9px;
+  background:var(--mesa-papel) center/116px 116px,linear-gradient(142deg,#f0e8d2,#ded3b8);
+  background-blend-mode:soft-light,normal;
+  box-shadow:inset 0 1px #fff7ea,0 1px 2px #4235204f;
+  transform:rotate(-1.5deg);
+}
 .file-label b{display:block;font:400 22px/1.05 var(--fell);color:#1e2a26;letter-spacing:.02em}
-.file-label small{display:block;margin-top:4px;font:400 11px 'Courier New',Courier,monospace;letter-spacing:.08em;color:#6b5d47}
+.file-label small{display:block;margin-top:4px;font:400 11px 'Courier New',Courier,monospace;letter-spacing:.08em;color:#5d503d}
 .file-emblem{width:58px;height:58px;margin:22px 0 0 14px;color:#2f4a40;opacity:.8;transition:color .4s,filter .4s,opacity .4s}
 .file-emblem svg{width:100%;height:100%}
-.file-stamp{position:absolute;right:14px;bottom:26px;padding:3px 9px;border:3px double #9c2a1c;border-radius:3px;color:#9c2a1c;font:700 14px 'Courier New',Courier,monospace;letter-spacing:.14em;transform:rotate(-13deg);opacity:.82;mix-blend-mode:multiply}
+.file-stamp{position:absolute;right:14px;bottom:26px;padding:3px 9px;border:3px double #9c2a1c;border-radius:3px;color:#8d3024;font:700 14px 'Courier New',Courier,monospace;letter-spacing:.14em;transform:rotate(-13deg);opacity:.8;mix-blend-mode:multiply}
 .file-note{position:absolute;left:18px;bottom:20px;max-width:118px;font:400 14px/1.25 var(--hand);color:#3c2f1d;transform:rotate(-3deg)}
-.file-clip{position:absolute;z-index:2;top:16px;right:46px;width:16px;height:46px;border:2.5px solid #9aa0a3;border-radius:8px;border-bottom-color:transparent;transform:rotate(9deg);transition:transform .55s cubic-bezier(.3,1.3,.5,1)}
-.obj-file:hover .file-photo,.obj-file:focus-visible .file-photo{transform:translate(26px,-22px) rotate(14deg)}
-.obj-file:hover .file-clip,.obj-file:focus-visible .file-clip{transform:translate(20px,-18px) rotate(14deg)}
-.obj-file:hover .file-emblem,.obj-file:focus-visible .file-emblem{color:#3fbf86;opacity:1;filter:drop-shadow(0 0 8px #7fd1a8cc);animation:file-throb 1.6s ease-in-out infinite}
-@keyframes file-throb{50%{filter:drop-shadow(0 0 16px #7fd1a8)}}
-@media(prefers-reduced-motion:reduce){.file *{animation:none!important;transition:none!important}}
+.file-clip{
+  position:absolute;
+  z-index:2;
+  top:16px;
+  right:46px;
+  width:16px;
+  height:46px;
+  border:2.5px solid #a1a8aa;
+  border-right-color:#7e8485;
+  border-bottom-color:transparent;
+  border-radius:8px;
+  filter:drop-shadow(1px 1px 0 #4a4f50);
+  transform:rotate(9deg);
+  transition:transform .54s cubic-bezier(.22,.75,.3,1.10);
+}
+.obj-file:is(:hover,:focus-visible,.is-picked) .file-photo{transform:translate(13px,-30px) rotate(13deg)}
+.obj-file:is(:hover,:focus-visible,.is-picked) .file-clip{transform:translate(10px,-16px) rotate(13deg)}
+.obj-file:is(:hover,:focus-visible,.is-picked) .file-emblem{color:#2d7257;opacity:1;filter:drop-shadow(0 0 5px #89bd9282)}
+@media(prefers-reduced-motion:reduce){.file *{transition:none}}
