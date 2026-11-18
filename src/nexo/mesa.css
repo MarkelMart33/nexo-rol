@@ -335,7 +335,7 @@
 @media(prefers-reduced-motion:reduce){.nexo-systems .mesa,.nexo-systems .mesa *,.nexo-systems .mesa *:before,.nexo-systems .mesa *:after{animation:none!important;transition:none!important}.nexo-systems .mesa .obj{transform:rotate(var(--rest))}}
 
 /* Atrezo: cambios acotados a los adornos; los accesos a sistemas no se modifican. */
-.mesa-vine{position:absolute;z-index:0;width:140px;height:950px;background:url('../../assets/mesa/hiedra-rastrera.svg') center/contain no-repeat;pointer-events:none;opacity:.92}
+.mesa-vine{position:absolute;z-index:0;width:140px;height:950px;background:url('../../assets/mesa/hiedra-rastrera.svg?v=2') center/contain no-repeat;pointer-events:none;opacity:.92}
 .vine-left{left:-35px;top:170px;transform:rotate(-3deg)}
 .vine-right{right:-35px;bottom:10px;transform:scaleX(-1) rotate(-5deg)}
 .nexo-systems .dc-dados{position:relative;display:block;width:155px;height:130px;padding:0;filter:drop-shadow(5px 8px 5px #0006)}
@@ -371,3 +371,16 @@
 .nexo-systems .pergamino-seal{left:111px;top:86px;transform:rotate(12deg);background:radial-gradient(circle at 50% 50%,transparent 0 6px,#4e111b 6.5px 7.5px,transparent 8px),radial-gradient(circle at 30% 25%,#b64b51,#762530 65%,#40111a)}
 @media(max-width:560px){.mesa-vine{width:80px;opacity:.75}.vine-left{left:-40px;top:260px}.vine-right{right:-40px;bottom:60px}}
 @media(prefers-reduced-motion:reduce){.nexo-systems .dc-esferas .storm-sphere{animation:none!important;transition:none!important}}
+
+/* La hiedra completa cabe dentro de la mesa, incluido el margen de sus sombras. */
+.nexo-systems .mesa-vine{width:100px;height:950px;transform:none;pointer-events:none}
+.nexo-systems .vine-left{left:0;top:155px}
+.nexo-systems .vine-right{right:0;bottom:12px;transform:scaleX(-1)}
+/* Solo el atrezo usa lienzos 3D. Nunca se seleccionan ni se estilizan los accesos. */
+.nexo-systems .dc.has-decor-model{position:relative;filter:none;width:220px;height:225px;perspective:none}
+.nexo-systems .dc.has-decor-model>span:not(.dc-say){visibility:hidden;pointer-events:none}
+.nexo-systems .dc.has-decor-model:before{display:none}
+.nexo-systems .dc.has-decor-model .decor-model{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.nexo-systems .dc-tintero.has-decor-model{width:190px;height:145px}
+.nexo-systems .dc.has-decor-model .dc-say{bottom:calc(100% - 8px)}
+@media(max-width:560px){.nexo-systems .mesa-vine{width:65px;height:900px}.nexo-systems .vine-left{left:0;top:245px}.nexo-systems .vine-right{right:0;bottom:24px}.nexo-systems .dc.has-decor-model{width:215px;height:220px}.nexo-systems .dc-tintero.has-decor-model{width:190px;height:145px}}
