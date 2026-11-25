@@ -60,3 +60,23 @@ html.fx .cth :is(.cth-field input,.cth-field textarea,.cth-spec)::placeholder{co
   html.fx :is(.dnd-actions,.vtm-actions,.tor-actions,.cth-actions,.pf-actions)>:first-child:nth-last-child(odd){grid-column:1/-1}
   html.fx :is(.dnd-actions,.vtm-actions,.tor-actions,.cth-actions,.pf-actions)>:is(button,a){width:100%;min-width:0;padding-left:10px;padding-right:10px;letter-spacing:.06em;text-wrap:balance}
 }
+
+/* ───── Rediseño 3/3: letra mínima dentro de las fichas y del creador ───── */
+html.fx .vtm :is(.vtm-field span,.vtm-stats small,.vtm-era-tag){font-size:11px;letter-spacing:.12em}
+html.fx .vtm :is(.vtm-badge,.vtm-era){font-size:10.5px}
+html.fx .vtm .vtm-phase button{font-size:11px;letter-spacing:.04em;line-height:1.25}
+html.fx :is(.tor,.pf,.cth,.dnd,.vtm) .ap-term{font-size:max(1em,11px)}
+
+/* El perfil tampoco necesita la mesa ni la PDA dibujadas debajo */
+html:has(.nexo-profile:not([hidden])) :is(.nexo-systems,.app-shell){display:none}
+
+/* Cuenta: los enlaces «Regístrate» y «¿Has olvidado…?» eran de 27 px de alto */
+html.fx .auth-gate :is(.auth-mode-button,.text-button){min-height:44px;display:flex;align-items:center;justify-content:center}
+
+@media(pointer:coarse){
+  /* Tiradas desde la ficha y casillas: más área táctil sin cambiar cómo se ven */
+  html.fx .nd-roll-btn{min-height:36px;min-width:36px}
+  html.fx .vtm .vtm-dot:not(.vtm-legend .vtm-dot){width:21px;height:21px}
+  html.fx .vtm .vtm-derived .vtm-dot{width:19px;height:19px}
+  html.fx .cth :is(.cth-tab){min-height:40px}
+}
