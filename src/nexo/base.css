@@ -1,0 +1,62 @@
+/*
+ * NEXO · Legibilidad y uso comunes a todos los sistemas.
+ * No cambia la identidad de nadie: fija un mínimo de letra, botones que se pulsan bien con el dedo,
+ * un foco visible del color de cada sistema y un orden de pantalla que no se rompe a 360 px.
+ * Los selectores llevan «html.fx» delante para ganar a los CSS de cada sistema, que se cargan después.
+ * Cada sistema elige el color de su foco con --nx-focus (con contraste 3:1 sobre su fondo y su papel).
+ */
+html.fx{--nx-focus:#75e7df;--nx-tap:44px;--nx-fab-room:calc(104px + env(safe-area-inset-bottom,0px))}
+html.fx .dnd{--nx-focus:#8a5a00}
+html.fx .vtm{--nx-focus:#ff5a72}
+html.fx .vtm.vtm-da{--nx-focus:#8e1414}
+html.fx .tor{--nx-focus:#a6e6ff}
+html.fx .cth{--nx-focus:#2f8f68}
+html.fx .pf{--nx-focus:#23877b}
+html.fx :is(.nexo-profile,.auth-gate){--nx-focus:#9b3b1d}
+
+/* ───── Foco del teclado: siempre visible y del color del sistema ───── */
+html.fx :is(.dnd,.vtm,.tor,.cth,.pf,.nexo-profile,.auth-gate,.nd-panel) :is(button,a[href],summary,select,input,textarea,[tabindex]):focus-visible,
+html.fx .nd-fab:focus-visible{outline:2px solid var(--nx-focus);outline-offset:2px}
+
+/* ───── La mesa y la PDA no se dibujan debajo de un sistema abierto (ahorra batería en el móvil) ───── */
+html:is(.nexo-dnd-open,.nexo-vampire-open,.nexo-tormentas-open,.nexo-cthulhu-open,.nexo-pathfinder-open) :is(.nexo-systems,.app-shell){display:none}
+
+/* ───── Cabecera de cada sistema: una sola línea y letra legible ───── */
+html.fx :is(.dnd-brand,.vtm-brand,.tor-brand,.cth-brand,.pf-brand){min-width:0}
+html.fx :is(.dnd-brand,.vtm-brand,.tor-brand,.cth-brand,.pf-brand)>span:last-child{min-width:0}
+html.fx :is(.dnd-brand,.vtm-brand,.tor-brand,.cth-brand,.pf-brand) small{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.fx :is(.dnd-status,.vtm-status,.tor-status,.cth-status,.pf-status){font-size:11px;line-height:1.3}
+
+/* ───── Hueco al final para que el botón «Dados» no tape lo último ───── */
+html.fx :is(.dnd-main,.vtm-main,.tor-main,.cth-main,.pf-main){padding-bottom:var(--nx-fab-room)}
+
+/* ───── Pestañas: la activa de Vampiro necesita más contraste con el texto claro ───── */
+html.fx .vtm:not(.vtm-da) .ap-vtm .ap-tab.is-active{background:#c3172f}
+
+/* ───── Índice del manual en el móvil: se ve que sigue hacia la derecha ───── */
+html.fx .ap-toc>ul{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);padding-right:28px}
+@media(min-width:861px){html.fx .ap-toc>ul{-webkit-mask-image:none;mask-image:none;padding-right:0}}
+
+/* ───── Cthulhu: los textos de ejemplo se leían mal sobre el papel ───── */
+html.fx .cth :is(.cth-field input,.cth-field textarea,.cth-spec)::placeholder{color:#8a7a58}
+
+/* ───── Pantallas táctiles: nada que se pulse por debajo de 44 px ───── */
+@media(pointer:coarse){
+  html.fx :is(.dnd-button,.vtm-button,.tor-button,.cth-button,.pf-button,.ap-tab,.ap-appbar-home,.nf-bar-button){min-height:var(--nx-tap)}
+  html.fx :is(.dnd-button,.vtm-button,.tor-button,.cth-button,.pf-button).ap-mini{min-height:40px}
+  html.fx :is(.dnd-button,.vtm-button,.tor-button,.cth-button,.pf-button){display:inline-flex;align-items:center;justify-content:center;gap:.45em;text-align:center}
+}
+
+/* ───── Móvil ───── */
+@media(max-width:560px){
+  html.fx :is(.dnd-top,.vtm-top,.tor-top,.cth-top,.pf-top){height:60px;padding:0 14px;gap:10px}
+  html.fx :is(.dnd-brand,.vtm-brand,.tor-brand,.cth-brand,.pf-brand){gap:10px;flex:1 1 auto}
+  html.fx :is(.dnd-brand,.vtm-brand,.tor-brand,.cth-brand,.pf-brand) b{font-size:17px}
+  html.fx :is(.dnd-brand,.vtm-brand,.tor-brand,.cth-brand,.pf-brand) small{font-size:11px;letter-spacing:.06em;line-height:1.25;white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+  /* El lema y el estado de guardado: dos líneas como mucho, sin comerse la marca */
+  html.fx :is(.dnd-status,.vtm-status,.tor-status,.cth-status,.pf-status){flex:0 1 auto;max-width:36%;font-size:11px;letter-spacing:.06em;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  /* Acciones: la principal a lo ancho y las demás en dos columnas iguales */
+  html.fx :is(.dnd-actions,.vtm-actions,.tor-actions,.cth-actions,.pf-actions){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  html.fx :is(.dnd-actions,.vtm-actions,.tor-actions,.cth-actions,.pf-actions)>:first-child:nth-last-child(odd){grid-column:1/-1}
+  html.fx :is(.dnd-actions,.vtm-actions,.tor-actions,.cth-actions,.pf-actions)>:is(button,a){width:100%;min-width:0;padding-left:10px;padding-right:10px;letter-spacing:.06em;text-wrap:balance}
+}
