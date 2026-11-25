@@ -12,12 +12,144 @@
 .mesa-note h1{margin:0;font:700 clamp(28px,4vw,40px)/1.05 var(--hand);letter-spacing:-.01em;color:#2f1f12}
 .mesa-note p{margin:10px 0 0;font:400 19px var(--hand);color:#6b5236}
 .mesa-tape{position:absolute;top:-12px;left:50%;width:92px;height:26px;transform:translateX(-50%) rotate(3deg);background:#e9dfc7b8;box-shadow:0 1px 3px #0003;clip-path:polygon(3% 0,97% 4%,100% 100%,0 94%)}
-.mesa-tag{position:relative;flex:none;width:118px;padding:16px 14px 14px 30px;border:0;border-radius:6px 22px 22px 6px;background:radial-gradient(circle at 70% 30%,#8f4c29,#6b351b 70%);color:#f3dcc0;text-align:left;cursor:pointer;transform:rotate(5deg);transform-origin:16px 50%;box-shadow:0 12px 20px -8px #000d,inset 0 0 0 1px #3c1b0b;transition:transform .35s cubic-bezier(.3,1.6,.5,1)}
-.mesa-tag:before{content:'';position:absolute;inset:5px 5px 5px 22px;border:1.5px dashed #e8c39a80;border-radius:3px 17px 17px 3px}
-.mesa-tag-hole{position:absolute;left:8px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:var(--walnut-dark);box-shadow:0 0 0 3px #c79a4a,0 0 0 4px #6b4a1c,inset 0 2px 3px #000}
-.mesa-tag b{display:block;font:400 30px/1 var(--fell);letter-spacing:.04em;color:#f8e4c6;text-shadow:0 -1px 0 #3c1b0b}
-.mesa-tag small{display:block;margin-top:6px;font:400 15px/1.1 var(--hand);color:#ecc9a2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mesa-tag:hover,.mesa-tag:focus-visible{transform:rotate(-3deg)}
+/* Etiqueta de equipaje: cuero cosido, ojal de latón y monograma prensado. */
+.mesa-tag{
+  --tag-angle:2deg;
+  --tag-medallion:42px;
+  position:relative;
+  display:grid;
+  flex:none;
+  grid-template-columns:var(--tag-medallion) minmax(0,1fr) 8px;
+  align-items:center;
+  column-gap:11px;
+  width:clamp(200px,17.5vw,240px);
+  min-height:81px;
+  padding:12px 17px 12px 36px;
+  border:0;
+  border-radius:12px 20px 20px 12px / 20px 18px 18px 20px;
+  background:
+    radial-gradient(ellipse at 22% 3%,#ffc99439,transparent 60%),
+    linear-gradient(100deg,#34201545,transparent 33% 76%,#25150e37),
+    url('../../assets/mesa/grano-cuero.png') center/155px,
+    linear-gradient(145deg,#82583e,#5f402d 65%,#4a3021);
+  background-blend-mode:normal,normal,soft-light,normal;
+  box-shadow:inset 1px 2px 1px #ce9f7866,inset -1px -2px 1px #2c1b15a8,
+    1px 3px 0 #301e16,2px 5px 1px #21150f,5px 10px 12px #190f0b7b;
+  color:#f8e6c9;
+  text-align:left;
+  cursor:pointer;
+  transform:rotate(var(--tag-angle));
+  transform-origin:14px center;
+  transition:transform .28s cubic-bezier(.23,.7,.28,1),box-shadow .28s ease;
+}
+.mesa-tag::before{
+  content:'';
+  position:absolute;
+  inset:7px 8px 7px 25px;
+  border:1px dashed #e2b183a6;
+  border-radius:5px 13px 13px 5px / 8px 11px 11px 8px;
+  box-shadow:0 1px #2c1b1469;
+  pointer-events:none;
+}
+.mesa-tag-hole{
+  position:absolute;
+  left:11px;
+  top:50%;
+  width:15px;
+  height:15px;
+  border-radius:50%;
+  background:url('../../assets/mesa/metal-cepillado.png') center/81px,
+    conic-gradient(from 25deg,#edc58a,#9a6330 75deg,#513019 147deg,#b88850 220deg,#f1d09a 315deg,#edc58a);
+  background-blend-mode:soft-light,normal;
+  box-shadow:0 0 0 1px #3e2619,1px 2px 2px #2517109e;
+  translate:0 -50%;
+}
+.mesa-tag-hole::before{
+  content:'';
+  position:absolute;
+  width:23px;
+  height:11px;
+  top:0;
+  right:7px;
+  border:1.5px solid #a88969;
+  border-radius:50%;
+  transform:rotate(-24deg);
+  box-shadow:0 2px 2px #291a11aa,inset 0 1px #d4b69580;
+}
+.mesa-tag-hole::after{
+  content:'';
+  position:absolute;
+  inset:3px;
+  border-radius:50%;
+  background:radial-gradient(circle at 77% 86%,#553827,#24160f 73%);
+  box-shadow:inset 1px 1px 2px #110c09,0 0 0 1px #76503375;
+}
+.mesa-tag-monogram{
+  position:relative;
+  display:grid;
+  place-items:center;
+  inline-size:var(--tag-medallion);
+  block-size:var(--tag-medallion);
+  border-radius:50%;
+  background:url('../../assets/mesa/grano-cuero.png') center/128px,
+    radial-gradient(ellipse at 68% 85%,#6f4e36,#492c1e);
+  background-blend-mode:soft-light,normal;
+  box-shadow:inset 1px 2px 3px #23150d94,0 1px 0 #c295698c;
+  color:#fae1b2;
+  font:400 24px/1 var(--fell);
+  text-shadow:0 -1px #352012,0 1px 1px #261910;
+}
+.mesa-tag-copy{position:relative;display:grid;min-width:0;gap:2px}
+.mesa-tag-name{
+  color:#ffedd4;
+  font:700 22px/1.1 var(--hand);
+  overflow-wrap:anywhere;
+  text-shadow:0 1px 1px #2d1b10;
+}
+.mesa-tag-caption{color:#e5bd91;font:400 14px/1 var(--fell)}
+.mesa-tag-arrow{
+  position:relative;
+  justify-self:center;
+  width:7px;
+  height:7px;
+  border-top:1.5px solid #ebc395;
+  border-right:1.5px solid #ebc395;
+  transform:rotate(45deg);
+  transition:translate .28s ease;
+}
+.mesa-tag:is(:hover,:focus-visible){
+  transform:translateY(-3px) rotate(-1deg);
+  box-shadow:inset 1px 2px 1px #e4bc906e,inset -1px -2px 1px #2c1b15a8,
+    1px 3px 0 #301e16,2px 5px 1px #21150f,5px 14px 15px #190f0b75;
+}
+.mesa-tag:is(:hover,:focus-visible) .mesa-tag-arrow{translate:2px 0}
+.mesa-tag:active{transform:translateY(1px) rotate(var(--tag-angle))}
+.mesa-tag:focus-visible{outline:2px solid #efd8aa;outline-offset:6px}
+@media(max-width:560px){
+  .nexo-systems .mesa-head .mesa-note{min-width:0}
+  .nexo-systems .mesa-head .mesa-note h1{font-size:clamp(19px,5.25vw,23px)}
+  .mesa-tag{
+    --tag-angle:1.5deg;
+    --tag-medallion:32px;
+    width:clamp(150px,47vw,192px);
+    min-height:69px;
+    grid-template-columns:var(--tag-medallion) minmax(0,1fr) 6px;
+    column-gap:7px;
+    padding:10px 12px 10px 27px;
+    border-radius:10px 16px 16px 10px / 16px 14px 14px 16px;
+  }
+  .mesa-tag::before{inset:6px 6px 6px 21px;border-radius:5px 10px 10px 5px}
+  .mesa-tag-hole{left:8px;width:12px;height:12px}
+  .mesa-tag-hole::before{width:18px;height:9px;right:6px}
+  .mesa-tag-monogram{font-size:18px}
+  .mesa-tag-name{font-size:17px}
+  .mesa-tag-caption{font-size:13px}
+  .mesa-tag-arrow{width:5px;height:5px}
+}
+@media(prefers-reduced-motion:reduce){
+  .mesa-tag:is(:hover,:focus-visible,:active){transform:rotate(var(--tag-angle))}
+  .mesa-tag:is(:hover,:focus-visible) .mesa-tag-arrow{translate:none}
+}
 
 /* Cada acceso conserva su espacio, con una luz común de arriba a la izquierda. */
 .mesa-objects{position:relative;z-index:1;flex:1}
@@ -535,11 +667,8 @@
   .mesa{padding:22px 16px 40px}
   .mesa-head{gap:14px}
   .mesa-note{padding:20px 20px 16px}
-  .mesa-tag{padding:12px 10px 12px 26px}
-  .mesa-tag b{font-size:24px}
   .mesa-objects{grid-template-columns:1fr;justify-items:center;gap:30px;padding-top:34px}
   .obj{--r:calc(var(--rest)*.55)}
-  .mesa-tag{width:108px}.mesa-tag small{font-size:13px}
   .mesa-decor{justify-content:center;gap:18px 24px;padding-top:34px}
   .dc-tintero{display:none}
 }
@@ -560,7 +689,6 @@
 .nexo-systems .mesa-note h1{font:400 clamp(25px,3vw,35px)/1.2 var(--fell);max-width:340px}
 .nexo-systems .mesa-note p{font-size:17px}
 .nexo-systems .mesa-tape{display:none}
-.nexo-systems .mesa-tag{background-image:url('../../assets/mesa/cuero.svg'),linear-gradient(135deg,#694b32,#30241e);box-shadow:1px 2px 1px #100c09,7px 9px 15px #0006}
 .nexo-systems .mesa .mesa-objects{gap:64px 65px;padding:64px 16px 42px;perspective:1400px}
 .nexo-systems .mesa-decor{z-index:2;overflow:visible;gap:32px 38px;padding:35px 0 20px;justify-content:center;border-top:1px solid #f3d7a412}
 .nexo-systems .dc{filter:drop-shadow(6px 9px 5px #0005);transition:transform .4s ease;animation:none}
@@ -578,10 +706,10 @@
 .nexo-systems .dc.dc-dados .poly-d4{width:48px;height:51px;clip-path:polygon(50% 0,100% 100%,0 100%);background:conic-gradient(at 50% 65%,#a7a5b8,#444454,#c2bfcd,#666174,#a7a5b8);padding-top:12px}
 .nexo-systems .dc.dc-dados .die{background-image:url('../../assets/mesa/papel.svg'),linear-gradient(135deg,#f3e8cd,#bba884);box-shadow:inset 1px 2px 1px #fff8,inset -2px -3px 1px #6d614c,3px 4px 0 #88775d}
 @media(max-width:860px){.nexo-systems .mesa{padding:32px 32px 64px}.mesa-ivy{opacity:.8;width:95px}.mesa-ivy-left{left:-38px}.mesa-ivy-right{right:-40px}.nexo-systems .mesa .mesa-objects{gap:46px 40px}.nexo-systems .mesa-head{gap:15px}.nexo-systems .mesa-note{padding:20px}.nexo-systems .mesa-note h1{font-size:26px}}
-@media(max-width:560px){.nexo-systems .mesa{padding:24px 20px 60px}.nexo-systems .mesa-head{flex-wrap:wrap}.nexo-systems .mesa-note{max-width:205px;padding:16px}.nexo-systems .mesa-note h1{font-size:23px}.nexo-systems .mesa-tag{width:72px;padding:12px 7px 12px 22px}.nexo-systems .mesa-tag b{font-size:22px}.nexo-systems .mesa-tag small{font-size:11px}.nexo-systems .mesa .mesa-objects{padding-top:46px;gap:42px}.mesa-ivy-right{top:650px}.nexo-systems .mesa-decor{gap:24px}.nexo-systems .dc-tintero{display:block;order:3;margin:20px auto 0}.nexo-systems .mesa-decor{zoom:.8}}
+@media(max-width:560px){.nexo-systems .mesa{padding:24px 20px 60px}.nexo-systems .mesa-head{flex-wrap:wrap}.nexo-systems .mesa-note{max-width:205px;padding:16px}.nexo-systems .mesa-note h1{font-size:23px}.nexo-systems .mesa .mesa-objects{padding-top:46px;gap:42px}.mesa-ivy-right{top:650px}.nexo-systems .mesa-decor{gap:24px}.nexo-systems .dc-tintero{display:block;order:3;margin:20px auto 0}.nexo-systems .mesa-decor{zoom:.8}}
 @media(prefers-reduced-motion:reduce){.nexo-systems .mesa *,.nexo-systems .mesa *:before,.nexo-systems .mesa *:after{animation:none!important;transition:none!important}.nexo-systems .obj{transform:rotate(var(--rest))}}
 /* La microtextura modula el material sin blanquear su pigmento. */
-.nexo-systems :is(.mesa-note,.mesa-tag,.jarra-body,.vela-plate){background-blend-mode:soft-light,normal}
+.nexo-systems :is(.mesa-note,.jarra-body,.vela-plate){background-blend-mode:soft-light,normal}
 .nexo-systems .mesa-ivy-left{left:-70px}.nexo-systems .mesa-ivy-right{right:-75px}
 @media(max-width:560px){.nexo-systems .mesa-ivy-left{left:-54px}.nexo-systems .mesa-ivy-right{right:-56px}}
 
