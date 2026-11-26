@@ -35,6 +35,7 @@
 .np-stat{display:grid;justify-items:center;align-content:center;gap:2px;min-height:76px;padding:8px 4px;border:1px solid var(--np-line);border-radius:10px;background:var(--np-card);color:var(--np-ink);text-align:center}
 .np-stat small{color:var(--np-soft);font:600 11px/1.2 var(--np-head);letter-spacing:.08em;text-transform:uppercase}
 .np-stat b{font:700 26px/1.05 var(--np-head);font-variant-numeric:tabular-nums}
+.np-stat i{max-width:100%;color:var(--np-soft);font-size:11px;font-style:normal;line-height:1.2}
 .np-stat em{color:var(--np-accent);font-size:11px;font-style:normal;letter-spacing:.06em}
 .np-stat.is-roll{border-color:color-mix(in srgb,var(--np-accent) 60%,var(--np-line))}
 .np-stat.is-roll b{color:var(--np-accent)}
@@ -72,6 +73,26 @@
 .np-roll span{min-width:0;overflow:hidden;font-size:14px;line-height:1.2;text-overflow:ellipsis}
 .np-roll b{flex:none;color:var(--np-accent);font:700 17px/1 var(--np-head);font-variant-numeric:tabular-nums}
 .np-roll.is-prof{border-color:color-mix(in srgb,var(--np-accent) 55%,var(--np-line));background:color-mix(in srgb,var(--np-accent) 10%,transparent)}
+.np-roll-grid.has-hints{grid-template-columns:1fr}
+@media (min-width:560px){.np-roll-grid.has-hints{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.np-roll span small{display:block;margin-top:2px;color:var(--np-soft);font-size:12.5px;line-height:1.3;white-space:normal}
+.np-roll span small.np-prof{display:inline;margin:0 0 0 6px;color:var(--np-accent);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.np-roll-grid.has-hints .np-roll span{white-space:normal}
+.np-note{margin:0 14px 8px;color:var(--np-soft);font-size:13.5px;line-height:1.45}
+.np-help{margin:0 10px 10px;padding:0 4px;border-bottom:1px dotted var(--np-line)}
+.np-help>summary,.np-gloss>summary{min-height:40px;display:flex;align-items:center;color:var(--np-accent);font-size:14px;font-weight:600;cursor:pointer;list-style:none}
+.np-help>summary::-webkit-details-marker,.np-gloss>summary::-webkit-details-marker{display:none}
+.np-help>summary:before,.np-gloss>summary:before{content:'＋';margin-right:6px;font-weight:400}
+.np-help[open]>summary:before,.np-gloss[open]>summary:before{content:'−'}
+.np-help p,.np-gloss p{margin:0 0 10px;font-size:14px;line-height:1.5}
+.np-guide{display:grid;gap:10px}
+.np-guide-title{margin:8px 2px 0;color:var(--np-soft);font:700 12px/1.2 var(--np-head);letter-spacing:.14em;text-transform:uppercase}
+.np-guide-body{padding:0 14px 12px;font-size:15px;line-height:1.5}
+.np-guide-body ol,.np-guide-body ul{margin:0;padding-left:20px}
+.np-guide-body li{margin:6px 0}
+.np-lead{margin:0}
+.np-gloss{border-top:1px dotted var(--np-line)}
+.np-gloss:first-child{border-top:0}
 .np-hint{margin:0;color:var(--np-soft);font-size:13px;line-height:1.45}
 
 /* Botón de la ficha que abre el modo */

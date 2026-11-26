@@ -185,11 +185,14 @@
     can: ch => Boolean(playModel(ch)), view: ch => partidaView(ch), roll: key => rollSkill(key),
     back: () => { if (current) juego?.render(host.querySelector('[data-play]')); }
   });
+  // Reglas básicas para quien empieza, en el modo partida (resúmenes propios).
+  const PARTIDA_RULES = [['Cómo se tira', 'd20 más el modificador de la habilidad contra la dificultad que diga el máster. Si la igualas o superas, lo consigues.'], ['Dado de trama', 'Cuando hay mucho en juego, el máster te pide tirarlo además: puede traer una complicación o una oportunidad.'], ['Tu turno', 'Puedes jugar un turno rápido, antes que los enemigos y con dos acciones, o uno lento, después y con tres. Tienes una reacción por ronda.'], ['Defensas', 'Los ataques tiran contra tu defensa física, cognitiva o espiritual según lo que te hagan.'], ['Concentración', 'Se gasta en algunas reacciones y talentos. Vuelve al descansar.'], ['Lesiones', 'Al caer a 0 de salud recibes una lesión. Apúntalas en el panel: algunas se curan con descanso y otras no.']];
   function partidaView(ch) {
     const data = sheetData(ch);
     return {
       title: data.name, sub: data.subtitle,
       stats: window.NEXO_PARTIDA.pick(data, [['Defensa física', 'Def. física', '', 'tor-defensas'], ['Defensa cognitiva', 'Def. cognitiva', '', 'tor-defensas'], ['Defensa espiritual', 'Def. espiritual', '', 'tor-defensas'], ['Movimiento'], ['Recuperación']]),
+      guide: [{ title: 'Reglas básicas', gloss: PARTIDA_RULES }],
       rolls: [{ id: 'sk', title: 'Habilidades', items: diceItems(ch).map(([key, label, value]) => ({ key, label, value: signed(value) })) }]
     };
   }

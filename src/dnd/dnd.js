@@ -132,6 +132,13 @@
     prefix: 'dnd', title: '<span>⚔</span> En juego <small>lo que cambia durante la partida</small>',
     current: () => current, model: ch => playModel(ch), save: () => scheduleSave(), term, ready: ch => isComplete(ch),
     act: (id, a, done, before) => playAction(id, a, done, before),
+    // Concentración: al recibir daño, la CD de la salvación y un botón para tirarla; a 0 PG se pierde.
+    onDelta: (a, c, delta) => {
+      if (c.id !== 'hp' || delta >= 0 || !a.cond('concentracion')) return null;
+      if (a.get('hp') === 0) { a.setCond('concentracion', 0); return { text: 'Pierdes la concentración.' }; }
+      concDc = Math.min(30, Math.max(10, Math.floor(-delta / 2)));
+      return { text: `Concentración: salvación de Constitución CD ${concDc}.`, act: { id: 'conc', label: `Tirar CON (CD ${concDc})` } };
+    },
     // Al volver a tener puntos de golpe, las salvaciones contra muerte se borran.
     onChange: () => { const a = current && juego.api(current); if (a?.model && a.get('hp') > 0 && (a.get('ds') || a.get('df'))) juego.change(current, x => { x.set('ds', 0); x.set('df', 0); }); }
   });
@@ -410,6 +417,7 @@
       ],
       groupTerms: { 'Espacios de conjuro': 'dnd-espacios', 'Salvaciones contra muerte': 'dnd-salvaciones-muerte' },
       conditions: [
+        { id: 'concentracion', label: 'Concentrado', term: 'dnd-concentracion', rest: { long: 'clear' }, effect: 'Mantienes un conjuro de concentración. Si recibes daño, salvación de Constitución (CD 10 o la mitad del daño, la mayor) para no perderlo; a 0 PG se pierde solo. Solo uno a la vez.' },
         ...PLAY_CONDITIONS.map(([k, label, effect]) => ({ id: k, label, effect, term: `dnd-estado-${k}` })),
         { id: 'agotamiento', label: 'Agotamiento', max: 6, term: 'dnd-estado-agotamiento', rest: { long: -1 }, effect: n => (n >= 6 ? 'Con 6 niveles, tu personaje muere.' : `−${2 * n} a todas tus pruebas d20 y −${5 * n} pies de velocidad.`) }
       ],
@@ -419,8 +427,13 @@
       ]
     };
   }
+  let concDc = 10;
   function playAction(id, a, done, before) {
     const ch = a.ch;
+    if (id === 'conc') {
+      rollFromSheet('sv:con', { note: `Concentración: necesitas ${concDc} o más; si fallas, quítate «Concentrado».` });
+      return;
+    }
     const dice = window.NEXO_DICE;
     if (id === 'hd') {
       if (!a.get('hd')) { done('No te quedan dados de golpe.'); return; }
@@ -679,31 +692,100 @@
     const item = diceItems(current).find(([k]) => k === key);
     if (!item) return;
     const fx = rollEffects(current, key, opts.adv);
-    window.NEXO_DICE?.roll('dnd', { mod: item[2] + fx.bonus, adv: fx.adv, note: fx.note, label: item[1], kind: key === 'spell' ? 'attack' : 'check' });
+    window.NEXO_DICE?.roll('dnd', { mod: item[2] + fx.bonus, adv: fx.adv, note: [fx.note, opts.note].filter(Boolean).join(' '), label: item[1], kind: key === 'spell' ? 'attack' : 'check' });
   }
 
   // Lo que enseña el modo partida: los números de la mesa y las tiradas de la ficha.
+  // Ayudas para quien empieza (resúmenes propios): qué es cada habilidad y salvación, el papel de cada clase y las reglas básicas.
+  const SKILL_HINT = {
+    acrobacias: 'Equilibrio, piruetas, caer de pie.', atletismo: 'Trepar, nadar, saltar, empujar o agarrar.', arcano: 'Magia, conjuros y objetos mágicos.',
+    engano: 'Mentir de forma convincente, disfrazarte.', historia: 'Reinos, guerras, leyendas y ruinas.', interpretacion: 'Cantar, bailar, actuar, contar historias.',
+    intimidacion: 'Asustar o presionar con amenazas.', investigacion: 'Buscar pistas, deducir, revisar trampas.', juego_manos: 'Robar bolsillos, esconder objetos pequeños.',
+    medicina: 'Estabilizar a un moribundo, ver enfermedades.', naturaleza: 'Plantas, animales, terreno y clima.', percepcion: 'Ver, oír u oler: emboscadas, puertas ocultas.',
+    perspicacia: 'Saber si alguien miente o qué pretende.', persuasion: 'Convencer con buenas maneras, negociar.', religion: 'Dioses, cultos, rituales y no muertos.',
+    sigilo: 'Moverte sin que te vean ni te oigan.', supervivencia: 'Rastrear, orientarte, cazar, acampar.', trato_animales: 'Calmar o manejar animales, montar.'
+  };
+  const SAVE_HINT = { fue: 'Empujones y agarres.', des: 'Esquivar explosiones y trampas.', con: 'Venenos y mantener la concentración.', int: 'Ilusiones y ataques a la mente.', sab: 'Miedo y magia que controla la mente.', car: 'Posesiones y destierros.' };
+  const ABILITY_HELP = {
+    fue: 'Fuerza física: ataques cuerpo a cuerpo, trepar, empujar y cargar peso.', des: 'Agilidad y reflejos: armas a distancia y ligeras, iniciativa y CA.',
+    con: 'Aguante: da tus puntos de golpe y te ayuda a no perder la concentración.', int: 'Razonamiento y memoria: saber cosas e investigar.',
+    sab: 'Intuición y percepción: darte cuenta de lo que pasa y leer a la gente.', car: 'Personalidad y presencia: convencer, mentir, intimidar.'
+  };
+  const CLASS_GUIDE = {
+    barbaro: ['Eres la primera línea: aguantas golpes que tumbarían a cualquiera y pegas muy fuerte de cerca.', ['Al empezar el combate, entra en Furia con tu acción adicional: resistes el daño contundente, cortante y perforante y sumas daño con tus ataques de Fuerza.', 'Ve a por el enemigo más peligroso y ataca con tu arma (desde nivel 5, dos ataques).', 'Si te compensa, usa Ataque temerario: ventaja en tus ataques de Fuerza, pero también contra ti hasta tu siguiente turno.', 'La Furia sigue mientras ataques a un enemigo o le obligues a hacer una salvación cada turno.']],
+    bardo: ['Eres el apoyo del grupo: inspiras, curas, controlas con magia y hablas por todos.', ['Acción adicional: da Inspiración bárdica a un aliado; si falla una tirada d20, puede sumar ese dado.', 'Acción: un conjuro que controle a los enemigos o un truco de daño.', 'Si un aliado cae a 0 PG, Palabra de curación (acción adicional) lo levanta desde lejos.', 'Fuera del combate, eres quien convence, engaña o actúa.']],
+    brujo: ['Tu magia viene de un patrón: daño constante a distancia y pocos espacios que vuelven con un descanso corto.', ['Acción: tu truco de daño principal (Estallido sobrenatural, si lo tienes), que gana rayos al subir de nivel.', 'Gasta tus espacios de pacto sin miedo: todos son del nivel más alto que tienes y vuelven con un descanso corto.', 'Usa tus invocaciones: son poderes permanentes o a voluntad.', 'Cuando te quedes sin espacios, pide al grupo un descanso corto.']],
+    clerigo: ['Curas, proteges y castigas con el poder de tu dios.', ['Al empezar, lanza un conjuro de concentración que dure todo el combate (Bendición, Espíritus guardianes…).', 'Acción: un truco de daño o un ataque con arma.', 'Acción adicional: Palabra de curación si alguien cae a 0 PG; levantar a un caído vale más que curar poco a poco.', 'Canalizar divinidad: el poder de tu dios para los momentos clave.']],
+    druida: ['Magia de la naturaleza: controlas el terreno, curas y puedes transformarte en bestia.', ['Al empezar, un conjuro de control con concentración, como Enmarañar.', 'Forma salvaje con acción adicional: te conviertes en bestia y ganas PG temporales.', 'Cuando no haya nada mejor, un truco de daño.', 'Palabra de curación levanta desde lejos a quien haya caído.']],
+    explorador: ['Cazas, rastreas y luchas con arco o espada; nadie se mueve mejor por la naturaleza.', ['Acción adicional: Marca del cazador sobre un enemigo; sumas 1d6 a cada impacto contra él (concentración).', 'Acción: ataca con tu arma (desde nivel 5, dos ataques).', 'Si el marcado cae, pasa la marca a otro con tu acción adicional.', 'Fuera del combate, guías al grupo, rastreas y buscas comida.']],
+    guerrero: ['Eres el experto en armas: el que más ataques hace y el más difícil de tumbar.', ['Acción: Atacar (dos ataques desde nivel 5, tres a nivel 11).', 'Acción adicional: Tomar aliento para curarte 1d10 + tu nivel cuando estés herido.', 'Oleada de acción: una acción más en el turno que haga falta rematar.', 'Cada arma tiene su maestría: un efecto extra que aplicas al usarla.']],
+    hechicero: ['La magia nace de ti: conoces menos conjuros que un mago, pero puedes retorcerlos con metamagia.', ['Mantente a distancia y usa tu mejor truco de daño.', 'Antes de un combate difícil, Hechicería innata (acción adicional): tu CD sube y tienes ventaja en tus ataques de conjuro.', 'Puntos de hechicería: conviértelos en espacios o paga metamagia (por ejemplo, para no herir a tus aliados con un conjuro de área).', 'Tus PG son pocos: quédate detrás de tus aliados.']],
+    mago: ['Tienes el libro de conjuros más amplio: hay una respuesta para casi cualquier problema.', ['Cada día prepara conjuros variados: daño, control, defensa y utilidad.', 'Contra grupos, un conjuro de área o de control para dividir a los enemigos.', 'Quédate lejos y detrás de tus aliados; tus PG son pocos.', 'Recuperación arcana: una vez al día, en un descanso corto, recuperas algunos espacios.']],
+    monje: ['Luchas sin armas, rápido y ágil, con puntos de concentración para golpes especiales.', ['Acción: ataca con golpes sin armas o armas de monje; acción adicional: otro golpe sin armas.', 'Gasta 1 punto de concentración en Ráfaga de golpes (más golpes), Defensa paciente o Paso del viento.', 'Tu velocidad es alta: entra y sal del combate.', 'Los puntos de concentración vuelven con un descanso corto.']],
+    paladin: ['Guerrero sagrado: armadura pesada, golpes divinos, curación y auras para el grupo.', ['Acción: ataca con tu arma (dos ataques desde nivel 5).', 'Tras impactar, puedes lanzar Golpe divino (acción adicional, gasta un espacio) para sumar daño radiante.', 'Imposición de manos (acción adicional): una reserva de PG para curar.', 'Mantente cerca de tus aliados: tus auras les ayudan.']],
+    picaro: ['Sigilo, habilidades y un golpe preciso que hace mucho daño.', ['Busca ventaja, o un aliado junto al objetivo, para sumar tu Ataque furtivo (una vez por turno).', 'Acción adicional: Acción astuta para correr, retirarte o esconderte.', 'Ataca con un arma sutil o a distancia y luego ponte a cubierto.', 'Fuera del combate, abres cerraduras, desactivas trampas y te cuelas donde nadie llega.']]
+  };
+  const RULES_BASICS = pb => [
+    ['Cómo se tira', 'Casi todo se resuelve con un d20 más un número de tu ficha. Si igualas o superas la dificultad que dice el máster, lo consigues. Aquí basta con tocar el número.'],
+    ['Tu turno', 'En tu turno puedes moverte hasta tu velocidad, hacer una acción (atacar, lanzar un conjuro, correr, ayudar…) y, si algo te lo permite, una acción adicional. Además tienes una reacción por ronda, incluso en el turno de otro.'],
+    ['Acción adicional', 'Algo rápido que solo puedes hacer si una regla lo dice. Una por turno. Si lanzas un conjuro con espacio como acción adicional, con tu acción solo puedes lanzar un truco.'],
+    ['Reacción', 'Una respuesta instantánea a algo que pasa, como un ataque de oportunidad. Una por ronda; vuelve al empezar tu turno.'],
+    ['Ataque de oportunidad', 'Si un enemigo que tienes al lado se aleja de ti, puedes atacarle una vez con tu reacción. Para evitarlo tú, usa la acción Destrabarse.'],
+    ['Tirada de ataque y CA', 'Para atacar tiras d20 más tu bonificador de ataque. Si igualas o superas la CA del objetivo, le das y tiras el daño.'],
+    ['Crítico', 'Un 20 natural en un ataque siempre impacta y es crítico: tiras el doble de dados de daño. Un 1 natural siempre falla.'],
+    ['Ventaja y desventaja', 'Con ventaja tiras dos d20 y te quedas el mayor; con desventaja, el menor. Elígelo arriba antes de tirar; los estados que la dan ya se cuentan solos.'],
+    ['Competencia', `Tu bonificador de competencia es ${signed(pb)}. Se suma a lo que dominas: las salvaciones y habilidades marcadas, tus armas y tus conjuros.`],
+    ['Salvación y CD', 'Una salvación es un d20 para resistir algo (un veneno, una explosión, un hechizo). La CD es el número que tienes que igualar. Cuando un enemigo resiste uno de tus conjuros, tira contra tu CD.'],
+    ['Conjuros, espacios y trucos', 'Los trucos son gratis e ilimitados. Los conjuros de nivel 1 o más gastan un espacio de ese nivel o mayor; uno mayor suele hacerlos más potentes. Los espacios vuelven al descansar.'],
+    ['Concentración', 'Algunos conjuros duran mientras te concentres, y solo puedes mantener uno. Márcate «Concentrado» en Estados: si te hieren, el modo partida te dice la CD de la salvación de CON y te deja tirarla.'],
+    ['Ritual', 'Algunos conjuros se pueden lanzar como ritual: tardan 10 minutos más pero no gastan espacio.'],
+    ['Descansos', 'Descanso corto: 1 hora; gastas dados de golpe para curarte y recuperas algunos recursos. Descanso largo: 8 horas, una vez al día; lo recuperas casi todo.'],
+    ['PG temporales', 'Un colchón de vida que se pierde primero. No se suman: si te dan más, te quedas con el número mayor.'],
+    ['Caer a 0 PG', 'Caes inconsciente. En cada turno haces una salvación contra muerte: con 10 o más, éxito; con menos, fallo. Tres éxitos: estable. Tres fallos: mueres. Cualquier curación te levanta.'],
+    ['Inspiración heroica', 'Si la tienes, puedes gastarla para repetir una tirada d20. Márcala en el panel cuando el máster te la dé.'],
+    ['Distancias', '5 pies son una casilla (1,5 m). 30 pies son 6 casillas.'],
+    ['Luz y oscuridad', 'Con luz tenue cuesta ver (desventaja en Percepción con la vista). En la oscuridad no ves nada, salvo con visión en la oscuridad.']
+  ];
+
+  // Lo que enseña el modo partida: los números de la mesa, las tiradas de la ficha y la guía para quien empieza.
   function partidaView(ch) {
     const cls = CLASSES[ch.cls];
     const sp = speciesInfo(ch);
     const pb = profBonus(ch);
     const prof = proficientSkills(ch);
     const saveProf = saveProficiencies(ch);
+    const feet = sp ? speed(ch, sp) : 0;
     const stats = [
-      { label: 'CA', value: armorClass(ch), term: 'dnd-clase-armadura' },
-      { label: 'Iniciativa', value: signed(mod(ch, 'des') + (hasFeat(ch, 'alerta') ? pb : 0)), roll: 'init', term: 'dnd-iniciativa' },
-      { label: 'Velocidad', value: sp ? `${speed(ch, sp)} p` : '—' },
-      { label: 'Perc. pasiva', value: 10 + skillTotal(ch, 'percepcion', prof) },
-      { label: 'Competencia', value: signed(pb), term: 'dnd-competencia' }
+      { label: 'CA', value: armorClass(ch), term: 'dnd-clase-armadura', hint: 'sin armadura' },
+      { label: 'Iniciativa', value: signed(mod(ch, 'des') + (hasFeat(ch, 'alerta') ? pb : 0)), roll: 'init', hint: 'quién actúa antes' },
+      { label: 'Velocidad', value: sp ? `${feet} p` : '—', hint: sp ? `${feet / 5} casillas` : '' },
+      { label: 'Perc. pasiva', value: 10 + skillTotal(ch, 'percepcion', prof), hint: 'lo que notas sin buscar' },
+      { label: 'Competencia', value: signed(pb), term: 'dnd-competencia', hint: 'a lo que dominas' }
     ];
-    if (cls?.cast) stats.push({ label: 'CD conjuros', value: 8 + pb + mod(ch, cls.cast), term: 'dnd-cd-conjuros' }, { label: 'Atq. conjuro', value: signed(pb + mod(ch, cls.cast)), roll: 'spell', term: 'dnd-ataque' });
+    if (cls?.cast) stats.push({ label: 'CD conjuros', value: 8 + pb + mod(ch, cls.cast), term: 'dnd-cd-conjuros', hint: 'tiran contra esto' }, { label: 'Atq. conjuro', value: signed(pb + mod(ch, cls.cast)), roll: 'spell', hint: 'contra la CA' });
+    const guide = CLASS_GUIDE[ch.cls];
     return {
       title: ch.name || 'Aventurero sin nombre', sub: describe(ch), adv: true, stats,
       rolls: [
-        { id: 'sv', title: 'Salvaciones', items: ABILITIES.map(([k, name]) => ({ key: 'sv:' + k, label: name, value: signed(mod(ch, k) + (saveProf.includes(k) ? pb : 0)), prof: saveProf.includes(k) })) },
-        { id: 'sk', title: 'Habilidades', items: ALL_SKILLS.map(k => ({ key: 'sk:' + k, label: SKILLS[k][0], value: signed(skillTotal(ch, k, prof)), prof: prof.has(k) })) },
-        { id: 'ab', title: 'Pruebas de característica', open: false, items: ABILITIES.map(([k, name]) => ({ key: 'ab:' + k, label: name, value: signed(mod(ch, k)) })) }
-      ]
+        { id: 'sv', title: 'Salvaciones', note: 'Cuando el máster te pida resistir algo («haz una salvación de Destreza»), toca esa.', help: ABILITIES.map(([k, name]) => [name, ABILITY_HELP[k]]),
+          items: ABILITIES.map(([k, name]) => ({ key: 'sv:' + k, label: name, value: signed(mod(ch, k) + (saveProf.includes(k) ? pb : 0)), prof: saveProf.includes(k), hint: SAVE_HINT[k] })) },
+        { id: 'sk', title: 'Habilidades', note: 'Cuando el máster te pida una prueba («tira Sigilo»), toca la habilidad. Las que dominas suman tu competencia.',
+          items: ALL_SKILLS.map(k => ({ key: 'sk:' + k, label: SKILLS[k][0], value: signed(skillTotal(ch, k, prof)), prof: prof.has(k), hint: SKILL_HINT[k] })) },
+        { id: 'ab', title: 'Pruebas de característica', open: false, note: 'Para lo que no encaja en ninguna habilidad: levantar una reja (Fuerza), aguantar sin dormir (Constitución)…', items: ABILITIES.map(([k, name]) => ({ key: 'ab:' + k, label: name, value: signed(mod(ch, k)) })) }
+      ],
+      guide: [
+        guide && { title: `Tu papel · ${cls.name}`, open: true, lead: guide[0] },
+        guide && { title: 'Tu turno, paso a paso', open: true, steps: guide[1] },
+        { title: 'Cómo usar el modo partida', list: [
+          'Puntos de golpe: escribe la cantidad y pulsa Daño o Curar. Los temporales se gastan primero. Cada cambio se puede deshacer.',
+          'Toca un número con «toca para tirar», una salvación o una habilidad: se tira con los dados de NEXO.',
+          'Elige Ventaja o Desventaja arriba antes de tirar; vuelve sola a Normal después.',
+          'Recursos y espacios: toca las casillas para gastarlos; los descansos los recuperan.',
+          'Estados: márcalos y verás qué significan. Las tiradas ya los tienen en cuenta.',
+          'Las palabras subrayadas abren su regla del manual.'
+        ] },
+        { title: 'Reglas básicas', gloss: RULES_BASICS(pb) }
+      ].filter(Boolean)
     };
   }
 

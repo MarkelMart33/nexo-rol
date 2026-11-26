@@ -94,7 +94,7 @@
    *     groupTerms: { título: idManual }, effects: api => [líneas], extra: api => html, summary: api => texto
    *   },
    *   save: () => void (guardar sin repintar la ficha), term: (id, texto) => html, ready: ch => bool,
-   *   act: (idAcción, api, hecho(texto)) => void, bindExtra: (nodo, api, hecho) => void, onChange: () => void
+   *   act: (idAcción, api, hecho(texto)) => void, onDelta: (api, contador, cambio pedido, antes, después) => null | { text, act: { id, label } }, bindExtra: (nodo, api, hecho) => void, onChange: () => void
    * }
    */
   function create(cfg) {
@@ -153,8 +153,8 @@
     }
 
     // Guarda, avisa y repinta solo el panel.
-    function commit(ch, text = '', undo = null) {
-      notice = text ? { id: ch.id, text, undo } : null;
+    function commit(ch, text = '', undo = null, act = null) {
+      notice = text ? { id: ch.id, text, undo, act } : null;
       asking = '';
       cfg.save();
       paint();
@@ -259,7 +259,7 @@
       const summary = summaryOf(a, model);
       const isOpen = shownOpen(ch);
       const restOptions = model.rests.map(r => `<option value="${esc(r.id)}">Con ${esc(r.label.toLowerCase())}</option>`).join('');
-      const note = notice && notice.id === ch.id ? `<p class="nj-notice" role="status"><span>${esc(notice.text)}</span>${notice.undo ? '<button type="button" class="nj-act" data-nj-undo data-nj-key="undo">DESHACER</button>' : ''}</p>` : '';
+      const note = notice && notice.id === ch.id ? `<p class="nj-notice" role="status"><span>${esc(notice.text)}</span>${notice.act ? `<button type="button" class="nj-act" data-nj-act="${esc(notice.act.id)}" data-nj-key="note:act">${esc(notice.act.label)}</button>` : ''}${notice.undo ? '<button type="button" class="nj-act" data-nj-undo data-nj-key="undo">DESHACER</button>' : ''}</p>` : '';
       return `<section class="${p}-panel nj-panel ap-${p}"><details class="nj-fold" data-nj-main ${isOpen ? 'open' : ''}>
         <summary class="nj-head" data-nj-key="main"><h2>${cfg.title}</h2><span class="nj-sum">${esc(summary)}</span></summary>
         <div class="nj-body">
@@ -279,6 +279,7 @@
       const model = defs(ch);
       const play = stateOf(ch);
       const before = snapshot(ch);
+      const asked = delta;
       let absorbed = 0;
       const shield = delta < 0 && c.temp ? model.byId.get(c.temp) : null;
       if (shield) {
@@ -293,7 +294,10 @@
       const parts = [];
       if (absorbed) parts.push(`${shield.label}: −${absorbed}.`);
       if (now !== was) parts.push(`${c.label}: de ${was} a ${now}.`);
-      commit(ch, parts.join(' '), before);
+      // El sistema puede añadir un aviso y un botón (la salvación de concentración de D&D al recibir daño).
+      const more = cfg.onDelta?.(api(ch, model), c, asked, was, now) || null;
+      if (more?.text) parts.push(more.text);
+      commit(ch, parts.join(' '), before, more?.act || null);
     }
     function rest(ch, id) {
       const model = defs(ch);

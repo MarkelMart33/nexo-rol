@@ -219,6 +219,8 @@
     can: ch => Boolean(playModel(ch)), view: ch => partidaView(ch), roll: key => rollFromSheet(key),
     back: () => { if (current) juego?.render(host.querySelector('[data-play]')); }
   });
+  // Reglas básicas para quien empieza, en el modo partida (resúmenes propios).
+  const PARTIDA_RULES = [['Cómo se tira', 'd20 más tu modificador contra una CD. Si la superas por 10 o más, es un éxito crítico; si te quedas 10 o más por debajo, un fallo crítico. Un 20 natural mejora el resultado un grado y un 1 natural lo empeora.'], ['Tu turno', 'Tienes tres acciones y una reacción. Moverte, atacar o alzar un escudo cuesta una acción; la mayoría de conjuros, dos.'], ['Ataques seguidos', 'El segundo ataque del turno tiene −5 y el tercero −10 (−4 y −8 con armas ágiles). Suele compensar moverse o hacer otra cosa con la tercera acción.'], ['Salvaciones', 'Fortaleza resiste venenos y golpes al cuerpo, Reflejos sirve para esquivar y Voluntad protege la mente.'], ['Competencia', 'Sin entrenar suma +0; entrenado, tu nivel +2; experto +4, maestro +6 y legendario +8 sobre tu nivel.'], ['Puntos de héroe', 'Gasta uno para repetir una tirada y quedarte con el segundo resultado. Si gastas todos al estar moribundo, te salvas.'], ['Caer a 0 PG', 'Quedas inconsciente y moribundo 1 (más tu valor de herido). Al empezar tu turno, tirada de recuperación contra CD 10 + moribundo. Con moribundo 4, mueres.']];
   function partidaView(ch) {
     const data = sheetData(ch);
     const items = diceItems(ch);
@@ -226,7 +228,8 @@
     return {
       title: data.name, sub: data.subtitle,
       stats: window.NEXO_PARTIDA.pick(data, [['Clase de Armadura', 'CA'], ['Velocidad'], ['Percepción', '', 'perc'], ['Fortaleza', '', 'fort'], ['Reflejos', '', 'ref'], ['Voluntad', '', 'vol'], ['CD de clase'], ['CD de conjuros']]),
-      rolls: [roll('Ataques', 'atk', k => ['melee', 'ranged', 'spell'].includes(k)), roll('Habilidades', 'sk', k => k.startsWith('sk:') || k.startsWith('lore:'))].filter(g => g.items.length)
+        guide: [{ title: 'Reglas básicas', gloss: PARTIDA_RULES }],
+    rolls: [roll('Ataques', 'atk', k => ['melee', 'ranged', 'spell'].includes(k)), roll('Habilidades', 'sk', k => k.startsWith('sk:') || k.startsWith('lore:'))].filter(g => g.items.length)
     };
   }
 

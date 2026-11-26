@@ -43,8 +43,10 @@
   /*
    * cfg: {
    *   prefix: 'dnd', host: () => nodo del sistema, juego: lo que devuelve NEXO_JUEGO.create, current: () => ficha abierta,
-   *   view: ch => { title, sub, adv: bool (botón de ventaja/desventaja), stats: [{ label, value, roll, term }],
-   *                 rolls: [{ id, title, open, items: [{ key, label, value, prof }] }] },
+   *   view: ch => { title, sub, adv: bool (botón de ventaja/desventaja), stats: [{ label, value, roll, term, hint }],
+   *                 rolls: [{ id, title, open, help: [[nombre, texto]], items: [{ key, label, value, prof, hint }] }],
+   *                 guide: [{ title, open, lead | steps: [texto] | list: [texto] | gloss: [[nombre, texto]] }] },
+   *   Las ayudas (hint, help, guide) son para quien empieza: explican qué es cada número y cómo se juega.
    *   roll: (clave, { adv: 'adv' | 'dis' | '' }) => void, back: () => void (vuelve a pintar el panel en la ficha),
    *   term: (id, texto) => html, can: ch => bool (si la ficha ya tiene con qué jugar)
    * }
@@ -67,13 +69,37 @@
     const value = v => esc(v ?? '—');
     function statHtml(s) {
       // Un número que se tira ya es un botón: su regla no puede ir dentro (sería un botón dentro de otro).
-      const inner = `<small>${s.roll ? esc(s.label) : term(s.term, s.label)}</small><b>${value(s.value)}</b>${s.roll ? '<em>tirar</em>' : ''}`;
+      const inner = `<small>${s.roll ? esc(s.label) : term(s.term, s.label)}</small><b>${value(s.value)}</b>${s.hint ? `<i>${esc(s.hint)}</i>` : ''}${s.roll ? '<em>toca para tirar</em>' : ''}`;
       return s.roll ? `<button type="button" class="np-stat is-roll" data-np-roll="${esc(s.roll)}" aria-label="Tirar ${esc(s.label)} (${esc(s.value)})">${inner}</button>` : `<div class="np-stat">${inner}</div>`;
     }
     function rollsHtml(group) {
       const open = opened.has(group.id) ? opened.get(group.id) : group.open !== false;
+      const hints = group.items.some(item => item.hint);
+      const help = group.help?.length ? `<details class="np-help"><summary>¿Qué significan?</summary>${group.help.map(([name, text]) => `<p><b>${esc(name)}.</b> ${esc(text)}</p>`).join('')}</details>` : '';
       return `<details class="np-rolls" data-np-group="${esc(group.id)}" ${open ? 'open' : ''}><summary><h3>${esc(group.title)}</h3><small>${group.items.length}</small></summary>
-        <div class="np-roll-grid">${group.items.map(item => `<button type="button" class="np-roll ${item.prof ? 'is-prof' : ''}" data-np-roll="${esc(item.key)}" aria-label="Tirar ${esc(item.label)} (${esc(item.value)})"><span>${esc(item.label)}</span><b>${value(item.value)}</b></button>`).join('')}</div></details>`;
+        ${group.note ? `<p class="np-note">${esc(group.note)}</p>` : ''}${help}
+        <div class="np-roll-grid ${hints ? 'has-hints' : ''}">${group.items.map(item => `<button type="button" class="np-roll ${item.prof ? 'is-prof' : ''}" data-np-roll="${esc(item.key)}" aria-label="Tirar ${esc(item.label)} (${esc(item.value)})"><span>${esc(item.label)}${item.prof ? '<small class="np-prof">dominas</small>' : ''}${item.hint ? `<small>${esc(item.hint)}</small>` : ''}</span><b>${value(item.value)}</b></button>`).join('')}</div></details>`;
+    }
+    // Guía para quien empieza: su papel, su turno paso a paso y las reglas básicas, cada una plegable.
+    const HOWTO = { title: 'Cómo usar el modo partida', list: [
+      'El contador grande se cambia escribiendo la cantidad y pulsando restar o sumar. Cada cambio se puede deshacer.',
+      'Toca un número con «toca para tirar» o cualquier tirada de la lista: va a los dados de NEXO.',
+      'Recursos: toca las casillas para gastarlos; los descansos los recuperan.',
+      'Estados: márcalos y verás qué significan. Las tiradas ya los tienen en cuenta.',
+      'Las palabras subrayadas abren su regla del manual.'
+    ] };
+    function guideHtml(list) {
+      list = [...(list || [])];
+      if (!list.some(g => g.title === HOWTO.title)) list.splice(Math.max(0, list.length - 1), 0, HOWTO);
+      return `<section class="np-guide"><h3 class="np-guide-title">Guía para jugar</h3>${list.map((g, i) => {
+        const key = 'guide:' + i;
+        const open = opened.has(key) ? opened.get(key) : Boolean(g.open);
+        const body = g.lead ? `<p class="np-lead">${esc(g.lead)}</p>`
+          : g.steps ? `<ol>${g.steps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>`
+          : g.list ? `<ul>${g.list.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
+          : g.gloss ? g.gloss.map(([name, text]) => `<details class="np-gloss"><summary>${esc(name)}</summary><p>${esc(text)}</p></details>`).join('') : '';
+        return `<details class="np-rolls np-guide-part" data-np-group="${key}" ${open ? 'open' : ''}><summary><h3>${esc(g.title)}</h3></summary><div class="np-guide-body">${body}</div></details>`;
+      }).join('')}</section>`;
     }
 
     function paint() {
@@ -86,7 +112,7 @@
           <div class="np-tools"></div>
           ${v.stats?.length ? `<div class="np-stats">${v.stats.map(statHtml).join('')}</div>` : ''}
           <div class="np-cols"><div class="np-play" data-np-play data-nj-open="1"></div>
-            ${v.rolls?.length ? `<div class="np-side">${v.rolls.map(rollsHtml).join('')}<p class="np-hint">Toca un número para tirarlo con los dados de NEXO. Los estados activos ya se aplican.</p></div>` : ''}</div>
+            ${v.rolls?.length || v.guide?.length ? `<div class="np-side">${(v.rolls || []).map(rollsHtml).join('')}${v.rolls?.length ? '<p class="np-hint">Toca un número para tirarlo con los dados de NEXO. Los estados activos ya se aplican y el resultado te dice por qué.</p>' : ''}${guideHtml(v.guide)}</div>` : ''}</div>
         </div>`;
       layer.scrollTop = scroll;
       cfg.juego?.render(layer.querySelector('[data-np-play]'));

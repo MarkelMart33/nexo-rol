@@ -176,12 +176,14 @@
     can: ch => Boolean(playModel(ch)), view: ch => partidaView(ch), roll: key => { if (key === 'tray') openDice(); },
     back: () => { if (current) juego?.render(host.querySelector('[data-play]')); }
   });
+  // Reglas básicas para quien empieza, en el modo partida (resúmenes propios).
+  const PARTIDA_RULES = [['Cómo se tira', 'Juntas una reserva de d10 (atributo + habilidad) y la tiras contra una dificultad, normalmente 6. Cada dado que la iguala o supera es un éxito y cada 1 quita uno. Sin éxitos y con algún 1, fracaso total.'], ['Fuerza de Voluntad', 'Gasta un punto para sumar un éxito automático a una tirada (uno por turno).'], ['Sangre', 'Gastas puntos de sangre para curarte, subir tus atributos físicos o despertarte. Tu generación dice cuántos puedes gastar por turno.'], ['Heridas', 'Cada nivel de salud perdido puede restar dados a todas tus reservas, como indica el medidor.'], ['Frenesí', 'Cuando la Bestia aprieta (hambre, rabia, fuego), tira Autocontrol o Instinto para no perder el control.']];
   function partidaView(ch) {
     const data = sheetData(ch);
     const stats = window.NEXO_PARTIDA.pick(data, [[road(ch).name], ['Fuerza de Voluntad', 'Voluntad'], ['Generación'], ['Sangre por turno', 'Sangre/turno']]);
     // Las reservas de Vampiro se arman con atributo + habilidad: se tiran desde el lanzador.
     stats.push({ label: 'Reserva', value: '⚄', roll: 'tray' });
-    return { title: data.name, sub: [clanOf(ch).name, data.subtitle].filter(Boolean).join(' · '), stats, rolls: [] };
+    return { title: data.name, sub: [clanOf(ch).name, data.subtitle].filter(Boolean).join(' · '), stats, rolls: [], guide: [{ title: 'Reglas básicas', open: true, gloss: PARTIDA_RULES }] };
   }
 
   function load() {

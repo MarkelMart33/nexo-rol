@@ -197,6 +197,8 @@
     can: ch => Boolean(playModel(ch)), view: ch => partidaView(ch), roll: key => rollFromSheet(key),
     back: () => { if (current) juego?.render(host.querySelector('[data-play]')); }
   });
+  // Reglas básicas para quien empieza, en el modo partida (resúmenes propios).
+  const PARTIDA_RULES = [['Cómo se tira', 'Tira 1D100: si sacas tu valor o menos, lo consigues. La mitad es un éxito difícil y la quinta parte, extremo. Un 01 es un crítico; un 100 (o de 96 a 100 si tu valor es menor de 50) es una pifia.'], ['Forzar una tirada', 'Si fallas, puedes repetir una vez explicando qué haces distinto. Si vuelves a fallar, el Guardián te pone en un aprieto.'], ['Dados de bonificación y penalización', 'Tiras dos dados de decenas y te quedas con el mejor (bonificación) o el peor (penalización).'], ['Suerte', 'Puedes gastar puntos de Suerte para subir una tirada uno a uno. No sirve para Cordura, Suerte, daño ni tiradas forzadas.'], ['Cordura', 'Ante el horror tiras Cordura: si la superas pierdes poco, si fallas más. Si pierdes 5 o más de golpe, tirada de INT: si la superas, entiendes lo que has visto y sufres una locura temporal.'], ['Herida grave', 'Si un solo golpe te quita la mitad o más de tus PV máximos, tienes una herida grave y tiras CON para no caer inconsciente.']];
   function partidaView(ch) {
     const data = sheetData(ch);
     const items = diceItems(ch);
@@ -204,6 +206,7 @@
     return {
       title: data.name, sub: data.subtitle,
       stats: window.NEXO_PARTIDA.pick(data, [['Esquivar', '', 'sk:esquivar'], ['Movimiento'], ['Bonif. al daño', 'Bon. daño'], ['Corpulencia']]),
+      guide: [{ title: 'Reglas básicas', gloss: PARTIDA_RULES }],
       rolls: [roll('Habilidades', 'sk', k => k.startsWith('sk:')), roll('Características', 'ch', k => k.startsWith('ch:'), false), roll('Suerte y Cordura', 'ex', k => k === 'luck' || k === 'san')].filter(g => g.items.length)
     };
   }
