@@ -6,7 +6,7 @@
     stylesheet.href = './src/nexo/terminal-shell.css?v=1';
     const table = document.createElement('link');
     table.rel = 'stylesheet';
-    table.href = './src/nexo/mesa.css?v=15';
+    table.href = './src/nexo/mesa.css?v=16';
     document.head.append(stylesheet, table);
 
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -143,7 +143,7 @@
           object.before(slot); slot.append(object);
         });
         const decorationTable = hub.querySelector('.mesa');
-        import('./decor-models.js?v=2').then(module => { if (decorationTable.isConnected) module.mount(decorationTable); }).catch(error => console.warn('Atrezo 3D no disponible; se conserva la vista compatible.', error));
+        import('./decor-models.js?v=3').then(module => { if (decorationTable.isConnected) module.mount(decorationTable); }).catch(error => console.warn('Atrezo 3D no disponible; se conserva la vista compatible.', error));
         hub.querySelector('[data-profile]').addEventListener('click', () => {
           away();
           if (window.NEXO_PROFILE) window.NEXO_PROFILE.open({ onExit: openHub });

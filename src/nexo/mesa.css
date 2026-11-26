@@ -807,3 +807,13 @@
 .nexo-systems .dc-tintero.has-decor-model{width:190px;height:145px}
 .nexo-systems .dc.has-decor-model .dc-say{bottom:calc(100% - 8px)}
 @media(max-width:560px){.nexo-systems .dc.has-decor-model{width:215px;height:220px}.nexo-systems .dc-tintero.has-decor-model{width:190px;height:145px}}
+
+/* Adornos 3D: el giro de reposo va dentro de la escena (decor-models.js lee --tilt), así que la caja
+   queda recta. El foco es una elipse de luz bajo el objeto, no un marco que se tuerce con él. */
+.nexo-systems .dc.has-decor-model{transform:none;transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
+.nexo-systems .dc.has-decor-model:hover{transform:translateY(-3px)}
+.nexo-systems .dc.has-decor-model:focus-visible{outline:none}
+.nexo-systems .dc.has-decor-model:after{content:'';position:absolute;left:8%;right:8%;top:16%;bottom:10%;border-radius:50%;border:2px dashed var(--lamp);background:radial-gradient(closest-side,#f6c77d26,#f6c77d00);opacity:0;transform:scale(.94);transition:opacity .2s,transform .25s ease-out;pointer-events:none}
+.nexo-systems .dc.has-decor-model:focus-visible:after{opacity:1;transform:none}
+.nexo-systems .dc-dados.has-decor-model .decor-model{inset:-17.5%;width:135%;height:135%}
+@media(prefers-reduced-motion:reduce){.nexo-systems .dc.has-decor-model,.nexo-systems .dc.has-decor-model:after{transition:none}.nexo-systems .dc.has-decor-model:hover{transform:none}}
