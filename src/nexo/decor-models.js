@@ -312,42 +312,137 @@ function bevelledDie(sides) {
   return { geometry, faces };
 }
 
-function buildDice(group, m, textures) {
+// Un dado biselado con su número pintado en la cara que mira a quien está sentado a la mesa.
+function restingDie(parent, sides, material, x, z, turn, value, textures) {
   const down = up.clone().negate();
   const view = new THREE.Vector3(0, .86, .48).normalize();
-  const specs = [
-    [4, m.bone, -.55, .22, -.24],
-    [8, m.slate, .16, -.36, .30],
-    [20, m.jade, .49, .50, -.31]
-  ];
-  const dice = specs.map(([sides, material, x, z, turn]) => {
-    const die = new THREE.Group();
-    const { geometry, faces } = bevelledDie(sides);
-    const base = faces[0].normal;
-    const rest = new THREE.Quaternion().setFromUnitVectors(base, down)
-      .premultiply(new THREE.Quaternion().setFromAxisAngle(up, turn));
-    const score = face => face.normal.clone().applyQuaternion(rest).dot(view);
-    const face = faces.reduce((best, current) => score(current) > score(best) ? current : best);
-    mesh(die, geometry, material);
+  const die = new THREE.Group();
+  const { geometry, faces } = bevelledDie(sides);
+  const rest = new THREE.Quaternion().setFromUnitVectors(faces[0].normal, down)
+    .premultiply(new THREE.Quaternion().setFromAxisAngle(up, turn));
+  const score = face => face.normal.clone().applyQuaternion(rest).dot(view);
+  const face = faces.reduce((best, current) => score(current) > score(best) ? current : best);
+  mesh(die, geometry, material);
 
-    const ink = canvasTexture(128, () => {});
-    textures.push(ink);
-    const decal = mesh(die, new THREE.PlaneGeometry(sides === 20 ? .26 : .31, .25),
-      new THREE.MeshBasicMaterial({ map: ink, transparent: true, alphaTest: .05, depthWrite: false, toneMapped: false }));
-    decal.castShadow = decal.receiveShadow = false;
-    const vertical = new THREE.Vector3(0, 0, -1).applyQuaternion(rest.clone().invert());
-    vertical.addScaledVector(face.normal, -vertical.dot(face.normal)).normalize();
-    const horizontal = new THREE.Vector3().crossVectors(vertical, face.normal);
-    decal.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(horizontal, vertical, face.normal));
-    decal.position.copy(face.center).addScaledVector(face.normal, .0025);
+  const ink = canvasTexture(128, () => {});
+  textures.push(ink);
+  const decal = mesh(die, new THREE.PlaneGeometry(sides === 20 ? .26 : .31, .25),
+    new THREE.MeshBasicMaterial({ map: ink, transparent: true, alphaTest: .05, depthWrite: false, toneMapped: false }));
+  decal.castShadow = decal.receiveShadow = false;
+  const vertical = new THREE.Vector3(0, 0, -1).applyQuaternion(rest.clone().invert());
+  vertical.addScaledVector(face.normal, -vertical.dot(face.normal)).normalize();
+  const horizontal = new THREE.Vector3().crossVectors(vertical, face.normal);
+  decal.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(horizontal, vertical, face.normal));
+  decal.position.copy(face.center).addScaledVector(face.normal, .0025);
 
-    die.quaternion.copy(rest);
-    const restPosition = new THREE.Vector3(x, .015 - new THREE.Box3().setFromObject(die).min.y, z);
-    die.position.copy(restPosition);
-    group.add(die);
-    return { die, rest, restPosition, ink, sides, value: null };
+  die.quaternion.copy(rest);
+  die.scale.setScalar(.82);
+  const restPosition = new THREE.Vector3(x, .015 - new THREE.Box3().setFromObject(die).min.y, z);
+  die.position.copy(restPosition);
+  parent.add(die);
+  const record = { die, rest, restPosition, ink, sides, value: null };
+  paintNumber(record, String(value));
+  return record;
+}
+
+// Bolsa de dados: terciopelo violeta fruncido en el cuello, cordón dorado con borlas
+// y un par de dados que se han salido. Al tocarla da un respingo y abre el selector de tirada.
+function buildDiceBag(group, m, textures) {
+  const velvet = new THREE.MeshPhysicalMaterial({
+    color: 0x4b2568, roughness: .86, sheen: 1, sheenColor: 0xc7a2e6, sheenRoughness: .5,
+    bumpMap: m.leather.bumpMap, bumpScale: .012, side: THREE.DoubleSide
   });
-  return { dice };
+  const lining = standard(0x170b20, .95);
+  lining.side = THREE.DoubleSide;
+  const gold = new THREE.MeshStandardMaterial({ color: 0xc9a04e, roughness: .42, metalness: .62, bumpMap: m.brass.bumpMap, bumpScale: .01 });
+
+  const bag = new THREE.Group();
+  bag.position.set(-.3, 0, -.12);
+  bag.scale.setScalar(BAG_SCALE);
+  group.add(bag);
+  // Perfil de la bolsa de abajo arriba: panza, cuello fruncido y volante abierto.
+  const profile = [[0, .05], [.4, .055], [.6, .12], [.7, .26], [.7, .4], [.6, .54],
+    [.42, .66], [.22, .74], [.14, .79], [.135, .82], [.19, .87], [.29, .93], [.36, .98], [.33, 1.01]]
+    .map(([radius, height]) => new THREE.Vector2(radius, height));
+  const body = mesh(bag, new THREE.LatheGeometry(profile, 96), velvet);
+  const { position } = body.geometry.attributes;
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+    const angle = Math.atan2(z, x);
+    // Pliegues: suaves en la panza, marcados en el cuello y ondulados en el volante.
+    const neck = Math.max(0, 1 - Math.abs(y - .79) / .22);
+    const frill = Math.max(0, (y - .84) / .18);
+    const folds = 1 + .035 * Math.sin(angle * 9 + y * 3) * (.4 + neck)
+      + .08 * Math.sin(angle * 14) * neck + .11 * Math.sin(angle * 7 + 1.3) * frill;
+    // La bolsa se apoya algo vencida hacia delante y a la derecha.
+    const slump = Math.max(0, y - .2) * .1;
+    position.setXYZ(i, x * folds + slump * .6, y * (1 - .04 * Math.cos(angle - .6)), z * folds + slump);
+  }
+  body.geometry.computeVertexNormals();
+  const mouth = mesh(bag, new THREE.CircleGeometry(.2, 40).rotateX(-Math.PI / 2), lining, .07, .9, .09);
+  mouth.castShadow = false;
+
+  // Cordón: dos vueltas al cuello y dos cabos que caen por el costado hasta la mesa, con su borla.
+  const knot = new THREE.Vector3(-.12, .79, .26);
+  for (const [lift, phase] of [[0, 0], [.03, .5]]) {
+    curve(bag, Array.from({ length: 28 }, (_, i) => {
+      const angle = i * TAU / 28 + phase;
+      return new THREE.Vector3(.07 + Math.cos(angle) * .175, .785 + lift + .012 * Math.sin(angle * 3), .1 + Math.sin(angle) * .175);
+    }), .026, gold, true, 64);
+  }
+  ball(bag, .055, gold, knot.x, knot.y, knot.z);
+  for (const [end, bend] of [[new THREE.Vector3(-.78, .05, .5), -.16], [new THREE.Vector3(-.42, .05, .86), .1]]) {
+    const middle = knot.clone().lerp(end, .5).add(new THREE.Vector3(bend, .26, .1));
+    curve(bag, [knot, knot.clone().lerp(middle, .5).add(new THREE.Vector3(0, .05, 0)), middle,
+      end.clone().add(new THREE.Vector3(-.08, .06, -.05)), end], .02, gold, false, 40);
+    // Borla: capuchón y hebras abiertas sobre la mesa.
+    ball(bag, .045, gold, end.x, end.y + .03, end.z);
+    const direction = end.clone().sub(middle).setY(0).normalize();
+    for (let i = 0; i < 9; i++) {
+      const spread = (i - 4) * .09;
+      const tip = end.clone().addScaledVector(direction, .22).add(new THREE.Vector3(
+        -direction.z * spread, -.02, direction.x * spread));
+      curve(bag, [end, end.clone().lerp(tip, .5).add(new THREE.Vector3(0, .012, 0)), tip], .007, gold, false, 6);
+    }
+  }
+
+  // Dados que se han salido de la bolsa.
+  const dice = [
+    restingDie(group, 20, m.jade, .86, .12, -.4, 20, textures),
+    restingDie(group, 4, m.bone, .42, .92, .3, 4, textures),
+    restingDie(group, 8, m.slate, .78, -.62, .9, 8, textures)
+  ];
+  return { bag, dice };
+}
+
+const BAG_SCALE = 1.22;
+
+// Duración de la sorpresa de cada adorno, en milisegundos.
+const DURATIONS = { esferas: 900, bolsa: 720, pergamino: 1600 };
+
+// Respingo de la bolsa: se aplasta, salta estirándose y se asienta; los dados sueltos dan un brinco.
+function hopBag(parts, motion) {
+  const { bag, dice } = parts;
+  if (motion === 1) {
+    bag.scale.setScalar(BAG_SCALE);
+    bag.position.y = 0;
+    for (const die of dice) { die.die.position.copy(die.restPosition); die.die.quaternion.copy(die.rest); }
+    return;
+  }
+  const squash = motion < .18 ? Math.sin(motion / .18 * Math.PI) * .14 : 0;
+  const air = motion >= .18 && motion < .62 ? Math.sin((motion - .18) / .44 * Math.PI) : 0;
+  const settle = motion >= .62 ? Math.sin((motion - .62) / .38 * Math.PI * 2) * .06 * (1 - motion) / .38 : 0;
+  const stretch = 1 - squash + air * .08 + settle;
+  bag.scale.set(BAG_SCALE / Math.sqrt(stretch), BAG_SCALE * stretch, BAG_SCALE / Math.sqrt(stretch));
+  bag.position.y = air * .22;
+  dice.forEach((die, i) => {
+    const local = Math.min(1, Math.max(0, (motion - .3 - i * .06) / .4));
+    const hop = Math.sin(local * Math.PI);
+    die.die.position.copy(die.restPosition);
+    die.die.position.y += hop * .14;
+    die.die.quaternion.copy(die.rest).premultiply(new THREE.Quaternion()
+      .setFromAxisAngle(up, hop * .5 * (i % 2 ? -1 : 1)));
+  });
 }
 
 // Pergamino: hoja tendida con el extremo superior enrollado, lacre con relieve y cintas.
@@ -581,7 +676,7 @@ function buildQuill(group, m) {
 
 const props = {
   jarra: buildMug, vela: buildCandle, esferas: buildPouch,
-  dados: buildDice, pergamino: buildScroll, pluma: buildQuill
+  bolsa: buildDiceBag, pergamino: buildScroll, pluma: buildQuill
 };
 
 function paintNumber(die, value) {
@@ -598,72 +693,6 @@ function paintNumber(die, value) {
   ctx.fillText(value, 64, 69, 108);
   die.ink.needsUpdate = true;
   die.value = value;
-}
-
-// Duración de la sorpresa de cada adorno, en milisegundos.
-const DURATIONS = { esferas: 900, dados: 1500, pergamino: 1600 };
-const DICE_ROOM = 1.35;
-
-// Tirada de dados: caen desde arriba a la izquierda (donde está la lámpara), botan dos veces
-// perdiendo altura, ruedan sobre un eje al azar y se asientan con un leve balanceo en su cara final.
-const RESTITUTION = .22;
-const BOUNCES = [1, RESTITUTION, RESTITUTION * RESTITUTION];
-const FLIGHT = BOUNCES.reduce((list, height, i) => {
-  const start = list.length ? list[list.length - 1].end : 0;
-  const length = i ? 2 * Math.sqrt(height) : 1;
-  list.push({ start, end: start + length, height, rising: i > 0 });
-  return list;
-}, []);
-const LANDED = FLIGHT[FLIGHT.length - 1].end;
-const SETTLE = LANDED * 1.22;
-
-function prepareThrow(die) {
-  const r = Math.random;
-  die.throw = {
-    offset: new THREE.Vector3(-.62 - r() * .22, .9 + r() * .25, -.46 - r() * .2),
-    axis: new THREE.Vector3(r() - .5, r() - .5, r() - .5).normalize(),
-    turns: (1.3 + r() * 1.1) * (r() > .5 ? 1 : -1),
-    rock: new THREE.Vector3(r() - .5, 0, r() - .5).normalize()
-  };
-}
-
-function bounceHeight(time) {
-  for (const { start, end, height, rising } of FLIGHT) {
-    if (time > end) continue;
-    const local = (time - start) / (end - start);
-    // Primer tramo: solo cae. Después, arcos parabólicos cada vez más bajos.
-    return rising ? height * 4 * local * (1 - local) : 1 - local * local;
-  }
-  return 0;
-}
-
-function throwDie(die, index, node, motion) {
-  const final = node.querySelector('[data-sides="' + die.sides + '"] b').textContent;
-  const plan = die.throw;
-  if (motion === 1 || !plan) {
-    paintNumber(die, final);
-    die.die.position.copy(die.restPosition);
-    die.die.quaternion.copy(die.rest);
-    return;
-  }
-  const delay = index * .06;
-  const t = Math.min(1, Math.max(0, (motion - delay) / (1 - .12)));
-  const time = t * SETTLE;
-  const travel = 1 - Math.pow(1 - Math.min(1, time / LANDED), 2.4);
-  die.die.position.copy(die.restPosition)
-    .addScaledVector(new THREE.Vector3(plan.offset.x, 0, plan.offset.z), 1 - travel);
-  const angle = plan.turns * TAU * Math.pow(1 - travel, 1.5);
-  // Mientras gira, una arista asoma más abajo que la cara de apoyo: se levanta un poco para no hundirse.
-  die.die.position.y += bounceHeight(time) * plan.offset.y + .09 * Math.min(1, Math.abs(angle) / 1.2);
-  const spin = new THREE.Quaternion().setFromAxisAngle(plan.axis, angle);
-  const settle = Math.max(0, (time - FLIGHT[0].end) / (SETTLE - FLIGHT[0].end));
-  const rock = new THREE.Quaternion().setFromAxisAngle(plan.rock,
-    .13 * Math.pow(1 - settle, 2) * Math.sin(settle * TAU * 2.5) * (settle > 0 ? 1 : 0));
-  die.die.quaternion.copy(die.rest).premultiply(spin).premultiply(rock);
-  // En el aire asoman caras distintas; al tocar la mesa por segunda vez queda la de verdad.
-  const airborne = time < FLIGHT[1].end;
-  paintNumber(die, airborne
-    ? String(1 + (Math.floor(performance.now() / 85) * 7 + index * 5) % die.sides) : final);
 }
 
 // El pergamino se desenrolla, se queda un instante abierto y vuelve a enrollarse.
@@ -750,7 +779,7 @@ export function mount(table) {
     for (const object of items) object.group.visible = object === item;
 
     // El giro de reposo va dentro de la escena: el hueco del adorno queda recto y su foco no se tuerce.
-    const sway = motion === 1 || parts.dice || parts.scroll ? item.tilt : Math.sin(motion * Math.PI) * .14;
+    const sway = motion === 1 || parts.bag || parts.scroll ? item.tilt : Math.sin(motion * Math.PI) * .14;
     group.rotation.y = item.turn + sway;
     if (parts.drink) parts.drink.visible = !node.classList.contains('is-empty');
     if (parts.flame) parts.flame.visible = !node.classList.contains('is-out');
@@ -769,7 +798,7 @@ export function mount(table) {
         }
       }
     }
-    if (parts.dice) parts.dice.forEach((die, index) => throwDie(die, index, node, motion));
+    if (parts.bag) hopBag(parts, motion);
     if (parts.scroll) parts.scroll(motion === 1 ? 0 : unroll(motion));
 
     key.intensity = dark ? .34 : 2.55;
@@ -791,7 +820,6 @@ export function mount(table) {
     if (playing && playing !== item) draw(playing);
     playing = item;
     const start = performance.now();
-    if (item.parts.dice) item.parts.dice.forEach(prepareThrow);
     const duration = DURATIONS[item.node.dataset.egg] || 630;
     function step(now) {
       const progress = reduced.matches ? 1 : Math.min(1, (now - start) / duration);
@@ -815,11 +843,10 @@ export function mount(table) {
     anchor.y = .28;
     anchor.z += .09;
     const size = bounds.getSize(new THREE.Vector3());
-    // Los dados llevan un lienzo más grande que su hueco para que el lanzamiento no se corte.
-    const room = parts.dice ? DICE_ROOM : 1;
-    // Los dados y el pergamino se acercan un poco: eran los adornos que menos se leían.
-    const close = parts.dice ? .86 : parts.scroll ? .88 : 1;
-    const halfSpan = Math.max(size.x * .67, size.z * .63 + size.y * .20, 1.36) * close * room;
+    // La bolsa es alta y salta: se mira un poco más arriba. El pergamino se acerca un poco.
+    if (parts.bag) anchor.y = .5;
+    const close = parts.scroll ? .88 : 1;
+    const halfSpan = Math.max(size.x * .67, size.z * .63 + size.y * .20, 1.36) * close;
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = pixels;
     canvas.className = 'decor-model';

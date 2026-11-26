@@ -594,7 +594,7 @@
 .mesa.is-dark:after{opacity:1}
 .mesa.is-dark .mesa-light{opacity:0;animation:none}
 .mesa.is-dark .mesa-decor{z-index:5}
-.mesa.is-dark .dc:not(.dc-vela)>span:not(.dc-say),.mesa.is-dark .dc-dados .die{filter:brightness(.3)}
+.mesa.is-dark .dc:not(.dc-vela)>span:not(.dc-say){filter:brightness(.3)}
 .mesa.is-dark .dc-vela>span:not(.dc-say){filter:brightness(.7)}
 /* A oscuras, algo mira desde el borde de la mesa */
 .mesa-eyes{position:absolute;right:4%;top:0;display:flex;gap:9px;padding:6px;opacity:0;pointer-events:none;transition:opacity 1.2s 1.4s}
@@ -614,14 +614,6 @@
 .dc-pergamino.is-poke>span{animation:dc-unroll .7s ease-in-out}
 @keyframes dc-unroll{40%{transform:scale(1.08) rotate(4deg)}}
 
-/* Dados de hueso: se vuelven a tirar */
-.dc-dados{--d:1.3s;display:flex;align-items:center;gap:14px;padding:6px}
-.dc.dc-dados .die{position:relative;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);width:42px;height:42px;padding:7px;border-radius:10px;background:radial-gradient(circle at 30% 24%,#fffcf4,#f1e8d4 45%,#d6c7a4 100%);box-shadow:5px 10px 9px -2px #000a,1px 3px 2px #0008,inset 2px 2px 2px #fff,inset -3px -3px 4px #ad9a74;transform:rotate(-24deg)}
-.dc.dc-dados .die+.die{transform:rotate(17deg) translateY(10px)}
-.die i{position:static;width:7px;height:7px;margin:auto;border-radius:50%;background:radial-gradient(circle at 60% 65%,#a0182a,#560611);box-shadow:inset 1.5px 1.5px 2px #000c,0 1px 0 #fff9}
-.dc-dados.is-poke .die{animation:dc-roll .65s cubic-bezier(.2,.8,.3,1)}
-.dc-dados.is-poke .die+.die{animation-duration:.8s}
-@keyframes dc-roll{0%{transform:translate(-50px,-34px) rotate(-320deg) scale(1.4)}60%{transform:translate(4px,2px) rotate(18deg) scale(1)}}
 
 /* Planta en maceta de barro, una roseta de hojas vista desde arriba */
 .dc-planta{--tilt:0deg;--d:1.4s;--y:-4px}
@@ -698,13 +690,6 @@
 .nexo-systems .vela-plate{background-image:url('../../assets/mesa/metal.svg'),radial-gradient(circle,#45301c 0 35%,#b29559 38%,#5b4126 54%,#d8bf82 58%,#745530 64%,#c8af74 68%,#352618 72%)}
 .nexo-systems .vela-wax{background:radial-gradient(circle at 40% 35%,#fff7d7,#d9c89f 65%,#aa946a);box-shadow:inset 3px 4px 3px #fff3,5px 8px 6px #0008}
 .nexo-systems .tintero-bottle{background:radial-gradient(circle at 35% 25%,#879b9477,transparent 22%),radial-gradient(circle,#071315 0 25%,#58706b 26%,#132a2c 34%,#071010 65%,#5b736a 70%,#121d19 76%);box-shadow:3px 7px 3px #0008,inset 2px 2px 2px #a4b3a888}
-.nexo-systems .dc-dados{width:225px;height:145px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px}
-.nexo-systems .dc.dc-dados .poly-die{position:relative;display:grid;place-items:center;width:64px;height:64px;background:conic-gradient(from 30deg at 50% 38%,#a3b5af,#35554e 60deg,#203832 120deg,#627c6c 180deg,#c3c8ab 240deg,#4f756c 300deg,#a3b5af);clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);color:#f0e0b4;font:20px Georgia,serif;text-shadow:0 1px 1px #000}
-.nexo-systems .poly-die:before{content:'';position:absolute;inset:12px;border:1px solid #e2dbb65c;clip-path:polygon(50% 0,100% 100%,0 100%);background:#06181322}
-.nexo-systems .poly-die b{position:relative;font-weight:400}
-.nexo-systems .dc.dc-dados .poly-d8{width:48px;height:64px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);background:conic-gradient(at 50% 50%,#d0bd92,#705a3d,#e2d3ac,#87704c,#d0bd92)}
-.nexo-systems .dc.dc-dados .poly-d4{width:48px;height:51px;clip-path:polygon(50% 0,100% 100%,0 100%);background:conic-gradient(at 50% 65%,#a7a5b8,#444454,#c2bfcd,#666174,#a7a5b8);padding-top:12px}
-.nexo-systems .dc.dc-dados .die{background-image:url('../../assets/mesa/papel.svg'),linear-gradient(135deg,#f3e8cd,#bba884);box-shadow:inset 1px 2px 1px #fff8,inset -2px -3px 1px #6d614c,3px 4px 0 #88775d}
 @media(max-width:860px){.nexo-systems .mesa{padding:32px 32px 64px}.mesa-ivy{opacity:.8;width:95px}.mesa-ivy-left{left:-38px}.mesa-ivy-right{right:-40px}.nexo-systems .mesa .mesa-objects{gap:46px 40px}.nexo-systems .mesa-head{gap:15px}.nexo-systems .mesa-note{padding:20px}.nexo-systems .mesa-note h1{font-size:26px}}
 @media(max-width:560px){.nexo-systems .mesa{padding:24px 20px 60px}.nexo-systems .mesa-head{flex-wrap:wrap}.nexo-systems .mesa-note{max-width:205px;padding:16px}.nexo-systems .mesa-note h1{font-size:23px}.nexo-systems .mesa .mesa-objects{padding-top:46px;gap:42px}.mesa-ivy-right{top:650px}.nexo-systems .mesa-decor{gap:24px}.nexo-systems .dc-tintero{display:block;order:3;margin:20px auto 0}.nexo-systems .mesa-decor{zoom:.8}}
 @media(prefers-reduced-motion:reduce){.nexo-systems .mesa *,.nexo-systems .mesa *:before,.nexo-systems .mesa *:after{animation:none!important;transition:none!important}.nexo-systems .obj{transform:rotate(var(--rest))}}
@@ -746,9 +731,6 @@
 .mesa-slot-decor{flex-basis:230px;width:230px;min-height:280px}
 .mesa-slot:focus-within,.mesa-slot:hover{z-index:5}
 .nexo-systems .mesa-light{animation:mesa-flicker 7s ease-in-out infinite}
-.nexo-systems .dc-dados{width:200px;height:100px;justify-content:center;gap:14px;padding:10px;flex-wrap:nowrap}
-.nexo-systems .dc-dados.is-poke .poly-die{animation:dc-poly-roll .75s cubic-bezier(.2,.8,.3,1)}
-@keyframes dc-poly-roll{0%{transform:translateY(-16px) rotate(-160deg) scale(1.12)}55%{transform:translateY(3px) rotate(15deg)}78%{transform:translateY(-3px) rotate(-5deg)}100%{transform:none}}
 .nexo-systems .mesa-decor{margin:0;padding:0;border:0;zoom:1}
 .nexo-systems .dc-say{width:200px;min-width:0;max-width:200px;box-sizing:border-box;left:50%;bottom:calc(100% + 12px);transform:translate(-50%,6px);z-index:10}
 .nexo-systems .dc-say.is-on{transform:translate(-50%,0)}
@@ -766,12 +748,6 @@
   .mesa-vine{width:clamp(76px,23vw,110px);opacity:.91}
   .vine-left{top:235px}
 }
-.nexo-systems .dc-dados{position:relative;display:block;width:155px;height:130px;padding:0;filter:drop-shadow(5px 8px 5px #0006)}
-.nexo-systems .dc.dc-dados .poly-die{position:absolute;box-shadow:inset 2px 3px 8px #ffffff33;transform:rotate(var(--die-angle));background-blend-mode:soft-light,normal}
-.nexo-systems .dc.dc-dados .poly-d20{left:53px;top:31px;z-index:3;--die-angle:17deg;background-image:url('../../assets/mesa/metal.svg'),conic-gradient(from 30deg at 50% 38%,#a3b5af,#35554e 60deg,#203832 120deg,#627c6c 180deg,#c3c8ab 240deg,#4f756c 300deg,#a3b5af)}
-.nexo-systems .dc.dc-dados .poly-d8{left:20px;top:21px;z-index:2;--die-angle:-22deg}
-.nexo-systems .dc.dc-dados .poly-d4{left:28px;top:73px;z-index:4;--die-angle:13deg}
-@keyframes dc-poly-roll{0%{transform:translateY(-15px) rotate(calc(var(--die-angle) - 160deg)) scale(1.12)}55%{transform:translateY(3px) rotate(calc(var(--die-angle) + 12deg))}78%{transform:translateY(-3px) rotate(calc(var(--die-angle) - 5deg))}100%{transform:rotate(var(--die-angle))}}
 /* Bolsa tumbada, boca orientada hacia las esferas que se han derramado. */
 .nexo-systems .dc-esferas{--tilt:-7deg;width:215px;height:205px}
 .nexo-systems .sphere-pouch{width:215px;height:205px}
@@ -815,5 +791,70 @@
 .nexo-systems .dc.has-decor-model:focus-visible{outline:none}
 .nexo-systems .dc.has-decor-model:after{content:'';position:absolute;left:8%;right:8%;top:16%;bottom:10%;border-radius:50%;border:2px dashed var(--lamp);background:radial-gradient(closest-side,#f6c77d26,#f6c77d00);opacity:0;transform:scale(.94);transition:opacity .2s,transform .25s ease-out;pointer-events:none}
 .nexo-systems .dc.has-decor-model:focus-visible:after{opacity:1;transform:none}
-.nexo-systems .dc-dados.has-decor-model .decor-model{inset:-17.5%;width:135%;height:135%}
 @media(prefers-reduced-motion:reduce){.nexo-systems .dc.has-decor-model,.nexo-systems .dc.has-decor-model:after{transition:none}.nexo-systems .dc.has-decor-model:hover{transform:none}}
+
+/* Bolsa de dados de la mesa (terminal-shell.js, openBag). El modelo 3D la pinta encima;
+   esto es la versión plana por si no hay WebGL. */
+.nexo-systems .dc-bolsa{width:200px;height:190px}
+.nexo-systems .bolsa{position:absolute;inset:0}
+.nexo-systems .bolsa-cuerpo{left:52px;top:48px;width:96px;height:104px;border-radius:46% 46% 42% 42%/38% 38% 58% 58%;background:radial-gradient(circle at 34% 30%,#8e5bb3,#4b2568 55%,#25102f);box-shadow:8px 12px 12px -4px #000a}
+.nexo-systems .bolsa-cuello{left:74px;top:28px;width:52px;height:34px;border-radius:40% 40% 30% 30%;background:radial-gradient(circle at 50% 30%,#1b0c24 0 30%,#6d3f8f 34%,#3b1b50)}
+.nexo-systems .bolsa-cordon{left:70px;top:54px;width:60px;height:9px;border-radius:5px;background:linear-gradient(#f0cf7c,#a07a2e)}
+
+.mesa-bolsa{--b-gold:#e2b866;--b-ink:#f3e6c8;--b-muted:#c8b39a;--b-felt:#2a1435;width:min(460px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:0;border:0;border-radius:14px;background:transparent;color:var(--b-ink);overflow:visible}
+.mesa-bolsa::backdrop{background:radial-gradient(ellipse at 50% 40%,#1a0e0880,#0b0604d0);backdrop-filter:blur(2px)}
+.mesa-bolsa[open] .bolsa-panel{animation:bolsa-in .34s cubic-bezier(.2,.9,.3,1.15)}
+.mesa-bolsa[open]::backdrop{animation:bolsa-fade .3s ease-out}
+@keyframes bolsa-in{from{opacity:0;transform:translateY(18px) scale(.94)}}
+@keyframes bolsa-fade{from{opacity:0}}
+.bolsa-panel{position:relative;display:grid;gap:14px;max-height:calc(100dvh - 24px);overflow:auto;padding:18px 18px 16px;border:1px solid #c9a04e88;border-radius:14px;background:radial-gradient(120% 80% at 30% 0%,#5a2f78,#341946 48%,#1f0d29),var(--b-felt);box-shadow:0 30px 60px -12px #000d,0 0 0 4px #2b170c,0 0 0 5px #c9a04e55,inset 0 1px 0 #ffffff1c,inset 0 0 40px #0006;font:16px/1.4 Georgia,'Palatino Linotype',serif}
+.bolsa-panel:before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:.35;background:repeating-linear-gradient(115deg,#ffffff06 0 2px,transparent 2px 5px)}
+.bolsa-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.bolsa-head h2{margin:0;font:400 26px/1.1 var(--fell,'IM Fell English SC',Georgia,serif);letter-spacing:.02em;color:var(--b-gold);text-shadow:0 1px 0 #0008}
+.mesa-bolsa p{font-family:Georgia,'Palatino Linotype',serif}
+.bolsa-head p{margin:4px 0 0;color:var(--b-muted);font-size:14px}
+.mesa-bolsa button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.mesa-bolsa button:focus-visible{outline:2px solid var(--b-gold);outline-offset:2px}
+.mesa-bolsa .bolsa-cerrar{flex:none;display:grid;place-items:center;width:44px;height:44px;margin:-6px -6px 0 0;border:1px solid #c9a04e55;border-radius:50%;background:#0003;font-size:24px;line-height:1}
+.bolsa-cerrar:hover{background:#0006}
+.bolsa-dados{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px;margin:0;padding:0;list-style:none}
+.bolsa-dados li{position:relative;animation:bolsa-tile .4s cubic-bezier(.2,.9,.3,1.2) calc(.04s * var(--i)) backwards}
+@keyframes bolsa-tile{from{opacity:0;transform:translateY(10px) scale(.9)}}
+.bolsa-dado{position:relative;display:grid;justify-items:center;gap:2px;width:100%;min-height:92px;padding:10px 6px 8px;border:1px solid #ffffff1a;border-radius:10px;background:linear-gradient(#ffffff12,#00000026);box-shadow:inset 0 1px 0 #ffffff14,0 4px 10px -4px #0008;transition:transform .18s cubic-bezier(.3,1.6,.5,1),background .2s,border-color .2s}
+.bolsa-dado svg{width:46px;height:46px;fill:#f3e6c8;stroke:#6b4422;stroke-width:1.6;stroke-linejoin:round;filter:drop-shadow(2px 3px 2px #0009);transition:transform .25s cubic-bezier(.3,1.6,.5,1)}
+.bolsa-dado b{font:400 18px/1 var(--fell,'IM Fell English SC',Georgia,serif);letter-spacing:.04em}
+.bolsa-dado:hover:not(:disabled){background:linear-gradient(#ffffff1f,#00000020);border-color:#c9a04e66}
+.bolsa-dado:hover:not(:disabled) svg{transform:rotate(-8deg) scale(1.06)}
+.bolsa-dado:active:not(:disabled){transform:scale(.95)}
+.bolsa-dado:disabled{opacity:.45;cursor:not-allowed}
+.bolsa-dado.is-picked{border-color:#e2b866aa;background:linear-gradient(#e2b86624,#0000002a)}
+.bolsa-dado.is-picked svg{fill:#fff3d6}
+.bolsa-cuenta{position:absolute;top:6px;right:6px;min-width:26px;padding:3px 6px;border-radius:999px;background:linear-gradient(#f0cf7c,#b4883a);color:#2a1a10;font:700 13px/1 Georgia,serif;box-shadow:0 2px 4px #0008}
+.bolsa-cuenta:empty{display:none}
+.mesa-bolsa .bolsa-quitar{position:absolute;left:4px;top:4px;display:grid;place-items:center;width:32px;height:32px;padding:0;border:1px solid #ffffff2a;border-radius:50%;background:#1a0b20d0;font-size:20px;line-height:1}
+.bolsa-quitar[hidden]{display:none}
+.bolsa-quitar:hover{background:#3a1b48}
+.bolsa-mano{display:flex;flex-wrap:wrap;align-content:flex-start;gap:6px;min-height:64px;padding:10px;border-radius:10px;background:radial-gradient(circle at 50% 0,#ffffff0d,transparent 70%),#140818a8;box-shadow:inset 0 3px 10px #000a,inset 0 0 0 1px #ffffff0d}
+.bolsa-vacia{margin:auto;color:var(--b-muted);font-style:italic;font-size:15px}
+.bolsa-chip{position:relative;display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;background:none}
+.bolsa-chip svg{width:38px;height:38px;fill:#f3e6c8;stroke:#6b4422;stroke-width:1.8;stroke-linejoin:round;filter:drop-shadow(2px 3px 2px #000a);transition:transform .2s}
+.bolsa-chip small{position:absolute;bottom:2px;right:0;padding:1px 4px;border-radius:6px;background:#2a1a10;color:var(--b-gold);font:700 11px/1.2 Georgia,serif}
+.bolsa-chip:hover svg{transform:translateY(-2px)}
+.bolsa-chip.is-new{animation:bolsa-drop .42s cubic-bezier(.2,.9,.3,1.3)}
+@keyframes bolsa-drop{0%{opacity:0;transform:translateY(-22px) rotate(-120deg) scale(.6)}70%{transform:translateY(2px) rotate(8deg)}}
+.bolsa-pie{display:grid;gap:10px}
+.bolsa-mod{display:flex;align-items:center;gap:8px}
+.bolsa-mod span{margin-right:auto;color:var(--b-muted);font-size:15px}
+.mesa-bolsa .bolsa-mod button{display:grid;place-items:center;width:44px;height:44px;padding:0;border:1px solid #ffffff22;border-radius:50%;background:#0003;font-size:22px}
+.bolsa-mod button:hover{background:#0006}
+.bolsa-mod output{min-width:48px;text-align:center;font:400 22px/1 var(--fell,'IM Fell English SC',Georgia,serif);color:var(--b-gold)}
+.bolsa-formula{margin:0;min-height:1.4em;text-align:center;color:var(--b-muted);font-size:15px;overflow-wrap:anywhere}
+.bolsa-acciones{display:grid;grid-template-columns:auto 1fr;gap:10px}
+.bolsa-vaciar{min-height:48px;padding:0 16px;border:1px solid #ffffff26;border-radius:10px;background:#0003}
+.bolsa-vaciar:hover{background:#0006}
+.mesa-bolsa .bolsa-tirar{min-height:48px;padding:0 16px;border:1px solid #f6d58a;border-radius:10px;background:linear-gradient(#f0cf7c,#b4883a);color:#2a1a10;font:700 17px/1.1 Georgia,serif;letter-spacing:.02em;box-shadow:0 6px 14px -6px #000c,inset 0 1px 0 #fff7;overflow-wrap:anywhere;transition:transform .15s,filter .2s}
+.bolsa-tirar:hover:not(:disabled){filter:brightness(1.07);transform:translateY(-1px)}
+.bolsa-tirar:active:not(:disabled){transform:translateY(1px)}
+.bolsa-tirar:disabled{opacity:.5;cursor:not-allowed;filter:grayscale(.6)}
+@media(max-width:420px){.mesa-bolsa .bolsa-quitar{display:none}.bolsa-cuenta{top:3px;right:3px;min-width:22px;padding:2px 5px;font-size:12px}.bolsa-panel{padding:14px 12px 12px}.bolsa-dados{grid-template-columns:repeat(4,1fr);gap:8px}.bolsa-dado{min-height:84px;padding:8px 2px 6px}.bolsa-dado svg{width:38px;height:38px}.bolsa-head h2{font-size:23px}}
+@media(prefers-reduced-motion:reduce){.mesa-bolsa[open] .bolsa-panel,.mesa-bolsa[open]::backdrop,.bolsa-dados li,.bolsa-chip.is-new{animation:none}.bolsa-dado,.bolsa-dado svg,.bolsa-chip svg,.bolsa-tirar{transition:none}.bolsa-dado:hover:not(:disabled) svg,.bolsa-chip:hover svg{transform:none}}
