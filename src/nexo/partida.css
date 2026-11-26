@@ -71,7 +71,7 @@
 .np-roll{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:44px;padding:6px 10px;border:1px solid var(--np-line);border-radius:8px;background:none;color:var(--np-ink);text-align:left}
 .np-roll span{min-width:0;overflow:hidden;font-size:14px;line-height:1.2;text-overflow:ellipsis}
 .np-roll b{flex:none;color:var(--np-accent);font:700 17px/1 var(--np-head);font-variant-numeric:tabular-nums}
-.np-roll.is-prof{border-color:color-mix(in srgb,var(--np-accent) 55%,var(--np-line));box-shadow:inset 3px 0 0 var(--np-accent)}
+.np-roll.is-prof{border-color:color-mix(in srgb,var(--np-accent) 55%,var(--np-line));background:color-mix(in srgb,var(--np-accent) 10%,transparent)}
 .np-hint{margin:0;color:var(--np-soft);font-size:13px;line-height:1.45}
 
 /* Botón de la ficha que abre el modo */
