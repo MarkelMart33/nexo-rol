@@ -70,6 +70,28 @@
   }
 
   const RULES = {
+    // Tirada libre de la bolsa de dados de la mesa: cualquier mezcla de dados más un modificador.
+    mesa: {
+      name: 'Mesa',
+      modes: {
+        test: {
+          label: 'Tirada libre',
+          fields: [{ key: 'expr', label: 'Dados', type: 'text', def: '1d20', placeholder: '2d6+1d20+3' }],
+          roll(o) {
+            const r = rollExpr(o.expr, { title: o.label || 'Tirada libre' });
+            if (r.error) return r;
+            // Con varios tipos de dado se desglosa la suma de cada uno.
+            const kinds = [...new Set(r.dice.map(d => d.sides))];
+            if (kinds.length < 2) return r;
+            const detail = kinds.map(sides => {
+              const list = r.dice.filter(d => d.sides === sides);
+              return `d${sides}: ${list.map(d => d.value).join(' + ')}${list.length > 1 ? ' = ' + list.reduce((t, d) => t + d.value, 0) : ''}`;
+            }).join(' · ');
+            return { ...r, detail };
+          }
+        }
+      }
+    },
     traveller: {
       name: 'Traveller',
       modes: {
@@ -785,7 +807,7 @@
   // Estilos del lanzador: se cargan una vez para todos los apartados.
   const css = document.createElement('link');
   css.rel = 'stylesheet';
-  css.href = './src/nexo/dice.css?v=4';
+  css.href = './src/nexo/dice.css?v=5';
   document.head.append(css);
 
   window.NEXO_DICE = { tray, roll, close, die, rules: RULES };

@@ -312,99 +312,324 @@ function bevelledDie(sides) {
   return { geometry, faces };
 }
 
-function buildDice(group, m, textures) {
+// Un dado biselado con su número pintado en la cara que mira a quien está sentado a la mesa.
+function restingDie(parent, sides, material, x, z, turn, value, textures) {
   const down = up.clone().negate();
   const view = new THREE.Vector3(0, .86, .48).normalize();
-  const specs = [
-    [4, m.bone, -.55, .22, -.24],
-    [8, m.slate, .16, -.36, .30],
-    [20, m.jade, .49, .50, -.31]
-  ];
-  const dice = specs.map(([sides, material, x, z, turn]) => {
-    const die = new THREE.Group();
-    const { geometry, faces } = bevelledDie(sides);
-    const base = faces[0].normal;
-    const rest = new THREE.Quaternion().setFromUnitVectors(base, down)
-      .premultiply(new THREE.Quaternion().setFromAxisAngle(up, turn));
-    const score = face => face.normal.clone().applyQuaternion(rest).dot(view);
-    const face = faces.reduce((best, current) => score(current) > score(best) ? current : best);
-    mesh(die, geometry, material);
+  const die = new THREE.Group();
+  const { geometry, faces } = bevelledDie(sides);
+  const rest = new THREE.Quaternion().setFromUnitVectors(faces[0].normal, down)
+    .premultiply(new THREE.Quaternion().setFromAxisAngle(up, turn));
+  const score = face => face.normal.clone().applyQuaternion(rest).dot(view);
+  const face = faces.reduce((best, current) => score(current) > score(best) ? current : best);
+  mesh(die, geometry, material);
 
-    const ink = canvasTexture(128, () => {});
-    textures.push(ink);
-    const decal = mesh(die, new THREE.PlaneGeometry(sides === 20 ? .26 : .31, .25),
-      new THREE.MeshBasicMaterial({ map: ink, transparent: true, alphaTest: .05, depthWrite: false, toneMapped: false }));
-    decal.castShadow = decal.receiveShadow = false;
-    const vertical = new THREE.Vector3(0, 0, -1).applyQuaternion(rest.clone().invert());
-    vertical.addScaledVector(face.normal, -vertical.dot(face.normal)).normalize();
-    const horizontal = new THREE.Vector3().crossVectors(vertical, face.normal);
-    decal.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(horizontal, vertical, face.normal));
-    decal.position.copy(face.center).addScaledVector(face.normal, .0025);
+  const ink = canvasTexture(128, () => {});
+  textures.push(ink);
+  const decal = mesh(die, new THREE.PlaneGeometry(sides === 20 ? .26 : .31, .25),
+    new THREE.MeshBasicMaterial({ map: ink, transparent: true, alphaTest: .05, depthWrite: false, toneMapped: false }));
+  decal.castShadow = decal.receiveShadow = false;
+  const vertical = new THREE.Vector3(0, 0, -1).applyQuaternion(rest.clone().invert());
+  vertical.addScaledVector(face.normal, -vertical.dot(face.normal)).normalize();
+  const horizontal = new THREE.Vector3().crossVectors(vertical, face.normal);
+  decal.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(horizontal, vertical, face.normal));
+  decal.position.copy(face.center).addScaledVector(face.normal, .0025);
 
-    die.quaternion.copy(rest);
-    const restPosition = new THREE.Vector3(x, .015 - new THREE.Box3().setFromObject(die).min.y, z);
-    die.position.copy(restPosition);
-    group.add(die);
-    return { die, rest, restPosition, ink, sides, value: null };
+  die.quaternion.copy(rest);
+  die.scale.setScalar(.82);
+  const restPosition = new THREE.Vector3(x, .015 - new THREE.Box3().setFromObject(die).min.y, z);
+  die.position.copy(restPosition);
+  parent.add(die);
+  const record = { die, rest, restPosition, ink, sides, value: null };
+  paintNumber(record, String(value));
+  return record;
+}
+
+// Bolsa de dados: terciopelo violeta fruncido en el cuello, cordón dorado con borlas
+// y un par de dados que se han salido. Al tocarla da un respingo y abre el selector de tirada.
+function buildDiceBag(group, m, textures) {
+  const velvet = new THREE.MeshPhysicalMaterial({
+    color: 0x4b2568, roughness: .86, sheen: 1, sheenColor: 0xc7a2e6, sheenRoughness: .5,
+    bumpMap: m.leather.bumpMap, bumpScale: .012, side: THREE.DoubleSide
   });
-  return { dice };
+  const lining = standard(0x170b20, .95);
+  lining.side = THREE.DoubleSide;
+  const gold = new THREE.MeshStandardMaterial({ color: 0xc9a04e, roughness: .42, metalness: .62, bumpMap: m.brass.bumpMap, bumpScale: .01 });
+
+  const bag = new THREE.Group();
+  bag.position.set(-.3, 0, -.12);
+  bag.scale.setScalar(BAG_SCALE);
+  group.add(bag);
+  // Perfil de la bolsa de abajo arriba: panza, cuello fruncido y volante abierto.
+  const profile = [[0, .05], [.4, .055], [.6, .12], [.7, .26], [.7, .4], [.6, .54],
+    [.42, .66], [.22, .74], [.14, .79], [.135, .82], [.19, .87], [.29, .93], [.36, .98], [.33, 1.01]]
+    .map(([radius, height]) => new THREE.Vector2(radius, height));
+  const body = mesh(bag, new THREE.LatheGeometry(profile, 96), velvet);
+  const { position } = body.geometry.attributes;
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+    const angle = Math.atan2(z, x);
+    // Pliegues: suaves en la panza, marcados en el cuello y ondulados en el volante.
+    const neck = Math.max(0, 1 - Math.abs(y - .79) / .22);
+    const frill = Math.max(0, (y - .84) / .18);
+    const folds = 1 + .035 * Math.sin(angle * 9 + y * 3) * (.4 + neck)
+      + .08 * Math.sin(angle * 14) * neck + .11 * Math.sin(angle * 7 + 1.3) * frill;
+    // La bolsa se apoya algo vencida hacia delante y a la derecha.
+    const slump = Math.max(0, y - .2) * .1;
+    position.setXYZ(i, x * folds + slump * .6, y * (1 - .04 * Math.cos(angle - .6)), z * folds + slump);
+  }
+  body.geometry.computeVertexNormals();
+  const mouth = mesh(bag, new THREE.CircleGeometry(.2, 40).rotateX(-Math.PI / 2), lining, .07, .9, .09);
+  mouth.castShadow = false;
+
+  // Cordón: dos vueltas al cuello y dos cabos que caen por el costado hasta la mesa, con su borla.
+  const knot = new THREE.Vector3(-.12, .79, .26);
+  for (const [lift, phase] of [[0, 0], [.03, .5]]) {
+    curve(bag, Array.from({ length: 28 }, (_, i) => {
+      const angle = i * TAU / 28 + phase;
+      return new THREE.Vector3(.07 + Math.cos(angle) * .175, .785 + lift + .012 * Math.sin(angle * 3), .1 + Math.sin(angle) * .175);
+    }), .026, gold, true, 64);
+  }
+  ball(bag, .055, gold, knot.x, knot.y, knot.z);
+  for (const [end, bend] of [[new THREE.Vector3(-.78, .05, .5), -.16], [new THREE.Vector3(-.42, .05, .86), .1]]) {
+    const middle = knot.clone().lerp(end, .5).add(new THREE.Vector3(bend, .26, .1));
+    curve(bag, [knot, knot.clone().lerp(middle, .5).add(new THREE.Vector3(0, .05, 0)), middle,
+      end.clone().add(new THREE.Vector3(-.08, .06, -.05)), end], .02, gold, false, 40);
+    // Borla: capuchón y hebras abiertas sobre la mesa.
+    ball(bag, .045, gold, end.x, end.y + .03, end.z);
+    const direction = end.clone().sub(middle).setY(0).normalize();
+    for (let i = 0; i < 9; i++) {
+      const spread = (i - 4) * .09;
+      const tip = end.clone().addScaledVector(direction, .22).add(new THREE.Vector3(
+        -direction.z * spread, -.02, direction.x * spread));
+      curve(bag, [end, end.clone().lerp(tip, .5).add(new THREE.Vector3(0, .012, 0)), tip], .007, gold, false, 6);
+    }
+  }
+
+  // Dados que se han salido de la bolsa.
+  const dice = [
+    restingDie(group, 20, m.jade, .86, .12, -.4, 20, textures),
+    restingDie(group, 4, m.bone, .42, .92, .3, 4, textures),
+    restingDie(group, 8, m.slate, .78, -.62, .9, 8, textures)
+  ];
+  return { bag, dice };
+}
+
+const BAG_SCALE = 1.22;
+
+// Duración de la sorpresa de cada adorno, en milisegundos.
+const DURATIONS = { esferas: 900, bolsa: 720, pergamino: 1600 };
+
+// Respingo de la bolsa: se aplasta, salta estirándose y se asienta; los dados sueltos dan un brinco.
+function hopBag(parts, motion) {
+  const { bag, dice } = parts;
+  if (motion === 1) {
+    bag.scale.setScalar(BAG_SCALE);
+    bag.position.y = 0;
+    for (const die of dice) { die.die.position.copy(die.restPosition); die.die.quaternion.copy(die.rest); }
+    return;
+  }
+  const squash = motion < .18 ? Math.sin(motion / .18 * Math.PI) * .14 : 0;
+  const air = motion >= .18 && motion < .62 ? Math.sin((motion - .18) / .44 * Math.PI) : 0;
+  const settle = motion >= .62 ? Math.sin((motion - .62) / .38 * Math.PI * 2) * .06 * (1 - motion) / .38 : 0;
+  const stretch = 1 - squash + air * .08 + settle;
+  bag.scale.set(BAG_SCALE / Math.sqrt(stretch), BAG_SCALE * stretch, BAG_SCALE / Math.sqrt(stretch));
+  bag.position.y = air * .22;
+  dice.forEach((die, i) => {
+    const local = Math.min(1, Math.max(0, (motion - .3 - i * .06) / .4));
+    const hop = Math.sin(local * Math.PI);
+    die.die.position.copy(die.restPosition);
+    die.die.position.y += hop * .14;
+    die.die.quaternion.copy(die.rest).premultiply(new THREE.Quaternion()
+      .setFromAxisAngle(up, hop * .5 * (i % 2 ? -1 : 1)));
+  });
+}
+
+// Pergamino: hoja tendida con el extremo superior enrollado, lacre con relieve y cintas.
+// `update(open)` desenrolla la hoja (0 en reposo, 1 abierta) moviendo vértices, sin crear geometría.
+const SCROLL = { left: -.94, width: 1.88, bottom: 1.05, top: -.53, reach: .3, deepest: -.89 };
+
+function scrollHeight(x, z) {
+  const curl = Math.pow(Math.max(0, (z - .6) / .45), 4) * .085;
+  return .062 + .016 * Math.sin(x * 5.8 + z * 2.1) + .007 * Math.sin(x * 17 - z * 4) + curl;
+}
+
+function scrollInk(m) {
+  return canvasTexture(512, (ctx, size) => {
+    ctx.drawImage(m.paper.map.image, 0, 0, size, size);
+    const random = randomSequence(345);
+    // Bordes tostados y una mancha de jarra: la hoja ha pasado por muchas posadas.
+    const burn = ctx.createLinearGradient(0, 0, size, 0);
+    burn.addColorStop(0, '#5a33148c'); burn.addColorStop(.07, '#7a4a1e22');
+    burn.addColorStop(.93, '#7a4a1e22'); burn.addColorStop(1, '#5a33148c');
+    ctx.fillStyle = burn; ctx.fillRect(0, 0, size, size);
+    const foot = ctx.createLinearGradient(0, size, 0, size * .86);
+    foot.addColorStop(0, '#5a331499'); foot.addColorStop(1, '#5a331400');
+    ctx.fillStyle = foot; ctx.fillRect(0, size * .86, size, size * .14);
+    ctx.strokeStyle = '#6b44203a'; ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.ellipse(112, 214, 44, 40, .3, .4, TAU - .5); ctx.stroke();
+    ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(112, 214, 49, 45, .3, 1.2, 4.6); ctx.stroke();
+
+    const ink = (alpha = .78) => { ctx.strokeStyle = 'rgba(58,36,20,' + alpha + ')'; ctx.fillStyle = ctx.strokeStyle; };
+    const scribble = (x, baseline, end, height = 1, width = 2) => {
+      ctx.lineWidth = width;
+      while (x < end) {
+        const w = 4 + random() * 10;
+        ctx.beginPath();
+        ctx.moveTo(x, baseline);
+        ctx.quadraticCurveTo(x + w * .25, baseline - (3 + random() * 12) * height, x + w * .54, baseline);
+        ctx.quadraticCurveTo(x + w * .76, baseline - random() * 8 * height, x + w, baseline + 1);
+        ctx.stroke();
+        x += w + (random() > .81 ? 11 : 3);
+      }
+    };
+    // Arriba, oculto bajo el rollo: un mapa con su cruz que solo asoma al desenrollar.
+    ink(.62); ctx.lineWidth = 2.2; ctx.setLineDash([7, 6]);
+    ctx.beginPath(); ctx.moveTo(96, 62); ctx.bezierCurveTo(170, 18, 230, 88, 300, 44);
+    ctx.bezierCurveTo(340, 22, 380, 40, 402, 58); ctx.stroke();
+    ctx.setLineDash([]); ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(394, 48); ctx.lineTo(412, 68); ctx.moveTo(412, 48); ctx.lineTo(394, 68); ctx.stroke();
+    ctx.lineWidth = 1.6;
+    for (const [x, y] of [[150, 70], [178, 62], [206, 72]]) {
+      ctx.beginPath(); ctx.moveTo(x - 12, y + 8); ctx.lineTo(x, y - 8); ctx.lineTo(x + 12, y + 8); ctx.stroke();
+    }
+    // Encabezado con capitular, cuerpo y firma.
+    ink(.86);
+    ctx.font = 'italic 700 54px Georgia, serif'; ctx.fillText('R', 74, 152);
+    scribble(118, 128, 410, 1.5, 3.2);
+    ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(118, 140); ctx.bezierCurveTo(230, 146, 330, 134, 432, 142); ctx.stroke();
+    ink(.66);
+    for (let row = 0; row < 7; row++) {
+      const baseline = 186 + row * 30;
+      scribble(row ? 79 + random() * 10 : 118, baseline, (row > 4 ? 300 : 432) - random() * 46);
+    }
+    ink(.8); ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(84, 432); ctx.bezierCurveTo(110, 392, 132, 446, 156, 414);
+    ctx.bezierCurveTo(176, 388, 190, 440, 222, 420); ctx.bezierCurveTo(240, 410, 236, 444, 196, 448); ctx.stroke();
+  });
+}
+
+function sealEmblem() {
+  // Mapa de relieve del sello: anillo, rosa de los vientos de ocho puntas y punto central.
+  return canvasTexture(256, (ctx, size) => {
+    const c = size / 2;
+    const dome = ctx.createRadialGradient(c, c, 0, c, c, c);
+    dome.addColorStop(0, '#9a9a9a'); dome.addColorStop(.78, '#8a8a8a');
+    dome.addColorStop(.92, '#b4b4b4'); dome.addColorStop(1, '#6a6a6a');
+    ctx.fillStyle = dome; ctx.fillRect(0, 0, size, size);
+    ctx.strokeStyle = '#4a4a4a'; ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.arc(c, c, c * .74, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = '#d0d0d0'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(c, c, c * .66, 0, TAU); ctx.stroke();
+    ctx.fillStyle = '#5a5a5a';
+    for (let i = 0; i < 8; i++) {
+      const long = i % 2 ? c * .38 : c * .56, angle = i * TAU / 8 - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(c + Math.cos(angle) * long, c + Math.sin(angle) * long);
+      ctx.lineTo(c + Math.cos(angle + .34) * c * .14, c + Math.sin(angle + .34) * c * .14);
+      ctx.lineTo(c + Math.cos(angle - .34) * c * .14, c + Math.sin(angle - .34) * c * .14);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#c8c8c8'; ctx.beginPath(); ctx.arc(c, c, c * .08, 0, TAU); ctx.fill();
+  }, THREE.NoColorSpace);
 }
 
 function buildScroll(group, m, textures) {
-  const ink = canvasTexture(512, (ctx, size) => {
-    ctx.drawImage(m.paper.map.image, 0, 0, size, size);
-    const random = randomSequence(345);
-    ctx.strokeStyle = '#594026a6';
-    ctx.lineWidth = 2;
-    for (let row = 0; row < 8; row++) {
-      let x = 79 + random() * 12;
-      const baseline = 93 + row * 35;
-      const end = 426 - random() * 80;
-      while (x < end) {
-        const width = 4 + random() * 10;
-        ctx.beginPath();
-        ctx.moveTo(x, baseline);
-        ctx.quadraticCurveTo(x + width * .25, baseline - (3 + random() * 12), x + width * .54, baseline);
-        ctx.quadraticCurveTo(x + width * .76, baseline - random() * 8, x + width, baseline + 1);
-        ctx.stroke();
-        x += width + (random() > .81 ? 11 : 3);
-      }
-    }
-  });
-  textures.push(ink);
+  const ink = scrollInk(m);
+  const emblem = sealEmblem();
+  textures.push(ink, emblem);
   const paperWithInk = m.paper.clone();
   paperWithInk.map = ink;
-  surface(group, 42, 30, (u, v) => {
-    const x = (u - .5) * (1.88 - .08 * v) + .013 * Math.sin(v * 19);
-    const z = -.53 + 1.58 * v + .011 * Math.sin(u * 49) * v;
-    const y = .063 + .019 * Math.sin(u * 11 + v * 3) + .080 * Math.pow(v, 8);
-    return new THREE.Vector3(x, y, z);
-  }, paperWithInk);
-  surface(group, 44, 70, (u, v) => {
-    const angle = v * TAU * 1.39;
-    const radius = .146 - v * .095;
-    return new THREE.Vector3((u - .5) * (1.91 - .105 * v) + .011 * Math.sin(angle * 3),
-      .203 - Math.cos(angle) * radius, -.54 - Math.sin(angle) * radius);
-  }, m.paper);
 
-  const seal = lathe(group, [[0, .020], [.152, .020], [.183, .036], [.189, .060],
-    [.178, .082], [.145, .09], [.125, .082], [0, .079]], m.seal, .38, .082, .65);
-  const { position } = seal.geometry.attributes;
-  for (let i = 0; i < position.count; i++) {
-    const x = position.getX(i), z = position.getZ(i), angle = Math.atan2(z, x);
-    const ripple = 1 + .032 * Math.sin(angle * 3) + .024 * Math.cos(angle * 7);
-    position.setX(i, x * ripple);
-    position.setZ(i, z * ripple);
+  const sheet = surface(group, 42, 34, () => new THREE.Vector3(), paperWithInk);
+  const roll = surface(group, 44, 70, () => new THREE.Vector3(), m.paper);
+  const grid = part => {
+    const { uv } = part.geometry.attributes;
+    return Array.from({ length: uv.count }, (_, i) => [uv.getX(i), uv.getY(i)]);
+  };
+  const sheetGrid = grid(sheet), rollGrid = grid(roll);
+
+  function update(open) {
+    const top = SCROLL.top - SCROLL.reach * open;
+    const span = SCROLL.bottom - SCROLL.deepest;
+    const { position, uv } = sheet.geometry.attributes;
+    sheetGrid.forEach(([u, v], i) => {
+      const along = (1 - v);
+      const z = top + (SCROLL.bottom - top) * along;
+      const x = SCROLL.left + .03 * along + u * (SCROLL.width - .06 * along) + .01 * Math.sin(z * 12);
+      position.setXYZ(i, x, scrollHeight(x, z), z);
+      uv.setXY(i, u, 1 - (z - SCROLL.deepest) / span);
+    });
+    position.needsUpdate = uv.needsUpdate = true;
+    sheet.geometry.computeVertexNormals();
+
+    // El rollo gira lo que avanza, como un cilindro que rueda sobre la mesa.
+    const radius = .146 * (1 - .14 * open);
+    const spin = SCROLL.reach * open / .146;
+    const rollPosition = roll.geometry.attributes.position;
+    rollGrid.forEach(([u, v], i) => {
+      const angle = v * TAU * 1.39 + spin;
+      const r = radius - v * .095 * (1 - .14 * open);
+      rollPosition.setXYZ(i, SCROLL.left - .015 + u * (SCROLL.width + .03 - .1 * v) + .011 * Math.sin(angle * 3),
+        .058 + radius - Math.cos(angle) * r, top - Math.sin(angle) * r);
+    });
+    rollPosition.needsUpdate = true;
+    roll.geometry.computeVertexNormals();
+  }
+  update(0);
+
+  // Cintas de raso que salen de debajo del lacre y caen fuera de la hoja.
+  const satin = new THREE.MeshPhysicalMaterial({
+    color: 0x6a1220, roughness: .42, sheen: 1, sheenColor: 0xd0606a, sheenRoughness: .35, side: THREE.DoubleSide
+  });
+  for (const [endX, endZ, sway] of [[.66, 1.36, .05], [.2, 1.4, -.06]]) {
+    surface(group, 3, 36, (u, v) => {
+      const z = .64 + (endZ - .64) * v;
+      const x = .38 + (endX - .38) * v + Math.sin(v * Math.PI * 1.6) * sway;
+      const side = (u - .5) * .085 * (1 - .15 * v);
+      const notch = v > .97 ? Math.abs(u - .5) * -.06 : 0;
+      const px = x + side * .95, pz = z + side * .3 + notch;
+      const y = pz < SCROLL.bottom - .02 ? scrollHeight(px, pz) + .006
+        : Math.max(.012, scrollHeight(px, SCROLL.bottom) - (pz - SCROLL.bottom) * 1.6);
+      return new THREE.Vector3(px, y, pz);
+    }, satin);
+  }
+
+  // Lacre: borde irregular, gotas alrededor y cara con el escudo en relieve.
+  const wax = new THREE.MeshPhysicalMaterial({
+    color: 0x8f1d2b, roughness: .38, clearcoat: .7, clearcoatRoughness: .3,
+    bumpMap: m.seal.bumpMap, bumpScale: .006
+  });
+  const ripple = (x, z) => {
+    const angle = Math.atan2(z, x);
+    return 1 + .045 * Math.sin(angle * 3 + .6) + .03 * Math.cos(angle * 7) + .015 * Math.sin(angle * 13);
+  };
+  const seal = lathe(group, [[0, .012], [.17, .012], [.205, .026], [.214, .05],
+    [.2, .074], [.172, .086], [.16, .088], [0, .088]], wax, .38, .07, .65);
+  const sealPosition = seal.geometry.attributes.position;
+  for (let i = 0; i < sealPosition.count; i++) {
+    const x = sealPosition.getX(i), z = sealPosition.getZ(i), k = ripple(x, z);
+    sealPosition.setX(i, x * k); sealPosition.setZ(i, z * k);
   }
   seal.geometry.computeVertexNormals();
-  const stamp = standard(0x551421, .64);
-  curve(group, Array.from({ length: 24 }, (_, i) => new THREE.Vector3(
-    .38 + .111 * Math.cos(i * TAU / 24), .166, .65 + .111 * Math.sin(i * TAU / 24)
-  )), .006, stamp, true);
-  curve(group, [
-    new THREE.Vector3(.33, .164, .68), new THREE.Vector3(.38, .164, .59), new THREE.Vector3(.43, .164, .68)
-  ], .005, stamp, true, 12);
-  return {};
+  const face = new THREE.CircleGeometry(.158, 64).rotateX(-Math.PI / 2);
+  const facePosition = face.attributes.position;
+  for (let i = 0; i < facePosition.count; i++) {
+    const x = facePosition.getX(i), z = facePosition.getZ(i), k = ripple(x, z);
+    facePosition.setX(i, x * k); facePosition.setZ(i, z * k);
+  }
+  const stamp = mesh(group, face, new THREE.MeshPhysicalMaterial({
+    color: 0x841a28, roughness: .5, clearcoat: .45, clearcoatRoughness: .45, bumpMap: emblem, bumpScale: 2.4
+  }), .38, .07 + .0885, .65);
+  stamp.rotation.y = .35;
+  const random = randomSequence(77);
+  for (let i = 0; i < 6; i++) {
+    const angle = random() * TAU, distance = .2 + random() * .04, size = .028 + random() * .03;
+    const drop = ball(group, 1, wax, .38 + Math.cos(angle) * distance, .085, .65 + Math.sin(angle) * distance);
+    drop.scale.set(size * 1.4, size * .45, size);
+    drop.rotation.y = -angle;
+  }
+  return { scroll: update };
 }
 
 function buildQuill(group, m) {
@@ -451,7 +676,7 @@ function buildQuill(group, m) {
 
 const props = {
   jarra: buildMug, vela: buildCandle, esferas: buildPouch,
-  dados: buildDice, pergamino: buildScroll, pluma: buildQuill
+  bolsa: buildDiceBag, pergamino: buildScroll, pluma: buildQuill
 };
 
 function paintNumber(die, value) {
@@ -468,6 +693,13 @@ function paintNumber(die, value) {
   ctx.fillText(value, 64, 69, 108);
   die.ink.needsUpdate = true;
   die.value = value;
+}
+
+// El pergamino se desenrolla, se queda un instante abierto y vuelve a enrollarse.
+function unroll(motion) {
+  const opening = Math.min(1, motion / .32), closing = Math.max(0, (motion - .62) / .38);
+  const ease = n => n * n * (3 - 2 * n);
+  return ease(opening) * (1 - ease(closing));
 }
 
 function makeEnvironment(renderer) {
@@ -546,7 +778,9 @@ export function mount(table) {
     const dark = table.classList.contains('is-dark');
     for (const object of items) object.group.visible = object === item;
 
-    group.rotation.y = motion === 1 ? item.tilt : Math.sin(motion * Math.PI) * .14;
+    // El giro de reposo va dentro de la escena: el hueco del adorno queda recto y su foco no se tuerce.
+    const sway = motion === 1 || parts.bag || parts.scroll ? item.tilt : Math.sin(motion * Math.PI) * .14;
+    group.rotation.y = item.turn + sway;
     if (parts.drink) parts.drink.visible = !node.classList.contains('is-empty');
     if (parts.flame) parts.flame.visible = !node.classList.contains('is-out');
     if (parts.feather) parts.feather.rotation.y = Math.sin(motion * TAU) * .27;
@@ -564,17 +798,8 @@ export function mount(table) {
         }
       }
     }
-    if (parts.dice) {
-      const fall = 1 - motion;
-      parts.dice.forEach((die, index) => {
-        const value = node.querySelector('[data-sides="' + die.sides + '"] b').textContent;
-        paintNumber(die, value);
-        die.die.position.copy(die.restPosition);
-        die.die.position.y += Math.abs(Math.sin(motion * Math.PI * 2)) * .43 * fall;
-        die.die.quaternion.copy(die.rest).premultiply(new THREE.Quaternion()
-          .setFromAxisAngle(up, TAU * fall * fall * (index % 2 ? -1 : 1)));
-      });
-    }
+    if (parts.bag) hopBag(parts, motion);
+    if (parts.scroll) parts.scroll(motion === 1 ? 0 : unroll(motion));
 
     key.intensity = dark ? .34 : 2.55;
     fill.intensity = dark ? .15 : .65;
@@ -595,7 +820,7 @@ export function mount(table) {
     if (playing && playing !== item) draw(playing);
     playing = item;
     const start = performance.now();
-    const duration = item.node.dataset.egg === 'esferas' ? 900 : 630;
+    const duration = DURATIONS[item.node.dataset.egg] || 630;
     function step(now) {
       const progress = reduced.matches ? 1 : Math.min(1, (now - start) / duration);
       draw(item, progress);
@@ -610,17 +835,23 @@ export function mount(table) {
     if (!build) continue;
     const group = new THREE.Group();
     const parts = build(group, library, library.textures);
+    // El ángulo de reposo de cada adorno (--tilt en mesa.css) se aplica a la escena, no a la caja.
+    const turn = -(parseFloat(getComputedStyle(node).getPropertyValue('--tilt')) || 0) * Math.PI / 180;
+    group.rotation.y = turn;
     const bounds = new THREE.Box3().setFromObject(group);
     const anchor = bounds.getCenter(new THREE.Vector3());
     anchor.y = .28;
     anchor.z += .09;
     const size = bounds.getSize(new THREE.Vector3());
-    const halfSpan = Math.max(size.x * .67, size.z * .63 + size.y * .20, 1.36);
+    // La bolsa es alta y salta: se mira un poco más arriba. El pergamino se acerca un poco.
+    if (parts.bag) anchor.y = .5;
+    const close = parts.scroll ? .88 : 1;
+    const halfSpan = Math.max(size.x * .67, size.z * .63 + size.y * .20, 1.36) * close;
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = pixels;
     canvas.className = 'decor-model';
     canvas.setAttribute('aria-hidden', 'true');
-    const item = { node, group, parts, anchor, halfSpan, canvas, ctx: canvas.getContext('2d'), tilt: 0 };
+    const item = { node, group, parts, anchor, halfSpan, canvas, ctx: canvas.getContext('2d'), tilt: 0, turn };
     items.push(item);
     scene.add(group);
     node.append(canvas);

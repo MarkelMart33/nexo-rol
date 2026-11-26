@@ -6,7 +6,7 @@
     stylesheet.href = './src/nexo/terminal-shell.css?v=1';
     const table = document.createElement('link');
     table.rel = 'stylesheet';
-    table.href = './src/nexo/mesa.css?v=15';
+    table.href = './src/nexo/mesa.css?v=16';
     document.head.append(stylesheet, table);
 
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -127,13 +127,13 @@
             <span class="dc dc-vela" data-egg="vela"><span class="vela"><i class="vela-glow"></i><i class="vela-plate"></i><i class="vela-shadow"></i><i class="vela-wax"></i><i class="vela-pool"></i><i class="vela-wick"></i><i class="vela-flame"></i><i class="vela-smoke"></i></span></span>
             <span class="dc dc-esferas" data-egg="esferas"><span class="sphere-pouch"><i class="pouch-body"></i><i class="pouch-mouth"></i><i class="pouch-cord cord-left"></i><i class="pouch-cord cord-right"></i><i class="storm-sphere sphere-0" style="--gem:#9be5ff;--phase:0s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-1" style="--gem:#ffd783;--phase:0.23s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-2" style="--gem:#a8f0bf;--phase:0.46s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-3" style="--gem:#c4acff;--phase:0.6900000000000001s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-4" style="--gem:#9be5ff;--phase:0.92s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-5" style="--gem:#ffd783;--phase:1.1500000000000001s"><span class="sphere-gem"></span></i><i class="storm-sphere sphere-6" style="--gem:#b2efff;--phase:1.3800000000000001s"><span class="sphere-gem"></span></i><i class="pouch-lip"></i></span></span>
             <span class="dc dc-pergamino" data-egg="pergamino"><span class="pergamino"><i class="pergamino-sheet"></i><i class="pergamino-roll"></i><i class="pergamino-seal"></i></span></span>
-            <span class="dc dc-dados" data-egg="dados"><span class="poly-die poly-d20" data-sides="20"><b>20</b></span><span class="poly-die poly-d8" data-sides="8"><b>8</b></span><span class="poly-die poly-d4" data-sides="4"><b>4</b></span></span>
+            <span class="dc dc-bolsa" data-egg="bolsa" aria-haspopup="dialog"><span class="bolsa"><i class="bolsa-cuerpo"></i><i class="bolsa-cuello"></i><i class="bolsa-cordon"></i></span></span>
             <span class="mesa-eyes"><i></i><i></i></span>
           </div>
         </div>`;
         decorate(hub.querySelector('.mesa'));
         const layout = hub.querySelector('.mesa-objects');
-        [['jarra','dnd'],['vela','vampire-da'],['esferas','tormentas'],['dados','pathfinder'],['pergamino','cthulhu']].forEach(([egg,system]) => {
+        [['jarra','dnd'],['vela','vampire-da'],['esferas','tormentas'],['bolsa','pathfinder'],['pergamino','cthulhu']].forEach(([egg,system]) => {
           layout.querySelector('[data-system="'+system+'"]').after(hub.querySelector('[data-egg="'+egg+'"]'));
         });
         // Cada objeto conserva un espacio propio, también durante su animación.
@@ -143,7 +143,7 @@
           object.before(slot); slot.append(object);
         });
         const decorationTable = hub.querySelector('.mesa');
-        import('./decor-models.js?v=2').then(module => { if (decorationTable.isConnected) module.mount(decorationTable); }).catch(error => console.warn('Atrezo 3D no disponible; se conserva la vista compatible.', error));
+        import('./decor-models.js?v=3').then(module => { if (decorationTable.isConnected) module.mount(decorationTable); }).catch(error => console.warn('Atrezo 3D no disponible; se conserva la vista compatible.', error));
         hub.querySelector('[data-profile]').addEventListener('click', () => {
           away();
           if (window.NEXO_PROFILE) window.NEXO_PROFILE.open({ onExit: openHub });
@@ -204,6 +204,118 @@
     const pick = list => list[Math.floor(Math.random() * list.length)];
     const NOTES = ['Coge uno de la mesa.', 'Tira iniciativa.', 'El máster siempre tiene razón.', 'Nadie se separa del grupo.', '¿Quién trae los aperitivos?', 'No abras esa puerta.', 'Un natural 20 lo arregla todo.', 'Las fichas, a lápiz.'];
     const RUMORS = ['Dicen que el posadero fue aventurero.', 'Hay un dragón al norte. O eso dicen.', 'No te fíes del bardo.', 'El mapa está mal a propósito.', 'Alguien ha visto luces en la cripta.'];
+    // Bolsa de dados: una ventana para juntar en la mano los dados que se quieren tirar
+    // (tipo y cantidad, y un modificador) y lanzarlos con el lanzador común de NEXO_DICE.
+    const BAG_SIDES = [4, 6, 8, 10, 12, 20, 100];
+    const BAG_MAX = 40;
+    const DIE_SHAPES = {
+      4: '<polygon points="20,4 36,34 4,34"/><path d="M20 4 20 24M4 34 20 24 36 34"/>',
+      6: '<rect x="6" y="6" width="28" height="28" rx="5"/><path d="M12 12h0M28 28h0M20 20h0" stroke-width="5" stroke-linecap="round"/>',
+      8: '<polygon points="20,3 36,20 20,37 4,20"/><path d="M4 20h32"/>',
+      10: '<polygon points="20,3 35,17 20,37 5,17"/><path d="M5 17 20 23 35 17M20 23v14"/>',
+      12: '<polygon points="20,3 37,15 30,35 10,35 3,15"/><polygon points="20,11 28,17 25,27 15,27 12,17"/>',
+      20: '<polygon points="20,2 36,11 36,29 20,38 4,29 4,11"/><polygon points="20,9 30,26 10,26"/><path d="M20 2v7M4 29l6-3M36 29l-6-3"/>',
+      100: '<polygon points="20,3 35,17 20,37 5,17"/><path d="M5 17 20 23 35 17M20 23v14"/>'
+    };
+    const dieSvg = sides => `<svg viewBox="0 0 40 40" aria-hidden="true" focusable="false">${DIE_SHAPES[sides]}</svg>`;
+    const bag = { counts: Object.fromEntries(BAG_SIDES.map(sides => [sides, 0])), mod: 0 };
+    bag.counts[20] = 1;
+    let bagDialog = null;
+    function openBag(origin) {
+      if (!bagDialog) bagDialog = buildBag();
+      if (bagDialog.open) return;
+      paintBag();
+      bagDialog.returnValue = '';
+      bagDialog.showModal();
+      bagDialog.querySelector('[data-add="20"]').focus();
+      // «Atrás» cierra la bolsa antes de salir de la mesa.
+      bagDialog.dataset.byBack = '';
+      window.NEXO_NAV.sub(() => { bagDialog.dataset.byBack = '1'; bagDialog.close(); });
+      bagDialog.origin = origin;
+    }
+    function buildBag() {
+      const dialog = document.createElement('dialog');
+      dialog.className = 'mesa-bolsa';
+      dialog.setAttribute('aria-labelledby', 'mesaBolsaTitulo');
+      dialog.innerHTML = `<div class="bolsa-panel">
+        <header class="bolsa-head"><div><h2 id="mesaBolsaTitulo">Bolsa de dados</h2><p>Toca un dado para cogerlo. Tócalo en la mano para soltarlo.</p></div>
+          <button type="button" class="bolsa-cerrar" data-close aria-label="Cerrar la bolsa">×</button></header>
+        <ul class="bolsa-dados">${BAG_SIDES.map((sides, i) => `<li style="--i:${i}">
+          <button type="button" class="bolsa-dado" data-add="${sides}">${dieSvg(sides)}<b>d${sides === 100 ? '%' : sides}</b><span class="bolsa-cuenta" data-count="${sides}" aria-hidden="true"></span></button>
+          <button type="button" class="bolsa-quitar" data-remove="${sides}" aria-label="Soltar un d${sides}">−</button></li>`).join('')}</ul>
+        <div class="bolsa-mano" aria-label="Dados en la mano" role="group" data-hand></div>
+        <div class="bolsa-pie">
+          <div class="bolsa-mod" role="group" aria-label="Modificador"><span>Modificador</span>
+            <button type="button" data-mod="-1" aria-label="Restar uno al modificador">−</button><output data-mod-value>+0</output><button type="button" data-mod="1" aria-label="Sumar uno al modificador">+</button></div>
+          <p class="bolsa-formula" data-formula aria-live="polite"></p>
+          <div class="bolsa-acciones"><button type="button" class="bolsa-vaciar" data-clear>Vaciar</button><button type="button" class="bolsa-tirar" data-throw>Tirar</button></div>
+        </div></div>`;
+      document.body.append(dialog);
+      const total = () => BAG_SIDES.reduce((sum, sides) => sum + bag.counts[sides], 0);
+      const change = (sides, delta) => {
+        const next = Math.max(0, bag.counts[sides] + delta);
+        if (delta > 0 && total() >= BAG_MAX) return;
+        bag.counts[sides] = next;
+        paintBag(delta > 0 ? sides : null);
+      };
+      dialog.addEventListener('click', event => {
+        const target = event.target.closest('button');
+        if (event.target === dialog) { dialog.close(); return; }
+        if (!target) return;
+        if (target.dataset.add) change(Number(target.dataset.add), 1);
+        else if (target.dataset.remove) change(Number(target.dataset.remove), -1);
+        else if (target.dataset.drop) change(Number(target.dataset.drop), -1);
+        else if (target.dataset.mod) { bag.mod = Math.max(-20, Math.min(20, bag.mod + Number(target.dataset.mod))); paintBag(); }
+        else if ('clear' in target.dataset) { BAG_SIDES.forEach(sides => { bag.counts[sides] = 0; }); bag.mod = 0; paintBag(); }
+        else if ('close' in target.dataset) dialog.close();
+        else if ('throw' in target.dataset) throwBag();
+        // Si el botón pulsado desaparece al repintar, el foco vuelve al dado de la bolsa.
+        const sides = target.dataset.drop || target.dataset.remove;
+        if (sides && (!target.isConnected || target.hidden)) dialog.querySelector(`[data-add="${sides}"]`).focus();
+      });
+      dialog.addEventListener('close', () => {
+        if (!dialog.dataset.byBack) window.NEXO_NAV.drop();
+        dialog.dataset.byBack = '';
+      });
+      return dialog;
+    }
+    function bagFormula() {
+      const parts = BAG_SIDES.filter(sides => bag.counts[sides]).map(sides => `${bag.counts[sides]}d${sides}`);
+      if (bag.mod) parts.push(String(Math.abs(bag.mod)));
+      return parts.map((part, i) => (i === parts.length - 1 && bag.mod && parts.length > 1 ? (bag.mod < 0 ? ' − ' : ' + ') : i ? ' + ' : '') + part).join('');
+    }
+    function paintBag(added = null) {
+      const dialog = bagDialog;
+      const count = BAG_SIDES.reduce((sum, sides) => sum + bag.counts[sides], 0);
+      for (const sides of BAG_SIDES) {
+        const n = bag.counts[sides];
+        const badge = dialog.querySelector(`[data-count="${sides}"]`);
+        badge.textContent = n ? '×' + n : '';
+        const tile = dialog.querySelector(`[data-add="${sides}"]`);
+        tile.classList.toggle('is-picked', n > 0);
+        tile.disabled = count >= BAG_MAX;
+        tile.setAttribute('aria-label', `Coger un d${sides}${n ? `, llevas ${n}` : ''}`);
+        dialog.querySelector(`[data-remove="${sides}"]`).hidden = !n;
+      }
+      const hand = dialog.querySelector('[data-hand]');
+      hand.innerHTML = count ? BAG_SIDES.flatMap(sides => Array.from({ length: bag.counts[sides] }, (_, i) =>
+        `<button type="button" class="bolsa-chip${added === sides && i === bag.counts[sides] - 1 ? ' is-new' : ''}" data-drop="${sides}" aria-label="Soltar un d${sides}">${dieSvg(sides)}<small>${sides === 100 ? '%' : sides}</small></button>`)).join('')
+        : '<p class="bolsa-vacia">La mano está vacía.</p>';
+      dialog.querySelector('[data-mod-value]').textContent = (bag.mod < 0 ? '−' : '+') + Math.abs(bag.mod);
+      const formula = bagFormula();
+      dialog.querySelector('[data-formula]').textContent = count ? formula : 'Elige al menos un dado.';
+      const button = dialog.querySelector('[data-throw]');
+      button.disabled = !count;
+      button.textContent = count === 1 ? 'Tirar el dado' : count ? `Tirar ${count} dados` : 'Tirar';
+    }
+    function throwBag() {
+      const expr = BAG_SIDES.filter(sides => bag.counts[sides]).map(sides => `${bag.counts[sides]}d${sides}`).join('+')
+        + (bag.mod ? (bag.mod > 0 ? '+' : '-') + Math.abs(bag.mod) : '');
+      if (!expr || /^[+-]/.test(expr)) return;
+      bagDialog.close();
+      window.NEXO_DICE?.roll('mesa', { expr, label: 'Bolsa de dados' }, { theme: 'mesa' });
+    }
+
     function decorate(table) {
       const timers = new WeakMap();
       const say = (item, text) => {
@@ -235,13 +347,9 @@
           table.querySelector('.mesa-eyes')?.classList.remove('is-gone');
           say(item, out ? 'Fuuu…' : 'Que se haga la luz.');
         },
-        dados(item) {
-          const results = [...item.querySelectorAll('[data-sides]')].map(die => {
-            const result = 1 + Math.floor(Math.random() * Number(die.dataset.sides));
-            die.querySelector('b').textContent = result;
-            return 'd' + die.dataset.sides + ': ' + result;
-          });
-          poke(item); say(item, results.join(' · '));
+        bolsa(item) {
+          poke(item);
+          openBag(item);
         },
         pergamino(item) {
           poke(item);
@@ -254,7 +362,7 @@
           if (note) note.textContent = pick(NOTES.filter(text => text !== note.textContent));
         }
       };
-      const names = {esferas:'Infundir luz tormentosa en las esferas', jarra:'Beber de la jarra', vela:'Encender o apagar la vela', dados:'Lanzar los dados', planta:'Explorar la planta', monedas:'Lanzar una moneda', pergamino:'Leer un rumor', pluma:'Escribir con la pluma'};
+      const names = {esferas:'Infundir luz tormentosa en las esferas', jarra:'Beber de la jarra', vela:'Encender o apagar la vela', bolsa:'Abrir la bolsa de dados', planta:'Explorar la planta', monedas:'Lanzar una moneda', pergamino:'Leer un rumor', pluma:'Escribir con la pluma'};
       table.querySelectorAll('[data-egg]').forEach(item => {
         item.removeAttribute('aria-hidden'); item.tabIndex = 0; item.setAttribute('role', 'button');
         item.setAttribute('aria-label', names[item.dataset.egg]);
