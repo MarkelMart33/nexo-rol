@@ -170,6 +170,22 @@
     };
   }
 
+  // Modo partida: la ficha en pequeño para jugar con el móvil, con la pantalla encendida (src/nexo/partida.js).
+  const partida = window.NEXO_PARTIDA?.create({
+    prefix: 'vtm', host: () => host, juego, current: () => current, term,
+    can: ch => Boolean(playModel(ch)), view: ch => partidaView(ch), roll: key => { if (key === 'tray') openDice(); },
+    back: () => { if (current) juego?.render(host.querySelector('[data-play]')); }
+  });
+  // Reglas básicas para quien empieza, en el modo partida (resúmenes propios).
+  const PARTIDA_RULES = [['Cómo se tira', 'Juntas una reserva de d10 (atributo + habilidad) y la tiras contra una dificultad, normalmente 6. Cada dado que la iguala o supera es un éxito y cada 1 quita uno. Sin éxitos y con algún 1, fracaso total.'], ['Fuerza de Voluntad', 'Gasta un punto para sumar un éxito automático a una tirada (uno por turno).'], ['Sangre', 'Gastas puntos de sangre para curarte, subir tus atributos físicos o despertarte. Tu generación dice cuántos puedes gastar por turno.'], ['Heridas', 'Cada nivel de salud perdido puede restar dados a todas tus reservas, como indica el medidor.'], ['Frenesí', 'Cuando la Bestia aprieta (hambre, rabia, fuego), tira Autocontrol o Instinto para no perder el control.']];
+  function partidaView(ch) {
+    const data = sheetData(ch);
+    const stats = window.NEXO_PARTIDA.pick(data, [[road(ch).name], ['Fuerza de Voluntad', 'Voluntad'], ['Generación'], ['Sangre por turno', 'Sangre/turno']]);
+    // Las reservas de Vampiro se arman con atributo + habilidad: se tiran desde el lanzador.
+    stats.push({ label: 'Reserva', value: '⚄', roll: 'tray' });
+    return { title: data.name, sub: [clanOf(ch).name, data.subtitle].filter(Boolean).join(' · '), stats, rolls: [], guide: [{ title: 'Reglas básicas', open: true, gloss: PARTIDA_RULES }] };
+  }
+
   function load() {
     try {
       const parsed = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -602,7 +618,7 @@
     const options = (entries, selected) => entries.map(([key, label]) => `<option value="${key}" ${key === selected ? 'selected' : ''}>${esc(label)}</option>`).join('');
     const clanOptions = options(Object.entries(e.clans).map(([key, clan]) => [key, clan.name]), ch.clan);
     const roadOptions = options(e.roads.map(key => [key, ROADS[key].name]), ch.road);
-    frame(`<div class="vtm-editor-head"><button class="vtm-button ghost" data-back>← ${side === 'da' ? 'TUS CAINITAS' : 'TUS VÁSTAGOS'}</button><span class="vtm-era-tag">${esc(e.name)}</span>${kit?.tools() || ''}<button class="vtm-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
+    frame(`<div class="vtm-editor-head"><button class="vtm-button ghost" data-back>← ${side === 'da' ? 'TUS CAINITAS' : 'TUS VÁSTAGOS'}</button><span class="vtm-era-tag">${esc(e.name)}</span>${partida?.button('vtm-button') || ''}${kit?.tools() || ''}<button class="vtm-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
       <div data-play></div>
       <section class="vtm-panel"><h2><span>I</span> Concepto</h2><div class="vtm-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del vástago' })}${field('Jugador', 'player')}${field('Crónica', 'chronicle')}
@@ -619,6 +635,7 @@
       <div class="vtm-modal" data-modal hidden><div class="vtm-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="vtmDelTitle"><h3 id="vtmDelTitle">¿Destruir a este vástago?</h3><p>La ficha se borrará de este dispositivo y no se podrá recuperar.</p><div class="vtm-actions"><button class="vtm-button ghost" data-cancel>CANCELAR</button><button class="vtm-button danger" data-confirm>ELIMINAR FICHA</button></div></div></div>`, saved ? 'GUARDADO EN ESTE DISPOSITIVO' : 'FICHA NUEVA · SIN GUARDAR');
 
     host.querySelector('[data-back]').addEventListener('click', renderList);
+    partida?.bind(host);
     host.querySelectorAll('[data-prop]').forEach(input => input.addEventListener('input', () => {
       current[input.dataset.prop] = input.value;
       scheduleSave();
@@ -772,6 +789,7 @@
     }));
     bindDiablerie(sheet, ch);
     juego?.render(host.querySelector('[data-play]'));
+    host.querySelectorAll('[data-np-open]').forEach(button => { button.hidden = !playModel(ch); });
   }
 
   // Diablerie (Amaranto en Edad Oscura)

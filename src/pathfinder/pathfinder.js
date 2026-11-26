@@ -213,6 +213,26 @@
     return { bonus, note: notes.length ? notes.join('. ') + '.' : '' };
   }
 
+  // Modo partida: la ficha en pequeño para jugar con el móvil, con la pantalla encendida (src/nexo/partida.js).
+  const partida = window.NEXO_PARTIDA?.create({
+    prefix: 'pf', host: () => host, juego, current: () => current, term,
+    can: ch => Boolean(playModel(ch)), view: ch => partidaView(ch), roll: key => rollFromSheet(key),
+    back: () => { if (current) juego?.render(host.querySelector('[data-play]')); }
+  });
+  // Reglas básicas para quien empieza, en el modo partida (resúmenes propios).
+  const PARTIDA_RULES = [['Cómo se tira', 'd20 más tu modificador contra una CD. Si la superas por 10 o más, es un éxito crítico; si te quedas 10 o más por debajo, un fallo crítico. Un 20 natural mejora el resultado un grado y un 1 natural lo empeora.'], ['Tu turno', 'Tienes tres acciones y una reacción. Moverte, atacar o alzar un escudo cuesta una acción; la mayoría de conjuros, dos.'], ['Ataques seguidos', 'El segundo ataque del turno tiene −5 y el tercero −10 (−4 y −8 con armas ágiles). Suele compensar moverse o hacer otra cosa con la tercera acción.'], ['Salvaciones', 'Fortaleza resiste venenos y golpes al cuerpo, Reflejos sirve para esquivar y Voluntad protege la mente.'], ['Competencia', 'Sin entrenar suma +0; entrenado, tu nivel +2; experto +4, maestro +6 y legendario +8 sobre tu nivel.'], ['Puntos de héroe', 'Gasta uno para repetir una tirada y quedarte con el segundo resultado. Si gastas todos al estar moribundo, te salvas.'], ['Caer a 0 PG', 'Quedas inconsciente y moribundo 1 (más tu valor de herido). Al empezar tu turno, tirada de recuperación contra CD 10 + moribundo. Con moribundo 4, mueres.']];
+  function partidaView(ch) {
+    const data = sheetData(ch);
+    const items = diceItems(ch);
+    const roll = (title, id, test) => ({ id, title, items: items.filter(([k]) => test(k)).map(([key, label, value]) => ({ key, label, value: signed(value) })) });
+    return {
+      title: data.name, sub: data.subtitle,
+      stats: window.NEXO_PARTIDA.pick(data, [['Clase de Armadura', 'CA'], ['Velocidad'], ['Percepción', '', 'perc'], ['Fortaleza', '', 'fort'], ['Reflejos', '', 'ref'], ['Voluntad', '', 'vol'], ['CD de clase'], ['CD de conjuros']]),
+        guide: [{ title: 'Reglas básicas', gloss: PARTIDA_RULES }],
+    rolls: [roll('Ataques', 'atk', k => ['melee', 'ranged', 'spell'].includes(k)), roll('Habilidades', 'sk', k => k.startsWith('sk:') || k.startsWith('lore:'))].filter(g => g.items.length)
+    };
+  }
+
   function load() {
     try {
       const parsed = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -686,7 +706,7 @@
     current = ch;
     lvOpen.clear();
     const saved = store.characters.some(item => item.id === ch.id);
-    frame(`<div class="pf-editor-head"><button class="pf-button ghost" data-back>← TUS AVENTUREROS</button>${kit?.tools() || ''}<button class="pf-button danger" data-delete ${saved ? '' : 'hidden'}>BORRAR FICHA</button></div>
+    frame(`<div class="pf-editor-head"><button class="pf-button ghost" data-back>← TUS AVENTUREROS</button>${partida?.button('pf-button') || ''}${kit?.tools() || ''}<button class="pf-button danger" data-delete ${saved ? '' : 'hidden'}>BORRAR FICHA</button></div>
       <div data-play></div>
       <section class="pf-panel">${heading(1, 'Aventurero', 'datos básicos')}<div class="pf-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del personaje' })}${field('Jugador', 'player')}${field('Campaña', 'campaign')}
@@ -698,6 +718,7 @@
       <div class="pf-modal" data-modal hidden><div class="pf-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="pfDelTitle"><h3 id="pfDelTitle">¿Borrar este aventurero?</h3><p>La ficha se borrará de este dispositivo y de tu cuenta, y no se podrá recuperar.</p><div class="pf-actions"><button class="pf-button ghost" data-cancel>CANCELAR</button><button class="pf-button danger" data-confirm>BORRAR FICHA</button></div></div></div>`, saved ? 'GUARDADO EN ESTE DISPOSITIVO' : 'FICHA NUEVA · SIN GUARDAR');
 
     host.querySelector('[data-back]').addEventListener('click', renderList);
+    partida?.bind(host);
     host.querySelectorAll('.pf-main > .pf-panel [data-prop]').forEach(input => input.addEventListener('input', () => { current[input.dataset.prop] = input.value; scheduleSave(); }));
     const modal = host.querySelector('[data-modal]');
     host.querySelector('[data-delete]').addEventListener('click', () => { modal.hidden = false; host.querySelector('[data-cancel]').focus(); });
@@ -1007,6 +1028,7 @@
     sheet.querySelector('[data-lore-add]')?.addEventListener('click', () => addLore(loreInput.value));
     loreInput?.addEventListener('keydown', event => { if (event.key === 'Enter') addLore(loreInput.value); });
     juego?.render(host.querySelector('[data-play]'));
+    host.querySelectorAll('[data-np-open]').forEach(button => { button.hidden = !playModel(ch); });
   }
 
   function ensureHost() {

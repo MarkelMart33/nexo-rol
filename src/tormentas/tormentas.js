@@ -179,6 +179,24 @@
     a.add('concentracion', Math.min(left, a.max('concentracion') - a.get('concentracion')));
   }
 
+  // Modo partida: la ficha en pequeño para jugar con el móvil, con la pantalla encendida (src/nexo/partida.js).
+  const partida = window.NEXO_PARTIDA?.create({
+    prefix: 'tor', host: () => host, juego, current: () => current, term,
+    can: ch => Boolean(playModel(ch)), view: ch => partidaView(ch), roll: key => rollSkill(key),
+    back: () => { if (current) juego?.render(host.querySelector('[data-play]')); }
+  });
+  // Reglas básicas para quien empieza, en el modo partida (resúmenes propios).
+  const PARTIDA_RULES = [['Cómo se tira', 'd20 más el modificador de la habilidad contra la dificultad que diga el máster. Si la igualas o superas, lo consigues.'], ['Dado de trama', 'Cuando hay mucho en juego, el máster te pide tirarlo además: puede traer una complicación o una oportunidad.'], ['Tu turno', 'Puedes jugar un turno rápido, antes que los enemigos y con dos acciones, o uno lento, después y con tres. Tienes una reacción por ronda.'], ['Defensas', 'Los ataques tiran contra tu defensa física, cognitiva o espiritual según lo que te hagan.'], ['Concentración', 'Se gasta en algunas reacciones y talentos. Vuelve al descansar.'], ['Lesiones', 'Al caer a 0 de salud recibes una lesión. Apúntalas en el panel: algunas se curan con descanso y otras no.']];
+  function partidaView(ch) {
+    const data = sheetData(ch);
+    return {
+      title: data.name, sub: data.subtitle,
+      stats: window.NEXO_PARTIDA.pick(data, [['Defensa física', 'Def. física', '', 'tor-defensas'], ['Defensa cognitiva', 'Def. cognitiva', '', 'tor-defensas'], ['Defensa espiritual', 'Def. espiritual', '', 'tor-defensas'], ['Movimiento'], ['Recuperación']]),
+      guide: [{ title: 'Reglas básicas', gloss: PARTIDA_RULES }],
+      rolls: [{ id: 'sk', title: 'Habilidades', items: diceItems(ch).map(([key, label, value]) => ({ key, label, value: signed(value) })) }]
+    };
+  }
+
   function load() {
     try {
       const parsed = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -509,7 +527,7 @@
     lvOpen.list = false;
     lvOpen.extras = false;
     const saved = store.characters.some(item => item.id === ch.id);
-    frame(`<div class="tor-editor-head"><button class="tor-button ghost" data-back>← TUS HÉROES</button>${kit?.tools() || ''}<button class="tor-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
+    frame(`<div class="tor-editor-head"><button class="tor-button ghost" data-back>← TUS HÉROES</button>${partida?.button('tor-button') || ''}${kit?.tools() || ''}<button class="tor-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
       <div data-play></div>
       <section class="tor-panel">${heading(1, 'Identidad', 'concepto del personaje')}<div class="tor-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del personaje' })}${field('Jugador', 'player')}${field('Campaña', 'campaign')}
@@ -523,6 +541,7 @@
       <div class="tor-modal" data-modal hidden><div class="tor-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="torDelTitle"><h3 id="torDelTitle">¿Dejar que la tormenta se lleve a este héroe?</h3><p>La ficha se borrará de este dispositivo y de tu cuenta, y no se podrá recuperar.</p><div class="tor-actions"><button class="tor-button ghost" data-cancel>CANCELAR</button><button class="tor-button danger" data-confirm>ELIMINAR FICHA</button></div></div></div>`, saved ? 'GUARDADO EN ESTE DISPOSITIVO' : 'FICHA NUEVA · SIN GUARDAR');
 
     host.querySelector('[data-back]').addEventListener('click', renderList);
+    partida?.bind(host);
     host.querySelectorAll('[data-prop]').forEach(input => input.addEventListener('input', () => {
       current[input.dataset.prop] = input.value;
       scheduleSave();
@@ -694,6 +713,7 @@
     sheet.querySelectorAll('[data-prop]').forEach(input => input.addEventListener('input', () => { current[input.dataset.prop] = input.value; scheduleSave(); }));
     if (store.characters.some(item => item.id === ch.id)) host.querySelector('[data-delete]').hidden = false;
     juego?.render(host.querySelector('[data-play]'));
+    host.querySelectorAll('[data-np-open]').forEach(button => { button.hidden = !playModel(ch); });
   }
 
   function ensureHost() {

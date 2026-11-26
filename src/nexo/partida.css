@@ -1,0 +1,126 @@
+/* NEXO · Modo partida: la ficha en pequeño para jugar. Toma la tinta de cada sistema de --ap-ink* (clase ap-<sistema>)
+   y el papel de --np-surface, que cada sistema da abajo con su paleta. */
+.np{--np-ink:var(--ap-ink,#2a2119);--np-soft:var(--ap-ink-soft,#6b5a48);--np-accent:var(--ap-ink-accent,#8a5a0b);--np-line:var(--ap-ink-line,#cbb07c);--np-head:var(--ap-head,Georgia,serif);
+  --np-surface:#f3ebdc;--np-bar:color-mix(in srgb,var(--np-surface) 92%,#000);--np-card:color-mix(in srgb,var(--np-accent) 7%,transparent);--np-press:color-mix(in srgb,var(--np-accent) 18%,transparent);
+  position:fixed;inset:0;z-index:30;overflow:auto;overscroll-behavior:contain;background:var(--np-surface);color:var(--np-ink);font-size:16px;line-height:1.4;-webkit-text-size-adjust:100%;animation:np-in .22s cubic-bezier(.2,.8,.2,1)}
+.np *,.np *:before,.np *:after{box-sizing:border-box}
+.np button,.np input,.np select{font:inherit;color:inherit}
+.np button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.np :is(button,summary):focus-visible{outline:2px solid var(--np-accent);outline-offset:2px}
+@keyframes np-in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* Cabecera: volver y quién es. La esquina superior derecha queda libre. */
+.np-bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;min-height:60px;padding:calc(8px + env(safe-area-inset-top,0px)) 76px 8px max(12px,env(safe-area-inset-left,0px));border-bottom:2px solid var(--np-accent);background:var(--np-bar);box-shadow:0 6px 18px -12px #000a}
+.np-back{flex:none;display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 14px;border:1px solid var(--np-line);border-radius:999px;background:var(--np-card);color:var(--np-ink);font:700 14px/1 var(--np-head);letter-spacing:.08em}
+.np-back:active{transform:scale(.96)}
+.np-who{min-width:0;display:grid}
+.np-who b{overflow:hidden;font:700 19px/1.15 var(--np-head);white-space:nowrap;text-overflow:ellipsis}
+.np-who small{overflow:hidden;color:var(--np-soft);font-size:13px;white-space:nowrap;text-overflow:ellipsis}
+
+.np-body{display:grid;gap:14px;max-width:1120px;margin:0 auto;padding:14px max(12px,env(safe-area-inset-right,0px)) calc(110px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.np-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.np-wake{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 13px;border:1px dashed var(--np-line);border-radius:999px;background:none;color:var(--np-soft);font-size:13px}
+.np-wake i{width:9px;height:9px;border-radius:50%;background:currentColor;opacity:.45}
+.np-wake.is-on{border-style:solid;border-color:var(--np-accent);color:var(--np-accent)}
+.np-wake.is-on i{opacity:1;box-shadow:0 0 0 3px color-mix(in srgb,var(--np-accent) 25%,transparent);animation:np-glow 2.4s ease-in-out infinite}
+.np-wake.is-off{cursor:default}
+@keyframes np-glow{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--np-accent) 8%,transparent)}}
+.np-adv{display:inline-flex;margin-left:auto;border:1px solid var(--np-line);border-radius:999px;overflow:hidden}
+.np-adv button{min-height:36px;padding:0 12px;border:0;border-left:1px solid var(--np-line);background:none;color:var(--np-soft);font-size:13px}
+.np-adv button:first-child{border-left:0}
+.np-adv button.is-on{background:var(--np-accent);color:var(--np-surface);font-weight:700}
+
+/* Los números de un vistazo */
+.np-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:8px}
+.np-stat{display:grid;justify-items:center;align-content:center;gap:2px;min-height:76px;padding:8px 4px;border:1px solid var(--np-line);border-radius:10px;background:var(--np-card);color:var(--np-ink);text-align:center}
+.np-stat small{color:var(--np-soft);font:600 11px/1.2 var(--np-head);letter-spacing:.08em;text-transform:uppercase}
+.np-stat b{font:700 26px/1.05 var(--np-head);font-variant-numeric:tabular-nums}
+.np-stat i{max-width:100%;color:var(--np-soft);font-size:11px;font-style:normal;line-height:1.2}
+.np-stat em{color:var(--np-accent);font-size:11px;font-style:normal;letter-spacing:.06em}
+.np-stat.is-roll{border-color:color-mix(in srgb,var(--np-accent) 60%,var(--np-line))}
+.np-stat.is-roll b{color:var(--np-accent)}
+.np-stat.is-roll:active,.np-roll:active{transform:scale(.96);background:var(--np-press)}
+
+.np-cols{display:grid;gap:14px;align-items:start}
+@media (min-width:900px){.np-cols{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}.np-side{position:sticky;top:76px}}
+
+/* El panel «En juego» dentro del modo partida: siempre abierto, sin cabecera ni contadores nuevos. */
+.np-play .nj-panel{margin:0;padding:0;border:0;background:none;box-shadow:none}
+.np-play .nj-panel:before,.np-play .nj-panel:after{display:none}
+.np-play .nj-fold>summary,.np-play [data-nj-fold="add"]{display:none}
+.np-play .nj-body{margin-top:0;gap:14px}
+.np-play .nj-big{padding:14px 14px 16px;border-radius:12px}
+.np-play .nj-value b{font-size:52px}
+.np-play .nj-delta input{font-size:22px;font-weight:700}
+.np-play .nj-delta .nj-btn{min-height:48px;font-size:14px}
+.np-play .nj-group,.np-play .nj-conds,.np-play .nj-extra{padding:12px 14px;border:1px solid var(--np-line);border-radius:12px;background:var(--np-card)}
+.np-play .nj-rests{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px}
+.np-play .nj-rest{min-height:52px}
+.np-play .nj-pip{min-width:30px;min-height:30px}
+
+/* Tiradas de la ficha */
+.np-side{display:grid;gap:10px}
+.np-rolls{border:1px solid var(--np-line);border-radius:12px;background:var(--np-card)}
+.np-rolls>summary{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 14px;list-style:none;cursor:pointer}
+.np-rolls>summary::-webkit-details-marker{display:none}
+.np-rolls>summary:after{content:'▾';margin-left:auto;color:var(--np-accent);transition:transform .2s}
+.np-rolls:not([open])>summary:after{transform:rotate(-90deg)}
+.np-rolls h3{margin:0;padding:0;border:0;color:var(--np-accent);font:700 13px/1.2 var(--np-head);letter-spacing:.12em;text-transform:uppercase}
+.np-rolls summary small{color:var(--np-soft);font-size:12px}
+.np-roll-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:0 10px 12px}
+@media (min-width:560px) and (max-width:899px){.np-roll-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.np-roll{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:44px;padding:6px 10px;border:1px solid var(--np-line);border-radius:8px;background:none;color:var(--np-ink);text-align:left}
+.np-roll span{min-width:0;overflow:hidden;font-size:14px;line-height:1.2;text-overflow:ellipsis}
+.np-roll b{flex:none;color:var(--np-accent);font:700 17px/1 var(--np-head);font-variant-numeric:tabular-nums}
+.np-roll.is-prof{border-color:color-mix(in srgb,var(--np-accent) 55%,var(--np-line));background:color-mix(in srgb,var(--np-accent) 10%,transparent)}
+.np-roll-grid.has-hints{grid-template-columns:1fr}
+@media (min-width:560px){.np-roll-grid.has-hints{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.np-roll span small{display:block;margin-top:2px;color:var(--np-soft);font-size:12.5px;line-height:1.3;white-space:normal}
+.np-roll span small.np-prof{display:inline;margin:0 0 0 6px;color:var(--np-accent);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.np-roll-grid.has-hints .np-roll span{white-space:normal}
+.np-note{margin:0 14px 8px;color:var(--np-soft);font-size:13.5px;line-height:1.45}
+.np-help{margin:0 10px 10px;padding:0 4px;border-bottom:1px dotted var(--np-line)}
+.np-help>summary,.np-gloss>summary{min-height:40px;display:flex;align-items:center;color:var(--np-accent);font-size:14px;font-weight:600;cursor:pointer;list-style:none}
+.np-help>summary::-webkit-details-marker,.np-gloss>summary::-webkit-details-marker{display:none}
+.np-help>summary:before,.np-gloss>summary:before{content:'＋';margin-right:6px;font-weight:400}
+.np-help[open]>summary:before,.np-gloss[open]>summary:before{content:'−'}
+.np-help p,.np-gloss p{margin:0 0 10px;font-size:14px;line-height:1.5}
+.np-guide{display:grid;gap:10px}
+.np-guide-title{margin:8px 2px 0;color:var(--np-soft);font:700 12px/1.2 var(--np-head);letter-spacing:.14em;text-transform:uppercase}
+.np-guide-body{padding:0 14px 12px;font-size:15px;line-height:1.5}
+.np-guide-body ol,.np-guide-body ul{margin:0;padding-left:20px}
+.np-guide-body li{margin:6px 0}
+.np-lead{margin:0}
+.np-gloss{border-top:1px dotted var(--np-line)}
+.np-gloss:first-child{border-top:0}
+.np-hint{margin:0;color:var(--np-soft);font-size:13px;line-height:1.45}
+
+/* Botón de la ficha que abre el modo */
+.np-open span{font-size:.85em}
+
+/* Papel de cada sistema */
+.np-dnd{--np-surface:#f3e8cc;background:radial-gradient(ellipse at 50% 0,#fbf3dd,transparent 60%),var(--dnd-grain,none),#f3e8cc}
+.np-pf{--np-surface:#efe3c4}
+.np-cth{--np-surface:#ece3cc;background:repeating-linear-gradient(#0000 0 27px,#8a74501a 27px 28px),#ece3cc}
+.np-vtm{--np-surface:#120a0d;--np-bar:#1b0d12}
+.vtm-da .np-vtm{--np-surface:#efe0bf;--np-bar:#e6d2a8}
+.np-tor{--np-surface:#0b1424;--np-bar:#101d33;background:radial-gradient(ellipse at 50% -10%,#20406a88,transparent 60%),#0b1424}
+
+/* Mientras el modo está abierto, el fab de dados queda por encima y no hay otro desplazamiento detrás. */
+html.nexo-partida-open :is(.dnd,.vtm,.tor,.cth,.pf){overflow:hidden}
+
+@media (max-width:420px){
+  .np-bar{gap:8px;padding-right:64px}
+  .np-back span{display:none}
+  .np-back{width:44px;justify-content:center;padding:0;font-size:18px}
+  .np-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .np-stat b{font-size:23px}
+  .np-adv{margin-left:0}
+  .np-adv button{padding:0 10px}
+}
+@media (prefers-reduced-motion:reduce){
+  .np,.np-wake.is-on i{animation:none}
+  .np-rolls>summary:after{transition:none}
+  .np-stat.is-roll:active,.np-roll:active,.np-back:active{transform:none}
+}
+[data-np-open][hidden]{display:none!important}
