@@ -39,6 +39,7 @@ Sistemas y edición de referencia (no mezcles ediciones):
   - `ficha.js` / `ficha.css`: lo común de las fichas (`window.NEXO_FICHA`): exportar, importar, hoja para imprimir y la ventanita de regla de `term(id, texto)`.
   - `copias.js`: archivos de ficha y copia de seguridad completa (`window.NEXO_COPIAS`).
   - `juego.js` / `juego.css`: panel «En juego» de las fichas (`window.NEXO_JUEGO`): contadores, estados y descansos.
+  - `partida.js` / `partida.css`: modo partida (`window.NEXO_PARTIDA`), la ficha en pequeño para jugar en el móvil con la pantalla encendida (Wake Lock). Cada sistema le pasa `view(ch)` (título, números de un vistazo y grupos de tiradas, con `NEXO_PARTIDA.pick` para sacarlos de su `sheetData`) y `roll(clave, { adv })`; el panel «En juego» se monta dentro con `data-nj-open`, que lo deja siempre abierto.
   - `master.js` / `master.css`: herramientas de máster de las campañas (`window.NEXO_MASTER`): combate con iniciativa, PNJ y generadores. `master-datos.js` (`window.NEXO_MASTER_DATOS`) lleva las tablas de los generadores, una por ambientación, y el generador de mundos de Traveller.
   - `mundo.js` / `mundo.css`: notas de mundo enlazadas de cada campaña (`window.NEXO_MUNDO`): entradas con tipo y etiquetas, enlaces `[[Nombre]]` entre ellas y lo que de ellas leen los jugadores.
   - `grupo.js` / `grupo.css`: campañas compartidas (`window.NEXO_GRUPO`): código de invitación, grupo, ficha de cada jugador a la vista de quien dirige y tiradas en directo. Es el único módulo que habla con las tablas `shared_*`.
@@ -76,6 +77,7 @@ Sistemas y edición de referencia (no mezcles ediciones):
   - `nexo-vampire-v1`, `nexo-dnd-v1`, `nexo-tormentas-v1`, `nexo-cthulhu-v1` y `nexo-pathfinder-v1`: fichas de cada sistema.
   - `nexo-campanas-v1`: campañas de todos los sistemas.
   - `nexo-juego-plegado`: si el panel «En juego» de cada ficha está plegado. Es una preferencia del dispositivo: no se sincroniza ni toca `updatedAt`.
+  - `nexo-partida-despierta`: vale `no` si en este dispositivo se ha pedido que el modo partida no mantenga la pantalla encendida. No se sincroniza.
   - `nexo-grupos-v1`: campañas de otras cuentas en las que se juega y, por sistema, la campaña a la que van las tiradas. Es una copia de lo que dice la nube y se borra al cerrar sesión.
   - Cada clave de fichas y campañas tiene su marca `<clave>-cloud` (`clean` o `dirty`).
 - Supabase:

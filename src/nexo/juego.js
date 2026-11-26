@@ -235,7 +235,8 @@
         <details class="nj-more" data-nj-fold="conds" ${unfolded.has('conds') ? 'open' : ''}><summary data-nj-key="fold:conds">＋ Añadir o quitar estados</summary><div class="nj-cond-list">${list.map(c => `<button type="button" class="nj-cond ${a.cond(c.id) ? 'is-on' : ''}" data-nj-cond="${esc(c.id)}" data-nj-key="cl:${esc(c.id)}" aria-pressed="${Boolean(a.cond(c.id))}">${esc(c.label)}</button>`).join('')}</div></details>
         ${lines ? `<ul class="nj-effects">${lines}</ul>` : ''}</div>`;
     }
-    const shownOpen = ch => { const saved = folds()[ch.id]; return typeof saved === 'boolean' ? saved : cfg.ready?.(ch) ?? true; };
+    // En el modo partida (src/nexo/partida.js) el panel va siempre abierto y sin cabecera.
+    const shownOpen = ch => { if (mount?.dataset.njOpen) return true; const saved = folds()[ch.id]; return typeof saved === 'boolean' ? saved : cfg.ready?.(ch) ?? true; };
     // Resumen de una línea: el contador principal y los estados activos (la cabecera del panel y la campaña compartida).
     function summaryOf(a, model) {
       const first = model.counters.find(c => c.big && !c.inside && (!c.showAt || a.get(c.showAt.id) === c.showAt.is));

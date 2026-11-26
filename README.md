@@ -97,6 +97,10 @@ Cada ficha de Vampiro, D&D, El Archivo de las Tormentas, La llamada de Cthulhu y
 
 Lo plegado o desplegado del panel se recuerda en cada dispositivo (clave `nexo-juego-plegado`) y no cuenta como cambio de la ficha.
 
+### Modo partida
+
+El botón «Modo partida» de la cabecera de cada ficha (`src/nexo/partida.js` y `src/nexo/partida.css`) abre la ficha en pequeño para jugar con el móvil en la mano: arriba los números que se miran en la mesa (CA, iniciativa, velocidad y percepción pasiva en D&D; defensas en Tormentas; CA y salvaciones en Pathfinder; Esquivar y movimiento en Cthulhu; senda, Voluntad y generación en Vampiro), debajo el mismo panel «En juego» siempre abierto, con los puntos de golpe en grande, y al lado las tiradas de la ficha (salvaciones, habilidades, ataques), que se lanzan con un toque en los dados de NEXO y ya aplican los estados. En D&D se elige además ventaja o desventaja para la próxima tirada. Mientras está abierto la pantalla no se apaga (Wake Lock, en navegadores que lo admiten y con HTTPS); se puede desactivar con el botón «Pantalla» y la elección se recuerda en el dispositivo (clave `nexo-partida-despierta`). «Atrás» o «← Ficha» vuelven a la ficha completa.
+
 ## Máster: combate, PNJ y generadores
 
 Cada campaña tiene tres herramientas para quien dirige (`src/nexo/master.js`, `master-datos.js` y `master.css`), con el aspecto de su sistema. En Traveller están en la aplicación «MÁSTER» de cada partida. Lo que se apunta en ellas se guarda con la campaña o la partida, en el dispositivo y, con cuenta, en la nube.

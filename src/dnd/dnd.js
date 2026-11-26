@@ -136,6 +136,13 @@
     onChange: () => { const a = current && juego.api(current); if (a?.model && a.get('hp') > 0 && (a.get('ds') || a.get('df'))) juego.change(current, x => { x.set('ds', 0); x.set('df', 0); }); }
   });
 
+  // Modo partida: la ficha en pequeño para jugar con el móvil, con la pantalla encendida (src/nexo/partida.js).
+  const partida = window.NEXO_PARTIDA?.create({
+    prefix: 'dnd', host: () => host, juego, current: () => current, term,
+    can: ch => Boolean(playModel(ch)), view: ch => partidaView(ch), roll: (key, opts) => rollFromSheet(key, opts),
+    back: () => { if (current) juego?.render(host.querySelector('[data-play]')); }
+  });
+
   function load() {
     try {
       const parsed = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -435,7 +442,7 @@
     }
   }
   // Cómo cambian los estados activos una tirada de la ficha: modificador, ventaja o desventaja y la nota que lo explica.
-  function rollEffects(ch, key) {
+  function rollEffects(ch, key, manual = '') {
     const has = id => juego?.cond(ch, id) || 0;
     const kind = key === 'spell' ? 'attack' : key.startsWith('sv:') ? 'save' : 'check';
     const adv = [], dis = [], notes = [];
@@ -452,6 +459,8 @@
       if (ability === 'des') push(dis, ['apresado']);
       if (ability === 'fue' || ability === 'des') ['aturdido', 'inconsciente', 'paralizado', 'petrificado'].forEach(id => { if (has(id)) notes.push(`${CONDITION_NAME[id]}: fallas esta salvación sin tirar`); });
     }
+    if (manual === 'adv') adv.push('tu elección');
+    if (manual === 'dis') dis.push('tu elección');
     if (adv.length && dis.length) notes.push(`La ventaja (${adv.join(', ')}) y la desventaja (${dis.join(', ')}) se anulan`);
     else if (adv.length) notes.push(`Ventaja por ${adv.join(', ')}`);
     else if (dis.length) notes.push(`Desventaja por ${dis.join(', ')}`);
@@ -666,11 +675,36 @@
     return items;
   }
   function diceSources() { return current ? [{ label: 'Tirada de la ficha', items: diceItems(current), show: signed }] : []; }
-  function rollFromSheet(key) {
+  function rollFromSheet(key, opts = {}) {
     const item = diceItems(current).find(([k]) => k === key);
     if (!item) return;
-    const fx = rollEffects(current, key);
+    const fx = rollEffects(current, key, opts.adv);
     window.NEXO_DICE?.roll('dnd', { mod: item[2] + fx.bonus, adv: fx.adv, note: fx.note, label: item[1], kind: key === 'spell' ? 'attack' : 'check' });
+  }
+
+  // Lo que enseña el modo partida: los números de la mesa y las tiradas de la ficha.
+  function partidaView(ch) {
+    const cls = CLASSES[ch.cls];
+    const sp = speciesInfo(ch);
+    const pb = profBonus(ch);
+    const prof = proficientSkills(ch);
+    const saveProf = saveProficiencies(ch);
+    const stats = [
+      { label: 'CA', value: armorClass(ch), term: 'dnd-clase-armadura' },
+      { label: 'Iniciativa', value: signed(mod(ch, 'des') + (hasFeat(ch, 'alerta') ? pb : 0)), roll: 'init', term: 'dnd-iniciativa' },
+      { label: 'Velocidad', value: sp ? `${speed(ch, sp)} p` : '—' },
+      { label: 'Perc. pasiva', value: 10 + skillTotal(ch, 'percepcion', prof) },
+      { label: 'Competencia', value: signed(pb), term: 'dnd-competencia' }
+    ];
+    if (cls?.cast) stats.push({ label: 'CD conjuros', value: 8 + pb + mod(ch, cls.cast), term: 'dnd-cd-conjuros' }, { label: 'Atq. conjuro', value: signed(pb + mod(ch, cls.cast)), roll: 'spell', term: 'dnd-ataque' });
+    return {
+      title: ch.name || 'Aventurero sin nombre', sub: describe(ch), adv: true, stats,
+      rolls: [
+        { id: 'sv', title: 'Salvaciones', items: ABILITIES.map(([k, name]) => ({ key: 'sv:' + k, label: name, value: signed(mod(ch, k) + (saveProf.includes(k) ? pb : 0)), prof: saveProf.includes(k) })) },
+        { id: 'sk', title: 'Habilidades', items: ALL_SKILLS.map(k => ({ key: 'sk:' + k, label: SKILLS[k][0], value: signed(skillTotal(ch, k, prof)), prof: prof.has(k) })) },
+        { id: 'ab', title: 'Pruebas de característica', open: false, items: ABILITIES.map(([k, name]) => ({ key: 'ab:' + k, label: name, value: signed(mod(ch, k)) })) }
+      ]
+    };
   }
 
   function describe(ch) {
@@ -706,7 +740,7 @@
   function openEditor(ch) {
     current = ch;
     const saved = store.characters.some(item => item.id === ch.id);
-    frame(`<div class="dnd-editor-head"><button class="dnd-button ghost" data-back>← TUS AVENTUREROS</button>${kit?.tools() || ''}<button class="dnd-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
+    frame(`<div class="dnd-editor-head"><button class="dnd-button ghost" data-back>← TUS AVENTUREROS</button>${partida?.button('dnd-button') || ''}${kit?.tools() || ''}<button class="dnd-button danger" data-delete ${saved ? '' : 'hidden'}>ELIMINAR</button></div>
       <div data-play></div>
       <section class="dnd-panel"><h2><span>I</span> Identidad</h2><div class="dnd-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del personaje' })}${field('Jugador', 'player')}${field('Campaña', 'campaign')}${field('Alineamiento', 'alignment', { list: 'dndAlignments' })}
@@ -717,6 +751,7 @@
       <div class="dnd-modal" data-modal hidden><div class="dnd-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="dndDelTitle"><h3 id="dndDelTitle">¿Retirar a este aventurero?</h3><p>La ficha se borrará de este dispositivo y no se podrá recuperar.</p><div class="dnd-actions"><button class="dnd-button ghost" data-cancel>CANCELAR</button><button class="dnd-button danger" data-confirm>ELIMINAR FICHA</button></div></div></div>`, saved ? 'GUARDADO EN ESTE DISPOSITIVO' : 'FICHA NUEVA · SIN GUARDAR');
 
     host.querySelector('[data-back]').addEventListener('click', renderList);
+    partida?.bind(host);
     host.querySelectorAll('[data-prop]').forEach(input => input.addEventListener('input', () => {
       current[input.dataset.prop] = input.value;
       scheduleSave();
@@ -1050,6 +1085,7 @@
     });
     if (store.characters.some(item => item.id === ch.id)) host.querySelector('[data-delete]').hidden = false;
     juego?.render(host.querySelector('[data-play]'));
+    host.querySelectorAll('[data-np-open]').forEach(button => { button.hidden = !playModel(ch); });
   }
 
   function ensureHost() {

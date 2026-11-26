@@ -191,6 +191,23 @@
     else done(`Suerte: un ${roll} no supera ${before}. Se queda igual.`);
   }
 
+  // Modo partida: la ficha en pequeño para jugar con el móvil, con la pantalla encendida (src/nexo/partida.js).
+  const partida = window.NEXO_PARTIDA?.create({
+    prefix: 'cth', host: () => host, juego, current: () => current, term,
+    can: ch => Boolean(playModel(ch)), view: ch => partidaView(ch), roll: key => rollFromSheet(key),
+    back: () => { if (current) juego?.render(host.querySelector('[data-play]')); }
+  });
+  function partidaView(ch) {
+    const data = sheetData(ch);
+    const items = diceItems(ch);
+    const roll = (title, id, test, open) => ({ id, title, open, items: items.filter(([k]) => test(k)).map(([key, label, value]) => ({ key, label, value })) });
+    return {
+      title: data.name, sub: data.subtitle,
+      stats: window.NEXO_PARTIDA.pick(data, [['Esquivar', '', 'sk:esquivar'], ['Movimiento'], ['Bonif. al daño', 'Bon. daño'], ['Corpulencia']]),
+      rolls: [roll('Habilidades', 'sk', k => k.startsWith('sk:')), roll('Características', 'ch', k => k.startsWith('ch:'), false), roll('Suerte y Cordura', 'ex', k => k === 'luck' || k === 'san')].filter(g => g.items.length)
+    };
+  }
+
   function load() {
     try {
       const parsed = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -571,7 +588,7 @@
   function openEditor(ch) {
     current = ch;
     const saved = store.characters.some(item => item.id === ch.id);
-    frame(`<div class="cth-editor-head"><button class="cth-button ghost" data-back>← TUS INVESTIGADORES</button>${kit?.tools() || ''}<button class="cth-button danger" data-delete ${saved ? '' : 'hidden'}>DESTRUIR EXPEDIENTE</button></div>
+    frame(`<div class="cth-editor-head"><button class="cth-button ghost" data-back>← TUS INVESTIGADORES</button>${partida?.button('cth-button') || ''}${kit?.tools() || ''}<button class="cth-button danger" data-delete ${saved ? '' : 'hidden'}>DESTRUIR EXPEDIENTE</button></div>
       <div data-play></div>
       <section class="cth-panel">${heading(1, 'Investigador', 'datos del expediente')}<div class="cth-fields">
         ${field('Nombre', 'name', { placeholder: 'Nombre del investigador' })}${field('Jugador', 'player')}${field('Campaña', 'campaign')}
@@ -586,6 +603,7 @@
       <div class="cth-modal" data-modal hidden><div class="cth-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="cthDelTitle"><h3 id="cthDelTitle">¿Quemar este expediente?</h3><p>La ficha se borrará de este dispositivo y de tu cuenta, y no se podrá recuperar.</p><div class="cth-actions"><button class="cth-button ghost" data-cancel>CANCELAR</button><button class="cth-button danger" data-confirm>DESTRUIR FICHA</button></div></div></div>`, saved ? 'GUARDADO EN ESTE DISPOSITIVO' : 'EXPEDIENTE NUEVO · SIN GUARDAR');
 
     host.querySelector('[data-back]').addEventListener('click', renderList);
+    partida?.bind(host);
     host.querySelectorAll('.cth-main > .cth-panel [data-prop]').forEach(input => input.addEventListener('input', () => { current[input.dataset.prop] = input.value; scheduleSave(); }));
     host.querySelector('[data-num="age"]').addEventListener('change', event => { current.age = event.target.value; changed(); });
     const modal = host.querySelector('[data-modal]');
@@ -764,6 +782,7 @@
       input.addEventListener('change', () => changed());
     });
     juego?.render(host.querySelector('[data-play]'));
+    host.querySelectorAll('[data-np-open]').forEach(button => { button.hidden = !playModel(ch); });
   }
 
   function ensureHost() {
